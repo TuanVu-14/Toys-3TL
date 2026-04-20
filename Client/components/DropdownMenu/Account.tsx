@@ -16,7 +16,7 @@ const Account = () => {
   return (
     <div onMouseEnter={()=>setDropdownVisible(true)} onMouseLeave={()=>setDropdownVisible(false)} className="relative mx-auto my-auto">
       <button className='mb-2'>
-        <UserIcon width={40}/>
+        <UserIcon width={29}/>
       </button>
       {(isDropdownVisible && appState.loggedIn) && (
         <div id="dropdownAvatar" className="z-30 bg-white divide-y divide-gray-100 rounded-lg absolute drop-shadow-custom-xl w-44">
