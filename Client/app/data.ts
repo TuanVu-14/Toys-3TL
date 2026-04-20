@@ -45,148 +45,37 @@ const topCat = [{
 }];
 const navBtns = [
     {name:"Home",isExtendable:false,extendables:[],catLink:'/'},
-    {name:"Categories",isExtendable:false,extendables:[],catLink:''},
-    {name:"Men's",isExtendable:true,extendables:[
+    {name:"Categories",isExtendable:false,extendables:[],catLink:'/categories'},
+    {name:"Lego",isExtendable:true,extendables:[
         {
-          title: "Shirt",
-          link: "/sub-category/men/shirt",
+          title: "Boy's LEGO",
+          link: "/sub-category/building-blocks/boy's-lego",
         },
         {
-          title: "Shorts & Jeans",
-          link: "/sub-category/fashion/shorts-&-jeans",
+          title: "Girl's LEGO",
+          link: "/sub-category/building-blocks/girl's-lego",
         },
         {
-          title: "Safety Shoes",
-          link: "/sub-category/footwear/safety-shoes",
+          title: "Kindergarten's LEGO",
+          link: "/sub-category/building-blocks/kindergarten's-lego",
         },
         {
-          title: "Wallet",
-          link: "/sub-category/men/wallet",
+          title: "Adult LEGO",
+          link: "/sub-category/building-blocks/adult-lego",
         },
-      ],catLink:'/categories/men'},
-    {name:"Women's",isExtendable:true,extendables:[
-        {
-            title: "Dress & Frock", // Combined Dress and Frock
-            link: "/sub-category/women/dress-&-frock",
+      ],catLink:'/categories/building-blocks'},
+    {name:"New arrival",isExtendable:false,extendables:[],catLink:'/categories/new-arrival'},
+    {name:"Best sellers",isExtendable:false,extendables:[],catLink:'/categories/best-sellers'},
+    {name:"Sale",isExtendable:true,extendables:[
+          {
+            title: "Up To 50% Off",
+            link: "/sub-category/sale/50%-sale",
           },
           {
-            title: "Earrings",
-            link: "/sub-category/women/earrings",
+            title: "Long-term Offer",
+            link: "/sub-category/sale/long-term-offer",
           },
-          {
-            title: "Necklace",
-            link:"/sub-category/women/necklace",
-          },
-          {
-            title: "Makeup Kit",
-            link: "/sub-category/women/makeup-kit",
-          },
-    ],catLink:'/categories/women'},
-    {name:"Jewelry",isExtendable:true,extendables:[
-        {
-            title: "Necklace",
-            link: "/sub-category/jewellery/necklace",
-          },
-          {
-            title: "Earrings",
-            link: "/sub-category/jewellery/earrings",
-          },
-          {
-            title: "Couple Rings",
-            link: "/sub-category/jewellery/couple-rings",
-          },
-          {
-            title: "Bracelets",
-            link: "/sub-category/jewellery/bracelets",
-          },
-    ],catLink:'/categories/jewellery'},
-    {name:"Perfume",isExtendable:true,extendables:[
-          {
-            title: "Clothes Perfume",
-            link: "/sub-category/perfume/clothes-perfume",
-          },
-          {
-            title: "Deodorant",
-            link: "/sub-category/perfume/deodorant",
-          },
-          {
-            title: "Flower Fragrance",
-            link: "/sub-category/perfume/flower-fragrance",
-          },
-          {
-            title: "Air Freshener",
-            link: "/sub-category/perfume/air-freshener",
-          },
-    ],catLink:'/categories/perfume'},
-    {
-        name: "Cosmetics",
-        isExtendable: true,
-        extendables: [
-          {
-            title: "Body Soap",
-            link: "/sub-category/cosmetics/body-soap",
-          },
-          {
-            title: "Shampoo",
-            link: "/sub-category/cosmetics/shampoo",
-          },
-          {
-            title: "Perfume",
-            link: "/sub-category/cosmetics/perfume",
-          },
-          {
-            title: "Body Wash",
-            link: "/sub-category/cosmetics/bodywash",
-          }
-        ],
-        catLink: "/categories/cosmetics"
-      },
-      {
-        name: "Footwear",
-        isExtendable: true,
-        extendables: [
-          {
-            title: "Long Shoes",
-            link: "/sub-category/footwear/long-shoes",
-          },
-          {
-            title: "First Copy",
-            link: "/sub-category/footwear/firstcopy",
-          },
-          {
-            title: "Cowboy Shoes",
-            link: "/sub-category/footwear/cowboy-shoes",
-          },
-          {
-            title: "Safety Shoes",
-            link: "/sub-category/footwear/safety-shoes",
-          }
-        ],
-        catLink: "/categories/footwear"
-      },
-      {
-        name: "Fashion",
-        isExtendable: true,
-        extendables: [
-          {
-            title: "Innerwear",
-            link: "/sub-category/fashion/innerwear",
-          },
-          {
-            title: "Shirts",
-            link: "/sub-category/fashion/shirts",
-          },
-          {
-            title: "Dress & Frock",
-            link: "/sub-category/fashion/dress-&-frock",
-          },
-          {
-            title: "Jacket",
-            link: "/sub-category/fashion/jacket",
-          }
-        ],
-        catLink: "/categories/fashion"
-      },
+    ],catLink:'/categories/sale'},
     {name:"Blog",isExtendable:false,extendables:[],catLink:'/blog'}
 ];
 const leftStatus = [
@@ -552,119 +441,120 @@ const testimonial = {
 }
 const categoryDropDown = [
     {
-        title:'Electronics',
-        catLink:"/electronics",
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/electronics-banner-1.jpg",
+        title:'Building Block',
+        catLink:"/building-blocks",
+        imgLink:"/images/sale.jpg",
         imgAlt:"",
-        imgRedirectLink:"",
+        imgRedirectLink:"categories/building-blocks",
         subCategories:[
             {
-                title:"Desktop",
-                link:"/sub-category/electronics/desktop",
+                title:"Boy's LEGO",
+                link:"/sub-category/building-blocks/boy's-lego",
             },
             {
-                title:"Laptop",
-                link:"/sub-category/electronics/laptop",
+                title:"Girl's LEGO",
+                link:"/sub-category/building-blocks/girl's-lego",
             },
             {
-                title:"Camera",
-                link:"/sub-category/electronics/camera",
+                title:"Kindergarten's LEGO",
+                link:"/sub-category/building-blocks/kindergarten's-lego",
             },
             {
-                title:"Tablet",
-                link:"/sub-category/electronics/tablet",
+                title:"Adult's LEGO",
+                link:"/sub-category/building-blocks/adult's-lego",
             },
             {
-                title:"Headphone",
-                link:"/sub-category/electronics/headphone",
+                title:"Puzzle",
+                link:"/sub-category/building-blocks/puzzle",
             },
         ]
     },
     {
-        title:"Men's",
-        catLink:"/men",
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/mens-banner.jpg",
+        title:"Vehicles",
+        catLink:"/vehicles",
+        imgLink:"/images/sale2.jpg",
         imgAlt:"",
         imgRedirectLink:"",
         subCategories:[
             {
-                title:"Formal",
-                link:"/sub-category/men/formal",
+                title:"Remote Control Car",
+                link:"/sub-category/vehicles/remote-control-car",
             },
             {
-                title:"Casual",
-                link:"/sub-category/men/casual",
+                title:"Model Car",
+                link:"/sub-category/vehicles/model-car",
             },
             {
-                title:"Sport",
-                link:"/sub-category/men/sports", 
+                title:"Assembled Vehicle",
+                link:"/sub-category/vehicles/assembled-vehicle", 
             },
             {
-                title:"Jacket",
-                link:"/sub-category/men/jacket",
+                title:"Playset & Accessory",
+                link:"/sub-category/vehicles/playset-and-accessory",
             },
             {
-                title:"Sunglasses",
-                link:"/sub-category/men/sunglasses",
+                title:"Others",
+                link:"/sub-category/vehicles/Others",
             },
         ]
     },
     {
-        title:"Women's",
-        catLink:"/women",
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/womens-banner.jpg",
+        title:"Ride-on Toys",
+        catLink:"/ride-on-toys",
+        imgLink:"/images/sale3.jpg",
         imgAlt:"",
         imgRedirectLink:"",
         subCategories:[
             {
-                title:"Formal",
-                link:"/sub-category/women/formal",
+                title:"Electric Ride-On Car",
+                link:"/sub-category/ride-on-toys/electric-ride-on-car",
             },
             {
-                title:"Casual",
-                link:"/sub-category/women/casual", 
+                title:"Foot-to-Floor Ride-On",
+                link:"/sub-category/ride-on-toys/foot-to-floor-ride-on", 
             },
             {
-                title:"Perfume",
-                link:"/sub-category/women/perfume",
+                title:"Kids Electric Motorbike",
+                link:"/sub-category/ride-on-toys/kids-electric-motorbike",
             },
             {
-                title:"Cosmetics",
-                link:"/sub-category/women/cosmetics",
+                title:"Ride-On Construction Vehicle",
+                link:"/sub-category/ride-on-toys/ride-on-construction-vehicle",
             },
             {
-                title:"Bags",
-                link:"/sub-category/women/bags",
+                title:"Scooter",
+                link:"/sub-category/ride-on-toys/scooter",
             },
         ]
     },
     {
-        title:'Electronics',
-        catLink:"/electronics",
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/electronics-banner-2.jpg",
+        title:'Movie-Themed Toys',
+        catLink:"/movie-themed-toys",
+        imgLink:"/images/sale4.png",
         imgAlt:"",
         imgRedirectLink:"",
         subCategories:[
             {
-                title:"Smart Watch",
-                link:"/sub-category/electronics/smart-watch",
+                title:"Superhero",
+                link:"/sub-category/movie-themed-toys/superhero",
             },
             {
-                title:"Smart TV",
-                link:"/sub-category/electronics/smart-TV",
+                title:"Anime",
+                link:"/sub-category/movie-themed-toys/anime",
             },
             {
-                title:"Keyboard",
-                link:"/sub-category/electronics/keyboard",
+                title:"Spinning",
+                link:"/sub-category/movie-themed-toys/spinning",
             },
             {
-                title:"Mouse",
-                link:"/sub-category/electronics/mouse",
+                title:"Robot Superhero",
+                link:"/sub-category/movie-themed-toys/robot-superhero",
             },
             {
-                title:"Microphone",
-                link:"/sub-category/electronics/microphone",
+                title:"Others",
+                link:"/sub-category/movie-themed-toys/others",
             },
+            
         ]
     },
 ];

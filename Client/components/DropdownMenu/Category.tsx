@@ -18,18 +18,20 @@ const Category = () => {
         marginTop: `${margin * 0.25}rem`,
         opacity: opacity,
         transition: 'margin-top 0.2s ease-in-out, opacity 0.3s ease-in-out'
-      }} className='xl:min-h-[450px] xl:min-w-[1280px] min-h-[400px] min-w-[1000px] xl:-left-40 z-30 absolute bg-white flex gap-5 rounded-lg drop-shadow-md px-8 py-8'>
+      }} className='xl:min-h-[450px] xl:min-w-[1280px] min-h-[400px] min-w-[1000px] xl:-left-40 z-20 absolute bg-white flex gap-5 rounded-lg drop-shadow-md px-8 py-8'>
         {categoryDropDown.map((each,index)=>
-            <div key={index}>
-                <div className='border-b-[1px] pb-3'>
+            <div key={index} className='flex-1'>
+                <div className='relative border-b-[1px] pb-3 mb-5 group'>
                 <a href={`/categories/${each.catLink}`} className='font-semibold text-base'>{each.title}</a>
-                </div>
+            </div>
                 <div className='flex flex-col gap-2 mb-8 mt-5'>
                     {each.subCategories.map((each,index)=>
-                        <a href={each.link} className='text-silver hover:text-salmon' key={index}>{each.title}</a>
+                    <a href={each.link} className='text-silver hover:text-salmon relative inline-block w-fit group' key={index}>{each.title}
+                        <div className="absolute bottom-[-1px] left-0 h-[2px] w-0 bg-salmon group-hover:w-full transition-all duration-300 rounded"></div>
+                    </a>
                     )}
                 </div>
-                <a href={each.imgRedirectLink}><img height={80} width={300} className='rounded-lg' src={each.imgLink}/></a>
+                <a href={each.imgRedirectLink}><img height={80} width={300} className='rounded-lg object-cover' src={each.imgLink}/></a>
             </div>
         )}
     </div>

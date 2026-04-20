@@ -23,6 +23,11 @@ const config: Config = {
         "blueIn":"rgb(2, 86, 176)",
         "blueAc":"rgb(0, 123, 255)",
         "btnpurple":"rgb(79, 70, 229)",
+        flower: {
+          50: "#FFF0F0",
+          100: "#E8989A",
+          150: "#E4959A",
+        },
         primary: {"50":"#eff6ff","100":"#dbeafe","200":"#bfdbfe","300":"#93c5fd","400":"#60a5fa","500":"#3b82f6","600":"#2563eb","700":"#1d4ed8","800":"#1e40af","900":"#1e3a8a","950":"#172554"},
       },
       backgroundImage: {
