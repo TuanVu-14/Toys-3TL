@@ -1,48 +1,5 @@
 import { title } from "process";
 
-const topCat = [{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/dress.svg',
-    name:"DRESS & FROCK",
-    quantity:53,
-    showLink:"/sub-category/fashion/dress-&-frock"
-},{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/coat.svg',
-    name:"INNERWEAR",
-    quantity:58,
-    showLink:"/sub-category/fashion/innerwear"
-},{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/glasses.svg ',
-    name:"SUNGLASSES",
-    quantity:32,
-    showLink:"/sub-category/men/sunglasses"
-},{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/shorts.svg',
-    name:"SHORTS & JEANS",
-    quantity:42,
-    showLink:"/sub-category/fashion/shorts-&-jeans"
-},{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/tee.svg',
-    name:"T-SHIRTS",
-    quantity:12,
-    showLink:"/sub-category/fashion/TShirt"
-},
-{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/jacket.svg',
-    name:"JACKET",
-    quantity:63,
-    showLink:"/sub-category/men/jacket"
-},
-{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/watch.svg',
-    name:"SMART WATCH",
-    quantity:42,
-    showLink:"/sub-category/electronics/smart-watch"
-},{
-    imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/hat.svg',
-    name:"HAIR GEL",
-    quantity:29,
-    showLink:"/sub-category/cosmetics/hair-gel"
-}];
 const navBtns = [
     {name:"Home",isExtendable:false,extendables:[],catLink:'/'},
     {name:"Categories",isExtendable:false,extendables:[],catLink:'/categories'},
@@ -80,164 +37,368 @@ const navBtns = [
 ];
 const leftStatus = [
     {
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/dress.svg",
-        title:"Clothes",
+        imgLink:"/images/icon.png",
+        title:"Building Block",
         links:[
             {
-                title:"Shirt",
+                title:"Boy's LEGO",
                 link:"/sub-category/clothes/shirt",
-                quantity:50,
             },
             {
-                title:"Shorts & Jeans",
+                title:"Girl's LEGO",
                 link:"/sub-category/clothes/shorts-&-jeans",
-                quantity:50,
             },
             {
-                title:"Jacket",
+                title:"Kindergarten's LEGO",
                 link:"/sub-category/clothes/jacket",
-                quantity:50,
             },
             {
-                title:"Dress & Frock",
+                title:"Adult's LEGO",
                 link:"/sub-category/clothes/dress-&-frock",
-                quantity:50,
+            },
+            {
+                title:"Puzzle",
+                link:"/sub-category/clothes/dress-&-frock",
             }
         ]
     },
     {
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/shoes.svg",
-        title:"Footwear",
+        imgLink:"/images/icon1.png",
+        title:"Baby Supplies",
         links:[
             {
-                title:"Sport",
+                title:"Baby Toys",
                 link:"/sub-category/footwear/sport",
-                quantity:50,
-            },
-            {
-                title:"Formal",
-                link:"/sub-category/footwear/formal",
-                quantity:50,
-            },
-            {
-                title:"Casual",
-                link:"/sub-category/footwear/casual",
-                quantity:50,
-            },
-            {
-                title:"Safety Shoes",
-                link:"/sub-category/footwear/safety-shoes",
-                quantity:50,
             }
         ]
     },
     {
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/jewelry.svg",
-        title:"Jewelry",
+        imgLink:"/images/icon2.png",
+        title:"Vehicles",
         links:[
             {
-                title:"Earrings",
+                title:"Remote Controll Car",
                 link:"/sub-category/jewellery/earrings",
-                quantity:50,
             },
             {
-                title:"Couple Rings",
+                title:"Model Car",
                 link:"/sub-category/jewellery/couple-rings",
-                quantity:50,
             },
             {
-                title:"Necklace",
+                title:"Assembled Vehicles",
                 link:"/sub-category/jewellery/necklace",
-                quantity:50,
+            },
+            {
+                title:"Playset & Accessory",
+                link:"/sub-category/jewellery/necklace",
+            },
+            {
+                title:"Others",
+                link:"/sub-category/jewellery/necklace",
             }
         ]
     },
     {
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/perfume.svg",
-        title:"Perfume",
+        imgLink:"/images/icon3.jpg",
+        title:"Ride-on Toys",
         links:[
             {
-                title:"Clothes Perfume",
+                title:"Electric Ride-on Car",
                 link:"/sub-category/perfume/clothes-perfume",
-                quantity:50,
             },
             {
-                title:"Deodorant",
+                title:"Foot-to-Floor Ride-on",
                 link:"/sub-category/perfume/deodorant",
-                quantity:50,
             },
             {
-                title:"Air Freshener",
+                title:"Kids Electric Motorbike",
                 link:"/sub-category/perfume/air-freshener",
-                quantity:50,
+            },
+            {
+                title:"Ride-on Construction Vehicle",
+                link:"/sub-category/perfume/air-freshener",
+            },
+            {
+                title:"Scooter",
+                link:"/sub-category/perfume/air-freshener",
             },
         ]
     },
     {
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/cosmetics.svg",
-        title:"Cosmetics",
+        imgLink:"/images/icon4.png",
+        title:"Movie-themed Toys",
         links:[
             {
-                title:"Shampoo",
+                title:"Superhero",
                 link:"/sub-category/cosmetics/shampoo",
-                quantity:50,
             },
             {
-                title:"Sunscreen",
+                title:"Anime",
                 link:"/sub-category/cosmetics/sunscreen",
-                quantity:50,
             },
             {
-                title:"Body Wash",
+                title:"Spinning",
                 link:"/sub-category/cosmetics/bodywash",
-                quantity:50,
             },
             {
-                title:"Makeup Kit",
+                title:"Robot Superhero",
                 link:"/sub-category/cosmetics/makeup-kit",
-                quantity:50,
+            },
+            {
+                title:"Others",
+                link:"/sub-category/cosmetics/makeup-kit",
             }
         ]
     },
     {
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/glasses.svg",
-        title:"Men",
+        imgLink:"/images/icon5.png",
+        title:"School Supplies",
         links:[
             {
-                title:"Sunglasses",
+                title:"School Backpack",
                 link:"/sub-category/men/sunglasses",
-                quantity:50,
             },
             {
-                title:"Casual",
+                title:"Preschool Backpack",
                 link:"/sub-category/men/casual",
-                quantity:50,
+            },
+            {
+                title:"Pencil Box",
+                link:"/sub-category/men/casual",
+            },
+            {
+                title:"Stationery",
+                link:"/sub-category/men/casual",
             }
         ]
     },
     {
-        imgLink:"https://codewithsadee.github.io/anon-ecommerce-website/assets/images/icons/bag.svg",
-        title:"Bags",
+        imgLink:"/images/icon6.png",
+        title:"Animal World",
         links:[
             {
-                title:"Shopping Bag",
+                title:"Dinosaur",
                 link:"/sub-category/women/bags",
-                quantity:50,
             },
             {
-                title:"Gym Backpack",
+                title:"Wildlife",
                 link:"/sub-category/women/bags",
-                quantity:50,
             },
             {
-                title:"Purse",
+                title:"Dragon",
                 link:"/sub-category/women/bags",
-                quantity:50,
             },
             {
-                title:"Wallet",
+                title:"Farm Animals",
                 link:"/sub-category/men/wallet",
-                quantity:50,
+            },
+            {
+                title:"Marine Animals",
+                link:"/sub-category/men/wallet",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon7.png",
+        title:"Creative Toys",
+        links:[
+            {
+                title:"STEAM Science Toys",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Modeling Clay",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Dynamic Sand",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"DIY",
+                link:"/sub-category/men/wallet",
+            },
+            {
+                title:"Slime",
+                link:"/sub-category/men/wallet",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon8.png",
+        title:"Doll",
+        links:[
+            {
+                title:"Collectible Dolls",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Fashion Dolls",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Occupational Dolls",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Baby Dolls",
+                link:"/sub-category/men/wallet",
+            },
+            {
+                title:"Playset & Acessories",
+                link:"/sub-category/men/wallet",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon9.png",
+        title:"Simulation Toys",
+        links:[
+            {
+                title:"Supermarket Toys",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Kitchen Toys",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Others",
+                link:"/sub-category/women/bags",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon10.jpg",
+        title:"Robot",
+        links:[
+            {
+                title:"Remote-controlled Robot",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Autonomous Robot",
+                link:"/sub-category/women/bags",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon11.png",
+        title:"Flying Toys",
+        links:[
+            {
+                title:"Drone",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Aircraft Launch Platform",
+                link:"/sub-category/women/bags",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon12.png",
+        title:"Motor Skills Toys",
+        links:[
+            {
+                title:"Indoor Toys",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Water Spray Toys",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Swimming Float",
+                link:"/sub-category/women/bags",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon13.png",
+        title:"Fashion Items",
+        links:[
+            {
+                title:"Fashionable Shoulder Bag",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Clock",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Glasses",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Paint",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Camera",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Fashion Design",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Makeup & Beauty",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Fashion Accessories",
+                link:"/sub-category/women/bags",
+            },
+        ]
+    },
+    {
+        imgLink:"/images/icon14.png",
+        title:"Game",
+        links:[
+            {
+                title:"Board Game",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Magic Toys",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Others",
+                link:"/sub-category/women/bags",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon15.png",
+        title:"Character Model",
+        links:[
+            {
+                title:"Blindbox",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Card",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Figuring",
+                link:"/sub-category/women/bags",
+            }
+        ]
+    },
+    {
+        imgLink:"/images/icon16.png",
+        title:"Plush Toys",
+        links:[
+            {
+                title:"Interactive Plush Toys",
+                link:"/sub-category/women/bags",
+            },
+            {
+                title:"Stuffed Animals",
+                link:"/sub-category/women/bags",
             }
         ]
     }
@@ -449,19 +610,19 @@ const categoryDropDown = [
         subCategories:[
             {
                 title:"Boy's LEGO",
-                link:"/sub-category/building-blocks/boy's-lego",
+                link:"/sub-category/building-blocks/boy-lego",
             },
             {
                 title:"Girl's LEGO",
-                link:"/sub-category/building-blocks/girl's-lego",
+                link:"/sub-category/building-blocks/girl-lego",
             },
             {
                 title:"Kindergarten's LEGO",
-                link:"/sub-category/building-blocks/kindergarten's-lego",
+                link:"/sub-category/building-blocks/kindergarten-lego",
             },
             {
                 title:"Adult's LEGO",
-                link:"/sub-category/building-blocks/adult's-lego",
+                link:"/sub-category/building-blocks/adult-lego",
             },
             {
                 title:"Puzzle",
@@ -800,4 +961,4 @@ const serviceFeatures = [
     },
 ];
 const allCategories = [{name:"Men's",link:'/categories/MEN'},{name:"Women's",link:'/categories/WOMEN'},{name:'Cosmetics',link:'/categories/Cosmetics'},{name:'Electronics',link:'/categories/electronics'},{name:'Perfume',link:'/categories/perfume'},{name:'Jewellery',link:'/categories/jewellery'},{name:'Footwear',link:'/categories/footwear'},{name:'Fashion',link:'/categories/fashion'}]
-export {topCat, allCategories, serviceFeatures, loginFeatures,  navBtns,  aboutUS, availableCategories, paymentSecure, leftStatus, categoryDropDown,  footerCategories, footerSections, featuresSec, currentEvent, testimonial};
+export {allCategories, serviceFeatures, loginFeatures,  navBtns,  aboutUS, availableCategories, paymentSecure, leftStatus, categoryDropDown,  footerCategories, footerSections, featuresSec, currentEvent, testimonial};
