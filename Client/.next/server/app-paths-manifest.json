@@ -1,4 +1,9 @@
 {
   "/page": "app/page.js",
-  "/product/[productID]/page": "app/product/[productID]/page.js"
+  "/about/page": "app/about/page.js",
+  "/our-services/page": "app/our-services/page.js",
+  "/search/[productName]/page": "app/search/[productName]/page.js",
+  "/sub-category/[maincategory]/[subcategory]/page": "app/sub-category/[maincategory]/[subcategory]/page.js",
+  "/product/[productID]/page": "app/product/[productID]/page.js",
+  "/blog/page": "app/blog/page.js"
 }

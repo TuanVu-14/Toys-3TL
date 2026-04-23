@@ -2,49 +2,9 @@ import React from 'react'
 import ReactStars from 'react-stars'
 const FilterSidebar = ({dataChecked,filterSubmit,toggleClear,mobileMode}:{dataChecked:boolean,filterSubmit:(e:any)=>void,toggleClear:()=>void,mobileMode:boolean}) => {
   return (
-    // <form action="#" method="get" id="drawer-example"
-    //     className="fixed top-0 left-0 z-40 w-full h-screen max-w-xs p-4 overflow-y-auto transition-transform -translate-x-full bg-white dark:bg-gray-800"
-    //      aria-labelledby="drawer-label">
-    //     <h5 id="drawer-label"
-    //         className="inline-flex items-center mb-4 text-base font-semibold text-gray-500 uppercase dark:text-gray-400">
-    //         Apply filters
-    //     </h5>
-    //     <button type="button" data-drawer-dismiss="drawer-example" aria-controls="drawer-example"
-    //         className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 absolute top-2.5 right-2.5 inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white">
-    //         <svg aria-hidden="true" className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
-    //             xmlns="http://www.w3.org/2000/svg">
-    //             <path fill-rule="evenodd"
-    //                 d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-    //                 clip-rule="evenodd"></path>
-    //         </svg>
-    //         <span className="sr-only">Close menu</span>
-    //     </button>
         <div className={`${!mobileMode ? 'hidden' : 'flex'} lg:flex-col lg:flex`}>
         <form onSubmit={filterSubmit} className="flex flex-col justify-between flex-1">
             <div className="space-y-6">
-                {/* <div className="space-y-2">
-                    <h6 className="text-base font-medium text-black dark:text-white">
-                        Categories
-                    </h6>
-                    {
-                        availableCategories.map((each,index)=>
-                            <div key={index} className="flex items-center mb-4">
-                                <input id={each.title} type="checkbox" 
-                                    className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
-
-                                <label className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                    {each.title}
-                                </label>
-                            </div>
-                        )
-                    }
-                    
-                    <a href="#"
-                        className="flex items-center text-sm font-medium text-primary-600 dark:text-primary-500 hover:underline">
-                        View all
-                    </a>
-                </div> */}
-
                 <div className="space-y-2">
                     <h6 className="text-base font-medium text-black dark:text-white">
                         Prices

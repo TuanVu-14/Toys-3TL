@@ -403,94 +403,29 @@ const leftStatus = [
         ]
     }
 ]
-const footerCategories = [
-    {
-        name: 'FASHION',
-        subcategories: [
-            { name: 'T-Shirt', subcatLink: '/sub-category/fashion/TShirt' },
-            { name: 'Shirts', subcatLink: '/sub-category/fashion/shirts' },
-            { name: 'Shorts & Jeans', subcatLink: '/sub-category/fashion/shorts-&-jeans' },
-            { name: 'Jacket', subcatLink: '/sub-category/fashion/jacket' },
-            { name: 'Dress & Frock', subcatLink: '/sub-category/fashion/dress-&-frock' },
-            { name: 'Innerwear', subcatLink: '/sub-category/fashion/innerwear' },
-            { name: 'Hosiery', subcatLink: '/sub-category/fashion/hosiery' }
-        ]
-    },
-    {
-        name: 'FOOTWEAR',
-        subcategories: [
-            { name: 'Sport', subcatLink: '/sub-category/footwear/sport' },
-            { name: 'Formal', subcatLink: '/sub-category/footwear/formal' },
-            { name: 'Boots', subcatLink: '/sub-category/footwear/boots' },
-            { name: 'Casual', subcatLink: '/sub-category/footwear/casual' },
-            { name: 'Cowboy Shoes', subcatLink: '/sub-category/footwear/cowboy-shoes' },
-            { name: 'Safety Shoes', subcatLink: '/sub-category/footwear/safety-shoes' },
-            { name: 'Party Wear Shoes', subcatLink: '/sub-category/footwear/party-wear-shoes' },
-            { name: 'Branded', subcatLink: '/sub-category/footwear/branded' },
-            { name: 'Firstcopy', subcatLink: '/sub-category/footwear/firstcopy' },
-            { name: 'Long Shoes', subcatLink: '/sub-category/footwear/long-shoes' }
-        ]
-    },
-    {
-        name: 'JEWELLERY',
-        subcategories: [
-            { name: 'Necklace', subcatLink: '/sub-category/jewellery/necklace' },
-            { name: 'Earrings', subcatLink: '/sub-category/jewellery/earrings' },
-            { name: 'Couple Rings', subcatLink: '/sub-category/jewellery/couple-rings' },
-            { name: 'Pendants', subcatLink: '/sub-category/jewellery/pendants' },
-            { name: 'Crystal', subcatLink: '/sub-category/jewellery/crystal' },
-            { name: 'Bangles', subcatLink: '/sub-category/jewellery/bangles' },
-            { name: 'Bracelets', subcatLink: '/sub-category/jewellery/bracelets' },
-            { name: 'Nosepin', subcatLink: '/sub-category/jewellery/nosepin' },
-            { name: 'Chain', subcatLink: '/sub-category/jewellery/chain' },
-            { name: 'Earrings', subcatLink: '/sub-category/jewellery/earrings' },
-            { name: 'Couple Rings', subcatLink: '/sub-category/jewellery/couple-rings' }
-        ]
-    },
-    {
-        name: 'COSMETICS',
-        subcategories: [
-            { name: 'Shampoo', subcatLink: '/sub-category/cosmetics/shampoo' },
-            { name: 'Bodywash', subcatLink: '/sub-category/cosmetics/bodywash' },
-            { name: 'Facewash', subcatLink: '/sub-category/cosmetics/facewash' },
-            { name: 'Makeup Kit', subcatLink: '/sub-category/cosmetics/makeup-kit' },
-            { name: 'Liner', subcatLink: '/sub-category/cosmetics/liner' },
-            { name: 'Lipstick', subcatLink: '/sub-category/cosmetics/lipstick' },
-            { name: 'Perfume', subcatLink: '/sub-category/cosmetics/perfume' },
-            { name: 'Body Soap', subcatLink: '/sub-category/cosmetics/body-soap' },
-            { name: 'Scrub', subcatLink: '/sub-category/cosmetics/scrub' },
-            { name: 'Hair Gel', subcatLink: '/sub-category/cosmetics/hair-gel' },
-            { name: 'Hair Colors', subcatLink: '/sub-category/cosmetics/hair-colors' },
-            { name: 'Hair Dye', subcatLink: '/sub-category/cosmetics/hair-dye' },
-            { name: 'Sunscreen', subcatLink: '/sub-category/cosmetics/sunscreen' },
-            { name: 'Skin Lotion', subcatLink: '/sub-category/cosmetics/skin-lotion' },
-            { name: 'Liner', subcatLink: '/sub-category/cosmetics/liner' },
-            { name: 'Lipstick', subcatLink: '/sub-category/cosmetics/lipstick' }
-        ]
-    }
-];
+
 const footerSections = [
     {
         sectionName: "Popular Categories",
         items: [
             {
-                title: "Fashion",
+                title: "LEGO",
                 link: "/categories/fashion"
             },
             {
-                title: "Electronic",
+                title: "Model Car",
                 link: "/categories/electronics"
             },
             {
-                title: "Cosmetic",
+                title: "Doll",
                 link: "/categories/cosmetics"
             },
             {
-                title: "Footwear",
+                title: "Robot",
                 link: "/categories/footwear"
             },
             {
-                title: "Perfume",
+                title: "Game",
                 link: "/categories/perfume"
             }
         ]
@@ -498,14 +433,6 @@ const footerSections = [
     {
         sectionName: "Products",
         items: [
-            // {
-            //     title: "Prices Drop",
-            //     link: "products/price-drop"
-            // },
-            // {
-            //     title: "New Products",
-            //     link: "products/new-products"
-            // },
             {
                 title: "Blog",
                 link: "/blog"
@@ -548,9 +475,9 @@ const footerSections = [
     {
         sectionName: 'Contact',
         items: [
-            {title:'419 State 414 Rte Beaver Dams, New York(NY), 14812, USA',link:"#"},
-            {title:'(607) 936-8058',link:"#"},
-            {title:'Example@Gmail.Com',link:"#"}
+            {title:'Location: SN 26B, Đường Nguyễn Thái Học, phường Vĩnh Phúc, tỉnh Phú Thọ',link:"#"},
+            {title:'Phone: 0384361840',link:"#"},
+            {title:'Email: uno22516@gmail.com',link:"#"}
         ]
     }
 ];
@@ -586,19 +513,12 @@ const featuresSec = [
         icon:'fa-solid fa-gift fa-2xl',
     }
 ];
-const currentEvent = {
-    discount:25,
-    titleFirst:"Summer",
-    titleLast:"Collection",
-    starting:10,
-    isDiscount:true,
-    eventLink:''
-}
+
 const testimonial = {
     imgLink:'https://codewithsadee.github.io/anon-ecommerce-website/assets/images/testimonial-1.jpg',
     name:'ALAN DOE',
     position:'CEO & Founder Invision',
-    description:'Lorem ipsum dolor sit amet consectetur Lorem ipsum dolor dolor sit amet.'
+    description:'The service exceeded my expectations. The team was responsive, reliable, and delivered outstanding results.'
 }
 const categoryDropDown = [
     {
@@ -757,6 +677,7 @@ const paymentSecure = [
         imgAlt:'',
     },
 ]
+
 const aboutUS= {
     section1:[
         {
@@ -816,84 +737,7 @@ const aboutUS= {
         ]
     }
 }
-const availableCategories = [
-    {
-        title: 'fashion',
-        banners:["https://i.pinimg.com/736x/71/c0/90/71c090c1ee401a79f7b84c086fa04063.jpg","https://www.apetogentleman.com/wp-content/uploads/2022/05/FALL-WINTER-TRENDS.jpg","https://assets.vogue.com/photos/614a24383c6a255bbac856d8/master/w_2560%2Cc_limit/00_story.jpg"],
-        subcategories: [
-            { title: 'T-Shirt', link: '/TShirt' },
-            { title: 'Shirts', link: '/shirts' },
-            { title: 'Shorts & Jeans', link: '/shorts-&-jeans' },
-            { title: 'Jacket', link: '/jacket' },
-            { title: 'Dress & Frock', link: '/dress-&-frock' },
-            { title: 'Innerwear', link: '/innerwear' },
-            { title: 'Hosiery', link: '/hosiery' },
-        ]
-    },
-    {
-        title: 'footwear',
-        banners:["https://www.india.com/wp-content/uploads/2017/08/footwear.jpg","https://images.moneycontrol.com/static-mcnews/2020/04/footwear-28042020.jpg?impolicy=website&width=1600&height=900","https://www.airwavesf.com/wp-content/uploads/2022/06/79589-645-collecting-sneakers-and-photography-a-collection-of-limited-editions-and-exclusive-models-combination_t20_Op1ydp.jpg"],
-        subcategories: [
-            { title: 'Sport', link: '/sport' },
-            { title: 'Formal', link: '/formal' },
-            { title: 'Boots', link: '/boots' },
-            { title: 'Casual', link: '/casual' },
-            { title: 'Cowboy Shoes', link: '/cowboy-shoes' },
-            { title: 'Safety Shoes', link: '/safety-shoes' },
-            { title: 'Party Wear Shoes', link: '/party-wear-shoes' },
-            { title: 'Branded', link: '/branded-footwear' },
-            { title: 'Firstcopy', link: '/firstcopy' },
-            { title: 'Long Shoes', link: '/long-shoes' },
-        ]
-    },
-    {
-        title: 'jewellery',
-        banners:["https://www.mygoldguide.in/sites/default/files/Indo-wester_%20look_Cocktail_parties_01.jpg","https://kiyajewellery.in/cdn/shop/files/351494422_600067025526915_1828569725887026248_n_copy.jpg?v=1713783276&width=3840","https://www.truesilver.co.in/cdn/shop/articles/6_Stunning_Jewellery_for_Western_Wear.jpg?v=1695726468"],
-        subcategories: [
-            { title: 'Necklace', link: '/necklace' },
-            { title: 'Earrings', link: '/earrings' },
-            { title: 'Couple Rings', link: '/couple-rings' },
-            { title: 'Pendants', link: '/pendants' },
-            { title: 'Crystal', link: '/crystal' },
-            { title: 'Bangles', link: '/bangles' },
-            { title: 'Bracelets', link: '/bracelets' },
-            { title: 'Nosepin', link: '/nosepin' },
-            { title: 'Chain', link: '/chain' },
-        ]
-    },
-    {
-        title: 'cosmetics',
-        banners:["https://www.cosmeticsdesign.com/var/wrbm_gb_food_pharma/storage/images/media/images/news-photogalleries/786041/color-cosmetics/15607895-1-eng-GB/Color-cosmetics.jpg","https://img.etimg.com/thumb/width-1600,height-900,imgsize-55008,resizemode-75,msid-102292994/industry/cons-products/fashion-/-cosmetics-/-jewellery/indians-spent-over-rs-5000-cr-on-cosmetics-sector-may-gain-as-more-women-go-to-work-study.jpg","https://lh3.googleusercontent.com/proxy/9nWZ4LOknTOPQgXzTZ0Q9VT6_WzLd8dmLgIkfZYiQgWuuOWXc7Gk6cfdzfjdUpbpiwPD6nIdy6jlIas_EUBibRUWWwxlvZxrNMJmFcSqdF1YB943"],
-        subcategories: [
-            { title: 'Shampoo', link: '/shampoo' },
-            { title: 'Bodywash', link: '/bodywash' },
-            { title: 'Facewash', link: '/facewash' },
-            { title: 'Makeup Kit', link: '/makeup-kit' },
-            { title: 'Liner', link: '/liner' },
-            { title: 'Lipstick', link: '/lipstick' },
-            { title: 'Perfume', link: '/perfume' },
-            { title: 'Body Soap', link: '/body-soap' },
-            { title: 'Scrub', link: '/scrub' },
-            { title: 'Hair Gel', link: '/hair-gel' },
-            { title: 'Hair Colors', link: '/hair-colors' },
-            { title: 'Hair Dye', link: '/hair-dye' },
-            { title: 'Sunscreen', link: '/sunscreen' },
-            { title: 'Skin Lotion', link: '/skin-lotion' },
-        ]
-    },
-    {
-        title: 'electronics',
-        banners:["https://i.pinimg.com/originals/d2/b9/40/d2b940959caadeaf591041c70ab7a0ab.png","https://d1csarkz8obe9u.cloudfront.net/posterpreviews/gaming-computer-banner-sale-design-template-4eee9f783ef62e0f7122e9ae7828bec1_screen.jpg?ts=1659604125","https://d1csarkz8obe9u.cloudfront.net/posterpreviews/computer-accessories-template-design-129534fcc8ab7b353cd7627bac2ec34e_screen.jpg?ts=1659516861"],
-        subcategories: [
-            { title: 'Laptops', link: '/laptop' },
-            { title: 'Tablets', link: '/tablet' },
-            { title: 'Headphones', link: '/headphone' },
-            { title: 'Cameras', link: '/cameras' },
-            { title: 'Smartwatches', link: '/smart-watch' },
-            { title: 'Smart TV', link: '/smart-TV' },
-        ]
-    },
-];
+
 const loginFeatures = [
     {
         title: 'Track Your Orders',
@@ -961,4 +805,4 @@ const serviceFeatures = [
     },
 ];
 const allCategories = [{name:"Men's",link:'/categories/MEN'},{name:"Women's",link:'/categories/WOMEN'},{name:'Cosmetics',link:'/categories/Cosmetics'},{name:'Electronics',link:'/categories/electronics'},{name:'Perfume',link:'/categories/perfume'},{name:'Jewellery',link:'/categories/jewellery'},{name:'Footwear',link:'/categories/footwear'},{name:'Fashion',link:'/categories/fashion'}]
-export {allCategories, serviceFeatures, loginFeatures,  navBtns,  aboutUS, availableCategories, paymentSecure, leftStatus, categoryDropDown,  footerCategories, footerSections, featuresSec, currentEvent, testimonial};
+export {allCategories, serviceFeatures, loginFeatures,  navBtns,  aboutUS, paymentSecure, leftStatus, categoryDropDown, footerSections, featuresSec, testimonial};
