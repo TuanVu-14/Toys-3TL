@@ -4,22 +4,45 @@ import Link from 'next/link'
 const Footer = () => {
   return (
     <div className='bg-flower-50  w-screen flex flex-col'>
-        <div className='flex flex-col justify-center items-center border-b-[1px] border-b-silver mt-16 pb-16'>
-            <div className='ml-4 mr-4'>
-            <p className='text-salmon font-semibold text-base tracking-wide'>BRAND DIRECTORY</p>
-                {footerCategories.map((each,index)=>
-                    <div key={index} className='flex mt-5 flex-wrap items-center'>
-                        <p className='text-footergray font-semibold'>{each.name} :</p>
-                                {each.subcategories.map((each1,index)=>
-                                    <div key={index} className='flex'>
-                                        <Link href={each1.subcatLink} className='text-silver tracking-wide ml-2 hover:text-gray-300'>{each1.name}</Link>
-                                        <span className='bg-silver w-[1px] ml-2 h-[20px]'></span>
-                                    </div>
-                                )}
-                    </div>
-                )}
+        <div className='flex flex-col lg:flex-row justify-between items-center border-b-[1px] border-b-silver mt-16 pb-10 px-6 gap-6'>
+            <div className='flex flex-col items-center text-center w-full lg:w-1/2'>
+                <p className='text-salmon font-semibold text-lg mb-2'>GET OUR UPDATES</p>
+                <p className='text-silver text-sm mb-4'>
+                Subscribe to receive updates, access to exclusive deals, and more.
+                </p>
+
+                <div className='flex w-full max-w-[400px]'>
+                <input
+                    type='email'
+                    placeholder='Enter your email...'
+                    className='flex-1 px-4 py-2 border-b border-silver-200 outline-none bg-inherit'
+                />
+                <button className='bg-salmon text-white ml-2 px-4 py-2 rounded-md hover:bg-red-500 focus:outline-none'>
+                    SUBSCRIBE
+                </button>
+                </div>
             </div>
-        </div>
+
+            <div className='flex flex-col items-center justify-center text-center w-full lg:w-1/2'>
+                <p className='text-salmon font-semibold text-lg mb-4'>FOLLOW US</p>
+                
+                <div className='flex gap-4 text-[30px]'>
+                <a href="#" className='text-silver hover:text-blue-600'>
+                    <i className="fa-brands fa-facebook"></i>
+                </a>
+                <a href="#" className='text-silver hover:text-sky-400'>
+                    <i className="fa-brands fa-twitter"></i>
+                </a>
+                <a href="#" className='text-silver hover:text-pink-500'>
+                    <i className="fa-brands fa-instagram"></i>
+                </a>
+                <a href="#" className='text-silver hover:text-blue-700'>
+                    <i className="fa-brands fa-linkedin"></i>
+                </a>
+                </div>
+            </div>
+
+            </div>
         <div className='relative flex flex-row pb-14 gap-10 flex-wrap border-b-[1px] justify-evenly border-b-silver'>
             {footerSections.map((each,index)=>
                 <div key={index} className='flex flex-col'>

@@ -22,9 +22,9 @@ const App = () => {
         <AppProvider>
           <Session/>
           <main className='min-h-screen w-screen flex items-center flex-col overflow-x-hidden'>
+              <Navbar/>
               <Cart/>
               <Favourite/>
-              <Navbar/>
               <Menubar/>
               <Banner/>
               <Status/>
