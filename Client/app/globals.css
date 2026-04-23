@@ -77,3 +77,16 @@ img.hover-zoom {
   -o-transition: all 0.5s ease-in-out;
   transition: all 0.5s ease-in-out;
 }
+
+.highlight-path {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+
+  animation: drawCircle 1.5s ease forwards;
+}
+
+@keyframes drawCircle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

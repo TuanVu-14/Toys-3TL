@@ -1,14 +1,11 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
 import { bannerDataHandler } from '@/app/api/homeData';
 import Loading from './Loading';
+import { useRouter } from 'next/navigation';
+
 interface Banner {
   bannerid: number;
-  toptitle: string;
-  middletitle: string;
-  bottomtitle: string;
   imglink: string;
-  startprice: number;
-  buttontitle: string;
   redirect_link: string;
   createdat: Date;
   updatedat: Date;
@@ -17,6 +14,8 @@ const Banner = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const data = useRef<Banner[]>([]);
   const [loading, setloading] = useState(true);
+  const router = useRouter();
+  const [isHovering, setIsHovering] = useState(false);
 
   const nextSlide = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % data.current.length);
@@ -39,10 +38,20 @@ const Banner = () => {
   }
   useLayoutEffect(() => {
     sync();
-  }, [])
+  }, []);
+
+  useEffect(() => {
+  if (data.current.length === 0 || isHovering) return;
+
+  const interval = setInterval(() => {
+    setCurrentIndex((prev) => (prev + 1) % data.current.length);
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [data, isHovering]);
   return (
-    <div className='relative flex flex-col items-center mt-4'>
-      <div className='relative max-w-[1300px] overflow-hidden'>
+    <div className='relative flex flex-col items-center mt-4 mb-6'>
+      <div className='relative max-w-[1300px] overflow-hidden w-full' onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
         <div
           className='flex transition-transform duration-500 relative'
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -52,22 +61,12 @@ const Banner = () => {
             <div key={index} className='flex-shrink-0 w-full'>
               <div className='relative'>
                 <img
-                  className='max-h-[450px] z-10 rounded-xl object-cover w-full'
+                  onClick={() => router.push(each.redirect_link)}
+                  className='max-h-[500px] z-10 rounded-xl object-cover w-full cursor-pointer'
                   src={each.imglink}
                   alt={`Slide ${index + 1}`}
                 />
                 <div className='absolute z-[15] md:hidden left-14 bottom-0 top-0 mt-auto mb-auto bg-white w-[320px] h-[220px] sm:w-[520px] sm:h-[220px] opacity-50 rounded-xl'></div>
-                <div className='absolute z-20 w-[300px] h-[200px] md:h-auto sm:w-[500px] flex flex-col gap-0 md:gap-4 md:left-32 left-16 bottom-0 top-0 mt-auto mb-auto justify-center'>
-                  <p className='text-salmon lg:text-3xl text-2xl font-medium'>{each.toptitle}</p>
-                  <p className='sm:text-5xl text-2xl font-bold'>{each.middletitle}</p>
-                  <p className='sm:text-2xl text-xl font-medium text-silver'>
-                    {each.bottomtitle}{' '}
-                    <span className='lg:text-4xl font-bold'>{each.startprice}</span>
-                  </p>
-                  <button className='sm:p-2 p-1 bg-salmon text-white px-5 sm:w-[130px] w-[120px] text-sm sm:text-base rounded-md font-semibold'>
-                    {each.buttontitle}
-                  </button>
-                </div>
               </div>
             </div>
           ))}

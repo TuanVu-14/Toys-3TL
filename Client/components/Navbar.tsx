@@ -58,7 +58,16 @@ const Navbar = () => {
             <div className='flex'>
                 {navBtns.map((btn,index)=>
                 <div key={index} onMouseEnter={()=>{setDropdownVisible(true);setselectIndex(index)}} onMouseLeave={()=>{setDropdownVisible(false);setselectIndex(null)}} className="relative items-center">
-                    <button onClick={() => router.push(btn.catLink)} key={index} className='button-with-border text-[15px] m-6 text-[#9B9797] font-body tracking-wide hover:text-salmon'>{btn.name.toUpperCase()}</button>
+                    <button onClick={() => router.push(btn.catLink)} key={index} className='relative text-[15px] m-6 text-[#9B9797] font-body tracking-wide hover:text-salmon'>
+                        <span className='relative inline-block px-3 py-1'>
+                            {btn.name.toUpperCase()}
+                            {btn.name === "Sale" && (
+                                <svg viewBox='0 0 120 40' className='absolute -top-2 -left-2 w-[130%] h-[160%] pointer-events-none'>
+                                    <ellipse cx="60" cy="20" rx="55" ry="16" stroke='#E8989A' strokeWidth="2" fill='none'></ellipse>
+                                </svg>
+                            )}
+                        </span>
+                    </button>
                     {selectIndex === index && isDropdownVisible && btn.name==='Categories' && (<Category/>)}
                     {selectIndex === index && btn.isExtendable && isDropdownVisible && (
                     <Product options={btn.extendables} />

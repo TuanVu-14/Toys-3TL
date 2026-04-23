@@ -1,7 +1,6 @@
 "use client"
 import React from 'react'
 import Navbar from '@/components/Navbar'
-import Trends from '@/components/Trends'
 import Status from '@/components/Status'
 import Footer from '@/components/Footer'
 import Details from '@/components/Details'
@@ -22,13 +21,12 @@ const App = () => {
       <MenuProvider>
         <AppProvider>
           <Session/>
-          <main className='h-screen w-screen flex items-center flex-col overflow-x-hidden'>
+          <main className='min-h-screen w-screen flex items-center flex-col overflow-x-hidden'>
               <Cart/>
               <Favourite/>
-              <Menubar/>
               <Navbar/>
+              <Menubar/>
               <Banner/>
-              <Trends/>
               <Status/>
               <Details/>
               <Tabs/>

@@ -41,7 +41,7 @@ const SidebarS = () => {
     return (
         <>
             <div className='hidden lg:flex-col lg:flex ml-auto'>
-                <div className='border-[1px] rounded-xl h-auto w-[220px] xl:w-[320px] p-[15px]'>
+                <div className='border-[1px] rounded-xl max-h-[400px] w-[220px] xl:w-[320px] p-[15px] overflow-y-auto '>
                     <p className='tracking-[2px] font-semibold text-davysilver mb-4'>CATEGORY</p>
                     {leftStatus.map((stat, index) =>
                         <div key={index}>
@@ -50,7 +50,7 @@ const SidebarS = () => {
                                 onClick={() => {handleToggle(index)}}>
                                 <div className='flex justify-between items-center w-[100%] text-[20px]'>
                                     <div className='flex justify-center items-center'>
-                                        <img className='h-[20px] w-[20px] mr-2' src={stat.imgLink} alt={stat.title} />
+                                        <img className='h-[40px] w-[40px] mr-2' src={stat.imgLink} alt={stat.title} />
                                         <p className='text-[16px] font-medium text-silver tracking-[1px]'>{stat.title}</p>
                                     </div>
                                     <p className='text-silver'>{collapsedIndex === index ? '-' : '+'}</p>
@@ -64,7 +64,7 @@ const SidebarS = () => {
                                 {(
                                     <div className='border-b-[1px] pb-2'>
                                         {stat.links.map((link, linkIndex) =>
-                                            <a href={link.link} key={linkIndex} className='flex justify-between mt-1 items-center text-silver hover:text-black'>
+                                            <a href={link.link} key={linkIndex} className='flex justify-between mt-1 items-center text-silver hover:text-flower-100'>
                                                 <p className='tracking-[1px]'>{link.title}</p>
                                                 {/* <p className='text-[17px]'>{link.quantity}</p> */}
                                                 <p className='text-[17px]'>{'>'}</p>
