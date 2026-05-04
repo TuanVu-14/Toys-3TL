@@ -2,10 +2,6 @@
 
 Welcome to the repository for our full stack eCommerce website built using the PERN stack (PostgreSQL, Express, React, Node.js). This project demonstrates a comprehensive online shopping experience with a variety of features and pages.
 
-![Desktop](/website-demo-image/desktop.png)
-![Mobile](/website-demo-image/mobile.png)
-![Showcase1](/website-demo-image/1.png)
-![Showcase2](/website-demo-image/2.png)
 ## Features
 
 ### eCommerce Features
