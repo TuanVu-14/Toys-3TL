@@ -1,26 +1,33 @@
-"use server"
-import axios from 'axios';
-import { cookies } from 'next/headers';
-import { sign } from 'jsonwebtoken';
-async function encrypt(key:string){
-    const encryptedKey =  await sign({},key)
-    return encryptedKey
+"use server";
+import axios from "axios";
+import { cookies } from "next/headers";
+import { sign } from "jsonwebtoken";
+async function encrypt(key: string) {
+  const encryptedKey = await sign({}, key);
+  return encryptedKey;
 }
 export default async function sessionHandler() {
   const url = process.env.BACKEND_URL;
-  const authKey = process.env.AUTH_KEY as string;
+  const authKey =
+    process.env.JWT_AUTH_KEY ||
+    process.env.AUTH_KEY ||
+    process.env.JWT_KEY ||
+    process.env.JWT_ENCRYPTION_KEY;
+  if (!authKey) throw new Error("Missing authentication key in environment");
   const sendingKey = await encrypt(authKey);
-  const cookie = cookies().get('sessionhold');
-  if(cookie){
+  const cookie = cookies().get("sessionhold");
+  if (cookie) {
     try {
-        const response = await axios.post(`${url}/api/user/session-check`, {token:cookie.value}, {
-          headers: { authorization:`Bearer ${sendingKey}` },
-        });
-        return {status:response.status,data:response.data}
+      const response = await axios.post(
+        `${url}/api/user/session-check`,
+        { token: cookie.value },
+        {
+          headers: { authorization: `Bearer ${sendingKey}` },
+        },
+      );
+      return { status: response.status, data: response.data };
     } catch (error) {
-        return {status:500,error: 'Internal Server Error' }
+      return { status: 500, error: "Internal Server Error" };
     }
-  }else
-    return {status:500,error: 'Cookie Not Found' };
-    
-};
+  } else return { status: 500, error: "Cookie Not Found" };
+}

@@ -1,6 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
-// Define interfaces for the items in cart and wishlist
 interface Item {
   cartItemID:number;
   productID:number;

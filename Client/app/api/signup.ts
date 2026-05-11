@@ -1,12 +1,12 @@
-"use server"
-import axios from 'axios';
-import { sign } from 'jsonwebtoken';
-import { cookies } from 'next/headers';
-async function encrypt(key:string){
-    const encryptedKey =  await sign({},key)
-    return encryptedKey
+"use server";
+import axios from "axios";
+import { sign } from "jsonwebtoken";
+import { cookies } from "next/headers";
+async function encrypt(key: string) {
+  const encryptedKey = await sign({}, key);
+  return encryptedKey;
 }
-interface propForm{
+interface propForm {
   userName: string;
   email: string;
   password: string;
@@ -14,24 +14,36 @@ interface propForm{
   dob: string;
 }
 
-export default async function signUpHandler({ userName, email, password, mobile_number, dob }:propForm,promotional:boolean) {
+export default async function signUpHandler(
+  { userName, email, password, mobile_number, dob }: propForm,
+  promotional: boolean,
+) {
   const url = process.env.BACKEND_URL;
-  const authKey = process.env.AUTH_KEY as string;
+  const authKey =
+    process.env.JWT_AUTH_KEY ||
+    process.env.AUTH_KEY ||
+    process.env.JWT_KEY ||
+    process.env.JWT_ENCRYPTION_KEY;
+  if (!authKey) throw new Error("Missing authentication key in environment");
   const sendingKey = await encrypt(authKey);
 
   try {
-    const response = await axios.post(`${url}/api/user/signup/${promotional}`, { userName, email, password, mobile_number, dob }, {
-      headers: { authorization:`Bearer ${sendingKey}` },
-    });
+    const response = await axios.post(
+      `${url}/api/user/signup/${promotional}`,
+      { userName, email, password, mobile_number, dob },
+      {
+        headers: { authorization: `Bearer ${sendingKey}` },
+      },
+    );
     cookies().set({
-      name: 'sessionhold',
+      name: "sessionhold",
       value: response.data.token,
       httpOnly: true,
-      secure:true,
-      maxAge:24 * 60 * 60 * 1000 * 7
-    })
-    return {status:response.status,data:response.data}
+      secure: true,
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return { status: response.status, data: response.data };
   } catch (error) {
-    return {status:500,error: 'Internal Server Error' }
+    return { status: 500, error: "Internal Server Error" };
   }
-};
+}

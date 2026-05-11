@@ -1,39 +1,56 @@
-"use server"
-import axios from 'axios';
-import { cookies } from 'next/headers';
-import { sign } from 'jsonwebtoken';
-async function encrypt(key:string){
-    const encryptedKey =  await sign({},key)
-    return encryptedKey
+"use server";
+import axios from "axios";
+import { cookies } from "next/headers";
+import { sign } from "jsonwebtoken";
+async function encrypt(key: string) {
+  const encryptedKey = await sign({}, key);
+  return encryptedKey;
 }
-export default async function signInHandler({email,password,remember}:{email:string,password:string,remember:boolean}) {
+export default async function signInHandler({
+  email,
+  password,
+  remember,
+}: {
+  email: string;
+  password: string;
+  remember: boolean;
+}) {
   const url = process.env.BACKEND_URL;
-  const authKey = process.env.AUTH_KEY as string;
+  const authKey =
+    process.env.JWT_AUTH_KEY ||
+    process.env.AUTH_KEY ||
+    process.env.JWT_KEY ||
+    process.env.JWT_ENCRYPTION_KEY;
+  if (!authKey) throw new Error("Missing authentication key in environment");
   const sendingKey = await encrypt(authKey);
 
   try {
-    const response = await axios.post(`${url}/api/user/signin/${remember}`, { email, password }, {
-      headers: { authorization:`Bearer ${sendingKey}` },
-    });
-    if(remember){
+    const response = await axios.post(
+      `${url}/api/user/signin/${remember}`,
+      { email, password },
+      {
+        headers: { authorization: `Bearer ${sendingKey}` },
+      },
+    );
+    if (remember) {
       cookies().set({
-        name: 'sessionhold',
+        name: "sessionhold",
         value: response.data.token,
         httpOnly: true,
-        secure:true,
-        maxAge:24 * 60 * 60 * 1000 * 7
-      })
-    }else{
+        secure: true,
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    } else {
       cookies().set({
-        name: 'sessionhold',
+        name: "sessionhold",
         value: response.data.token,
         httpOnly: true,
-        secure:true,
-        maxAge:24 * 60 * 60 * 1000
-      })
+        secure: true,
+        maxAge: 60 * 60 * 24,
+      });
     }
-    return {status:response.status,data:response.data}
+    return { status: response.status, data: response.data };
   } catch (error) {
-    return {status:500,error: 'Internal Server Error' }
+    return { status: 500, error: "Internal Server Error" };
   }
-};
+}
