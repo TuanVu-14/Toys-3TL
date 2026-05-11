@@ -2,7 +2,7 @@ import { client } from "../data/DB";
 import axios from 'axios'
 import {oauth2Client} from '../utils/googleAPI';
 export const googleAuth = async (code:string) => {
-    try {
+    try {  
         const googleRes = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(googleRes.tokens);
 
