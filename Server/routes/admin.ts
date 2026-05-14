@@ -792,50 +792,51 @@ router.delete(
 router.get("/admin/reviews", adminAuth, async (req: Request, res: Response) => {
   try {
     const response = await client.query(`
-        SELECT r.id, r.userid, r.productid, r.rating, r.comment, r.status, r.created_at,
-               u.username, p.title
-        FROM reviews r
-        LEFT JOIN users u ON r.userid = u.userid
-        LEFT JOIN products p ON r.productid = p.productid
-        ORDER BY r.created_at DESC
-      `);
+      SELECT
+        r.reviewid,
+        r.userid,
+        r.productid,
+        r.rating,
+        r.comment,
+        r.status,
+        r.createdat,
+        r.title AS review_title,
+        u.username,
+        p.title AS product_title
+      FROM reviews r
+      LEFT JOIN users u ON r.userid = u.userid
+      LEFT JOIN products p ON r.productid = p.productid
+      ORDER BY r.createdat DESC
+    `);
     res.status(200).json({ data: response.rows });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
-router.put(
-  "/admin/reviews/:reviewID/status",
-  adminAuth,
-  async (req: Request, res: Response) => {
-    const { reviewID } = req.params;
-    const { status } = req.body;
-    try {
-      await client.query("UPDATE reviews SET status = $1 WHERE id = $2", [
-        status,
-        reviewID,
-      ]);
-      res.status(200).json({ message: "Review status updated" });
-    } catch (error) {
-      res.status(500).json({ error: "Server Error" });
-    }
-  },
-);
+router.put("/admin/reviews/:reviewID/status", adminAuth, async (req: Request, res: Response) => {
+  const { reviewID } = req.params;
+  const { status } = req.body;
+  try {
+    await client.query("UPDATE reviews SET status = $1, updatedat = NOW() WHERE reviewid = $2", [status, reviewID]);
+    res.status(200).json({ message: "Review status updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
 
-router.delete(
-  "/admin/reviews/:reviewID",
-  adminAuth,
-  async (req: Request, res: Response) => {
-    const { reviewID } = req.params;
-    try {
-      await client.query("DELETE FROM reviews WHERE id = $1", [reviewID]);
-      res.status(200).json({ message: "Review deleted" });
-    } catch (error) {
-      res.status(500).json({ error: "Server Error" });
-    }
-  },
-);
+router.delete("/admin/reviews/:reviewID", adminAuth, async (req: Request, res: Response) => {
+  const { reviewID } = req.params;
+  try {
+    await client.query("DELETE FROM reviews WHERE reviewid = $1", [reviewID]);
+    res.status(200).json({ message: "Review deleted" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
 
 // Settings endpoints
 router.get(

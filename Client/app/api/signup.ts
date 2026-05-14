@@ -1,11 +1,13 @@
 "use server";
+
 import axios from "axios";
 import { sign } from "jsonwebtoken";
 import { cookies } from "next/headers";
+
 async function encrypt(key: string) {
-  const encryptedKey = await sign({}, key);
-  return encryptedKey;
+  return sign({}, key);
 }
+
 interface propForm {
   userName: string;
   email: string;
@@ -24,7 +26,21 @@ export default async function signUpHandler(
     process.env.AUTH_KEY ||
     process.env.JWT_KEY ||
     process.env.JWT_ENCRYPTION_KEY;
-  if (!authKey) throw new Error("Missing authentication key in environment");
+
+  if (!url) {
+    return {
+      status: 500,
+      data: { error: "Missing BACKEND_URL in environment" },
+    };
+  }
+
+  if (!authKey) {
+    return {
+      status: 500,
+      data: { error: "Missing authentication key in environment" },
+    };
+  }
+
   const sendingKey = await encrypt(authKey);
 
   try {
@@ -35,15 +51,26 @@ export default async function signUpHandler(
         headers: { authorization: `Bearer ${sendingKey}` },
       },
     );
+
     cookies().set({
       name: "sessionhold",
       value: response.data.token,
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7,
+      path: "/",
     });
+
     return { status: response.status, data: response.data };
-  } catch (error) {
-    return { status: 500, error: "Internal Server Error" };
+  } catch (error: any) {
+    console.error("signUpHandler error:", error?.response?.data || error?.message);
+
+    return {
+      status: error?.response?.status || 500,
+      data: error?.response?.data || {
+        error: error?.message || "Internal Server Error",
+      },
+    };
   }
 }

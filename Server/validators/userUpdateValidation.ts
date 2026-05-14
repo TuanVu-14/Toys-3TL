@@ -172,19 +172,21 @@ const AddressUpdateSchema = checkSchema({
         trim:true,
         errorMessage: 'Country must be a non-empty string'
     },
-    postalCode: {
-        in: ['body'],
-        isPostalCode: {
-            options: 'IN', // Change this to the appropriate locale
-            errorMessage: 'Invalid postal code format'
-        },
-        isInt:true,
-        notEmpty: true,
-        escape:true,
-        isLength:{options:{min:6,max:8}},
-        trim:true,
-        errorMessage: 'Postal code must be a non-empty string'
+   postalCode: {
+    in: ['body'],
+
+    notEmpty: {
+        errorMessage: 'Postal code is required',
     },
+
+    matches: {
+        options: /^[0-9]+$/,
+        errorMessage: 'Postal code must contain only numbers',
+    },
+
+    trim: true,
+    escape: true,
+},
     userName: {
         in: ['body'],
         errorMessage: 'The userName must be at least 4 characters',
@@ -262,18 +264,21 @@ const insertAddressSchema = checkSchema({
         trim: true,
         errorMessage: 'Country must be a non-empty string'
     },
-    postalCode: {
-        in: ['body'],
-        isPostalCode: {
-            options: 'IN',
-            errorMessage: 'Invalid postal code format'
-        },
-        notEmpty: true,
-        escape: true,
-        isLength: { options: { min: 6, max: 8 } },
-        trim: true,
-        errorMessage: 'Postal code must be a non-empty string'
+   postalCode: {
+    in: ['body'],
+
+    notEmpty: {
+        errorMessage: 'Postal code is required',
     },
+
+    matches: {
+        options: /^[0-9]+$/,
+        errorMessage: 'Postal code must contain only numbers',
+    },
+
+    trim: true,
+    escape: true,
+},
     userName: {
         in: ['body'],
         isLength: { options: { min: 4, max: 64 } },

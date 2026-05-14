@@ -1,15 +1,15 @@
-"use server"
-import { cookies } from 'next/headers';
+"use server";
+import { cookies } from "next/headers";
+
 export default async function signOutHandler() {
-  const cookie = cookies().get('sessionhold');
-  if(cookie){
-    try {
-        cookies().delete('sessionhold');
-        return true;
-    } catch (error) {
-        return false;
-    }
-  }else
-    return false;
-    
-};
+  cookies().set({
+    name: "sessionhold",
+    value: "",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return true;
+}

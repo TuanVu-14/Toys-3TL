@@ -6,11 +6,12 @@ import signInHandler from "@/app/api/signin";
 import signUpHandler from "@/app/api/signup";
 import sessionHandler from "@/app/api/sessionauth";
 import authDataHandler from "@/app/api/googleAuth";
+import signOutHandler from "@/app/api/signout";
 
 const redirectByRole = (role: string, router: ReturnType<typeof useRouter>) => {
   if (role === "admin") router.push("/admin");
   else if (role === "warehouse_manager") router.push("/admin/warehouse");
-  else if (role === "sales_staff") router.push("/admin/orders");
+  else if (role === "sales_staff") router.push("/admin/sales");
   else router.push("/");
 };
 
@@ -21,8 +22,8 @@ const useAuth = () => {
 
   const saveLoginData = (userData: any) => {
     const data = {
-      userID: userData.userID,
-      userName: userData.userName,
+      userID: userData.userID ?? userData.userid,
+      userName: userData.userName ?? userData.username,
       email: userData.email,
       mobile_number: userData.mobile_number,
       dob: userData.dob,
@@ -31,6 +32,14 @@ const useAuth = () => {
     dispatch(setDefaultAccount(data));
     setLoggedIn(true);
     return data;
+  };
+
+  const logout = async () => {
+    await signOutHandler();
+    dispatch(setDefaultAccount({ userID: 0, userName: "", email: "", mobile_number: "", dob: "", role: "customer" }));
+    setLoggedIn(false);
+    router.replace("/");
+    router.refresh();
   };
 
   const checkLogin = async (
@@ -113,7 +122,7 @@ const useAuth = () => {
     }
   };
 
-  return { checkLogin, registerUser, checkSession, checkAuthLogin };
+  return { checkLogin, registerUser, checkSession, checkAuthLogin, logout };
 };
 
 export default useAuth;

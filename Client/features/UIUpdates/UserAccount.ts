@@ -60,7 +60,7 @@ interface Account {
   userID: number;
   userName: string;
   email: string;
-  mobile_number: number;
+  mobile_number: string;
   dob: string;
   role: string;
 }
@@ -80,7 +80,7 @@ const initialState: UserState = {
     userID: 0,
     userName: "",
     email: "",
-    mobile_number: 0,
+    mobile_number: "",
     dob: "",
     role: "",
   },

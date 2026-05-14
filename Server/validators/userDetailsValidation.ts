@@ -103,16 +103,19 @@ const AddressInsertSchema = checkSchema({
         trim:true,
         errorMessage: 'Country must be a non-empty string'
     },
-    postalCode: {
-        in: ['body'],
-        isPostalCode: true,
-        isString: true,
-        notEmpty: true,
-        escape:true,
-        isLength:{options:{min:6,max:8}},
-        trim:true,
-        errorMessage: 'Postal code must be a non-empty string'
+  postalCode: {
+    in: ['body'],
+    optional: true,
+    notEmpty: {
+        errorMessage: 'Postal code is required'
     },
+    matches: {
+        options: /^[0-9]+$/,
+        errorMessage: 'Postal code must contain only numbers'
+    },
+    trim: true,
+    escape: true
+},
 });
 const cartItemSchema = checkSchema({
     userID: {
