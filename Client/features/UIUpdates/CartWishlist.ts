@@ -80,6 +80,24 @@ export const {
   addItemToWishlist, 
   removeItemFromWishlist 
 } = cartWishlistSlice.actions
+// Helpers/formatPrice.ts
 
+export const formatPrice = (
+  price: number | string,
+  discount?: number | string
+) => {
+  const originalPrice = Number(price || 0);
+  const discountValue = Number(discount || 0);
+  const finalPrice =
+    discountValue > 0
+      ? (originalPrice * (100 - discountValue)) / 100
+      : originalPrice;
+
+  return (
+    new Intl.NumberFormat("vi-VN", {
+      maximumFractionDigits: 0,
+    }).format(finalPrice) + "đ"
+  );
+};
 // Export the reducer
 export default cartWishlistSlice.reducer

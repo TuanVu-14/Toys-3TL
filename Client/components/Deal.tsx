@@ -5,6 +5,7 @@ import Stars from './ProductUi/Stars';
 import { dealDataHandler } from '@/app/api/homeData';
 import Link from 'next/link';
 import Loading from './Loading';
+import { formatPrice } from '@/features/UIUpdates/CartWishlist';
 interface DealProduct {
     productid: number;
     title: string;
@@ -55,8 +56,8 @@ const Deal = () => {
                     </a>
                     <p className='text-base tracking-normal text-silver'>{each.description}</p>
                     <div className='flex items-center'>
-                        <p className='text-2xl font-bold text-salmon'>${each.price}</p>
-                        <p className='text-xl line-through ml-4 text-silver'>${each.discount}</p>
+                        <p className='text-2xl font-bold text-salmon'>{formatPrice(each.price, each.discount)}</p>
+                        <p className='text-xl line-through ml-4 text-silver'>{formatPrice(each.price)}</p>
                     </div>
                     <Link href={`/product/${each.productid}`}><button className='bg-salmon p-2 rounded-xl w-[165px] h-[45px] text-white font-bold text-lg hover:bg-black hover:text-white transition-colors duration-200'>Visit Product</button></Link>
                     <div className='flex justify-between'>

@@ -5,6 +5,8 @@ import Stars from '../ProductUi/Stars';
 import Link from 'next/link';
 import { sidebarDataHandler } from '@/app/api/homeData';
 import Loading from '../Loading';
+import { formatPrice } from "@/features/UIUpdates/CartWishlist";
+
 interface Product {
     productid: number;
     title: string;
@@ -94,8 +96,8 @@ const SidebarS = () => {
                                         {each.rating > 0 && <p className='text-sm text-silver'>{each.rating}</p>}
                                     </div>
                                     <div className='flex items-center'>
-                                        <p className='text-sm line-through text-silver'>${each.price}</p>
-                                        <p className='text-base font-semibold ml-4 text-davysilver'>${each.discount}</p>
+                                        <p className='text-sm line-through text-silver'>{formatPrice(each.price, each.discount)}</p>
+                                        <p className='text-base font-semibold ml-4 text-davysilver'>{formatPrice(each.price)}</p>
                                     </div>
                                 </div>
                             </div>

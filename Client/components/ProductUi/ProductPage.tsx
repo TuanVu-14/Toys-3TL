@@ -22,6 +22,7 @@ import { cartAddHandler, wishlistAddHandler } from "@/app/api/itemLists";
 import { useApp } from "@/Helpers/AccountDialog";
 import ProductDialogs from "./ProductDialogs";
 import Link from "next/link";
+import { formatPrice } from "@/features/UIUpdates/CartWishlist";
 // Interface for individual reviews
 interface Review {
   reviewid: number;
@@ -335,17 +336,17 @@ const ProductPage = () => {
                       </div>
                     </div>
                     <div className="flex gap-5 items-center">
-                      <p className="font-bold text-3xl">
-                        $ {data.discountedprice}
-                      </p>
-                      <p className="line-through">$ {data.price}</p>
-                      <p className="text-yellow-500">
-                        {percentageDifference(
-                          parseInt(data.discountedprice),
-                          parseInt(data.price),
-                        )}
-                        % off
-                      </p>
+                     <span className="text-red-600 font-bold">
+  {formatPrice(data.price, (data as any).discount)}
+</span>
+
+<span className="text-gray-400 line-through">
+  {formatPrice(data.price)}
+</span>
+
+<p className="text-yellow-500">
+  {Number((data as any).discount || 0)}% off
+</p>
                     </div>
                     <p>
                       <span className="font-semibold">In stock</span>: Dispatch

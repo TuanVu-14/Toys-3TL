@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
+import { formatPrice } from "@/features/UIUpdates/CartWishlist";
 
 interface DataPattern {
   data: {
@@ -46,9 +47,11 @@ const TrendingPrimary = (props:DataPattern) => {
               </p>
             </Link>
             <div className="flex items-center">
-              <p className="text-lg text-salmon font-bold">${each.discount}</p>
+              <p className="text-lg text-salmon font-bold">
+                {formatPrice(each.price, each.discount)}
+              </p>
               <p className="text-sm line-through font-normal ml-4 text-silver">
-                ${each.price}
+                {formatPrice(each.price)}
               </p>
             </div>
           </div>

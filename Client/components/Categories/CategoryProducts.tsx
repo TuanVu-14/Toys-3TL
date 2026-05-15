@@ -4,6 +4,7 @@ import Stars from '../ProductUi/Stars';
 import NoProduct from './NoProduct';
 import Loading from '../Loading';
 import Link from 'next/link';
+import { formatPrice } from '@/features/UIUpdates/CartWishlist';
 interface Color {
   colorid:number;
   name: string;
@@ -82,7 +83,7 @@ const ProductCard = ({ product }:{ product:Product }) => {
       {product.isdiscount && (
         <div className="absolute top-2 left-2 bg-green-500 text-white px-2 text-md uppercase rounded">
           {product.discount}%
-        </div>
+        </div>  
       )}
       <div className={`relative transition-transform mb-1 duration-300 ${isHovered && 'scale-105'}`}>
         <img className='min-w-[200px] min-h-[210px]' src={product.images.imglink} alt={product.title} />
@@ -102,8 +103,13 @@ const ProductCard = ({ product }:{ product:Product }) => {
           {product.reviewCount > 0 && <p className=' text-silver'>{product.reviewCount}</p>}
         </div>
         <div className='flex mb-5 items-center gap-4'>
-          <p className='font-bold text-[18px]'>${product.discount}</p>
-          <p className='line-through'>${product.price}</p>
+         <p className="font-bold text-[18px] text-red-500">
+  {formatPrice(product.price, product.discount)}
+</p>
+
+<p className="line-through text-gray-400">
+  {formatPrice(product.price)}
+</p>
         </div>
       </div>
     </div>

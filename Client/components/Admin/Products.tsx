@@ -8,6 +8,7 @@ import {
   updateAdminProduct,
   getAdminCategories,
 } from "@/app/api/admin";
+import { formatPrice } from "@/features/UIUpdates/CartWishlist";
 
 type AdminProduct = {
   productid: number;
@@ -217,12 +218,12 @@ export default function ProductsPage() {
                     {product.category}
                   </td>
                   <td className="px-4 py-4 font-semibold text-slate-900">
-                    ${parseFloat(product.price.toString()).toFixed(2)}
+                    {formatPrice(product.price)}
                   </td>
                   <td className="px-4 py-4">
                     <div>
                       <p className="font-semibold text-green-600">
-                        ${salePrice(product).toFixed(2)}
+                        {formatPrice(salePrice(product))}
                       </p>
                       {product.discount > 0 && (
                         <p className="text-xs text-rose-600">

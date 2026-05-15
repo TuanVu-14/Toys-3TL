@@ -5,6 +5,7 @@ import NoProduct from './Search/NoProduct';
 import Loading from './Loading';
 import Link from 'next/link';
 import { homeProductsDataHandler } from '@/app/api/homeData';
+import { formatPrice } from '@/features/UIUpdates/CartWishlist';
 interface Color {
   colorid:number;
   name: string;
@@ -109,8 +110,13 @@ const ProductCard = ({ product }:{ product:Product }) => {
           {product.reviewCount > 0 && <p className=' text-silver'>{product.reviewCount}</p>}
         </div>
         <div className='flex mb-5 items-center gap-4'>
-          <p className='font-bold text-[18px]'>${product.discount}</p>
-          <p className='line-through'>${product.price}</p>
+          <p className="font-bold text-[18px] text-red-500">
+  {formatPrice(product.price, product.discount)}
+</p>
+
+<p className="line-through text-gray-400">
+  {formatPrice(product.price)}
+</p>
         </div>
       </div>
     </div>

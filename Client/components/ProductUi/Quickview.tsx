@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useApp } from '@/Helpers/AccountDialog'
 import { cartAddHandler } from '@/app/api/itemLists'
 import Stars from './Stars'
+import { formatPrice } from '@/features/UIUpdates/CartWishlist';
 function classNames(...classes:string[]) {
   return classes.filter(Boolean).join(' ')
 }
@@ -135,7 +136,7 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
                           Product information
                         </h3>
 
-                        <p className="text-2xl text-gray-900">${product.discount}</p>
+                        <p className="text-2xl text-gray-900">{formatPrice(product.price, product.discount)}</p>
 
                         {/* Reviews */}
                         <div className="mt-6">
