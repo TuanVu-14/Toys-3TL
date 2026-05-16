@@ -42,74 +42,106 @@ router.post(
   orderCreationSchema,
   async (req: Request, res: Response) => {
     const result = validationResult(req);
-    if (result.isEmpty()) {
-      const { userid, productid, colorid, sizeid } = matchedData(req);
-      const { gift_wrapping, gift_wrap_style, gift_message } = getGiftOptions(req);
 
-      const orderid = IDGenerator();
-      const shippingid = IDGenerator();
-      const paymentid = IDGenerator();
-      const transactionid = `TS-${IDGenerator()}-${paymentid}-${orderid}`;
-      const orderitemid = IDGenerator();
-      const trackingnumber = `IN${orderid}-${paymentid}-${transactionid}`;
-      const deliveryDate = getDateTimeFiveDaysFromNow();
-      const paymentCharge = 15;
-      try {
-        // Check if product with given productid, colorid, and sizeid exists
-        const productQuery = `
-        SELECT p.discount
+    if (!result.isEmpty()) {
+      return res.status(400).json({ message: "Validation error", errors: result.array() });
+    }
+
+    const { userid, productid, colorid, sizeid } = matchedData(req);
+    const { gift_wrapping, gift_wrap_style, gift_message } = getGiftOptions(req);
+
+    const shippingid = IDGenerator();
+    const paymentid = IDGenerator();
+    const orderitemid = IDGenerator();
+    const deliveryDate = getDateTimeFiveDaysFromNow();
+
+    const paymentCharge = 15000;
+    const shippingcharge = 5000;
+    const quantity = 1;
+
+    try {
+      await client.query("BEGIN");
+
+      const productQuery = `
+        SELECT p.price, COALESCE(p.discount, 0) AS discount
         FROM products p
         JOIN productcolors pc ON pc.productid = p.productid AND pc.colorid = $2
-        JOIN productSizes ps ON ps.productid = p.productid AND ps.sizeid = $3
+        JOIN productsizes ps ON ps.productid = p.productid AND ps.sizeid = $3
         WHERE p.productid = $1
       `;
-        const productResult = await client.query(productQuery, [
-          productid,
-          colorid,
-          sizeid,
-        ]);
 
-        if (productResult.rows.length === 0) {
-          return res.status(404).json({ error: "Product not found" });
-        }
-        const addressQuery = `
-        SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true
-      `;
-        const addressResult = await client.query(addressQuery, [userid]);
+      const productResult = await client.query(productQuery, [
+        productid,
+        colorid,
+        sizeid,
+      ]);
 
-        if (addressResult.rows.length === 0) {
-          return res.status(404).json({ error: "Address not found" });
-        }
-        const addressid = addressResult.rows[0].addressid;
-        const amount = productResult.rows[0].discount;
-        const shippingcharge = 5;
+      if (productResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Product not found" });
+      }
 
-        // Insert into orders table
-        const orderQuery = `
-        INSERT INTO orders (orderid, userid, totalamount, orderstatus, order_code)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *
-      `;
-        const totalAmount = (
-          shippingcharge +
-          paymentCharge +
-          parseFloat(amount)
-        ).toFixed(2);
-        await client.query(orderQuery, [
-          orderid,
+      const addressResult = await client.query(
+        `SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true`,
+        [userid],
+      );
+
+      if (addressResult.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Address not found" });
+      }
+
+      const addressid = addressResult.rows[0].addressid;
+
+      const price = Number(productResult.rows[0].price);
+      const discountPercent = Number(productResult.rows[0].discount || 0);
+      const discountedPrice = Math.round(price * (100 - discountPercent) / 100);
+      const amount = discountedPrice * quantity;
+      const totalAmount = amount + shippingcharge + paymentCharge;
+
+      const orderResult = await client.query(
+        `
+        INSERT INTO orders (
+          userid,
+          totalamount,
+          orderstatus,
+          order_code,
+          is_gift,
+          gift_message,
+          gift_wrapping_type
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING orderid
+        `,
+        [
           userid,
           totalAmount,
           "Confirmed",
           "IN",
-        ]);
+          gift_wrapping,
+          gift_message,
+          gift_wrap_style,
+        ],
+      );
 
-        // Insert into shipping table
-        const shippingQuery = `
-        INSERT INTO shipping (shippingid, orderid, addressid, shippingmethod, shippingcost, trackingnumber, deliveredat)
+      const orderid = orderResult.rows[0].orderid;
+      const transactionid = `COD-${orderid}-${paymentid}`;
+      const trackingnumber = `IN${orderid}-${paymentid}`;
+
+      await client.query(
+        `
+        INSERT INTO shipping (
+          shippingid,
+          orderid,
+          addressid,
+          shippingmethod,
+          shippingcost,
+          trackingnumber,
+          deliveredat
+        )
         VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `;
-        await client.query(shippingQuery, [
+        `,
+        [
           shippingid,
           orderid,
           addressid,
@@ -117,15 +149,23 @@ router.post(
           shippingcharge,
           trackingnumber,
           deliveryDate,
-        ]);
+        ],
+      );
 
-        // Insert into payments table
-        const paymentQuery = `
-        INSERT INTO payments (paymentid, orderid, paymentmethod, paymentstatus, amount, transactionid,billingaddress)
-        VALUES ($1, $2, $3, $4, $5, $6,$7)
-        RETURNING *
-      `;
-        await client.query(paymentQuery, [
+      await client.query(
+        `
+        INSERT INTO payments (
+          paymentid,
+          orderid,
+          paymentmethod,
+          paymentstatus,
+          amount,
+          transactionid,
+          billingaddress
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `,
+        [
           paymentid,
           orderid,
           "Payment on Delivery",
@@ -133,41 +173,53 @@ router.post(
           amount,
           transactionid,
           addressid,
-        ]);
+        ],
+      );
 
-        // Insert into orderitems table
-        await client.query(
-          `
-          INSERT INTO orderitems (
-            orderitemid, orderid, productid, quantity, shippingid, paymentid, colorid, sizeid,
-            gift_wrapping, gift_wrap_style, gift_message
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      await client.query(
+        `
+        INSERT INTO orderitems (
+          orderitemid,
+          orderid,
+          productid,
+          quantity,
+          shippingid,
+          paymentid,
+          colorid,
+          sizeid,
+          gift_wrapping,
+          gift_wrap_style,
+          gift_message
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `,
-          [
-            orderitemid,
-            orderid,
-            productid,
-            1,
-            shippingid,
-            paymentid,
-            colorid,
-            sizeid,
-            gift_wrapping,
-            gift_wrap_style,
-            gift_message,
-          ],
-        );
+        [
+          orderitemid,
+          orderid,
+          productid,
+          quantity,
+          shippingid,
+          paymentid,
+          colorid,
+          sizeid,
+          gift_wrapping,
+          gift_wrap_style,
+          gift_message,
+        ],
+      );
 
-        const updateViewQuery = `UPDATE productparams SET sold = sold + 1 WHERE productid = $1`;
-        await client.query(updateViewQuery, [productid]);
-        res.status(200).json({ orderid });
-      } catch (error) {
-        console.error("Error creating order:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-      }
-    } else {
-      res.status(500).json({ message: "Validation error" });
+      await client.query(
+        `UPDATE productparams SET sold = sold + 1 WHERE productid = $1`,
+        [productid],
+      );
+
+      await client.query("COMMIT");
+
+      return res.status(200).json({ orderid });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("Error creating COD order:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
     }
   },
 );
@@ -314,58 +366,102 @@ router.get(
   OrderIDSchema,
   async (req: Request, res: Response) => {
     const result = validationResult(req);
-    if (result.isEmpty()) {
-      const { orderID } = matchedData(req);
-      try {
-        // Check if the order with the given orderID exists and fetch relevant details
-        const orderQuery = `
-        SELECT o.orderstatus, p.paymentstatus, p.paymentmethod
+
+    if (!result.isEmpty()) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: result.array(),
+      });
+    }
+
+    const { orderID } = matchedData(req);
+
+    try {
+      const orderQuery = `
+        SELECT
+          o.orderstatus,
+          p.paymentstatus,
+          p.paymentmethod
         FROM orders o
-        JOIN payments p ON p.orderid = o.orderid
+        LEFT JOIN payments p ON p.orderid = o.orderid
         WHERE o.orderid = $1
       `;
-        const orderResult = await client.query(orderQuery, [orderID]);
 
-        if (orderResult.rows.length === 0) {
-          return res.status(404).json({ error: "Order not found" });
-        }
+      const orderResult = await client.query(orderQuery, [orderID]);
 
-        const { orderstatus, paymentstatus, paymentmethod } =
-          orderResult.rows[0];
-        // Check conditions and return appropriate status code
-        if (
-          orderstatus === "Confirmed" &&
-          paymentstatus === "Pending" &&
-          paymentmethod === "Payment on Delivery"
-        ) {
-          return res.sendStatus(200);
-        } else if (
-          orderstatus === "Confirmed" &&
-          paymentstatus === "Pending" &&
-          paymentmethod === "Card"
-        ) {
-          return res.sendStatus(205);
-        } else if (orderstatus === "Failed" && paymentstatus === "Failed") {
-          return res.sendStatus(210);
-        } else if (
-          orderstatus === "Confirmed" &&
-          paymentstatus === "Confirmed" &&
-          paymentmethod === "Card"
-        ) {
-          return res.sendStatus(200);
-        } else {
-          return res.status(404).json({ error: "Product not found" });
-        }
-      } catch (error) {
-        console.error("Error checking order status:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+      // Không tìm thấy order
+      if (orderResult.rows.length === 0) {
+        return res.status(404).json({
+          error: "Order not found",
+        });
       }
-    } else {
-      res.status(500).json({ message: "Validation error" });
+
+      const {
+        orderstatus,
+        paymentstatus,
+        paymentmethod,
+      } = orderResult.rows[0];
+
+      console.log("Order Status Check:", {
+        orderID,
+        orderstatus,
+        paymentstatus,
+        paymentmethod,
+      });
+
+      // ======================================================
+      // 1. COD (Payment on Delivery)
+      // Chỉ cần order tồn tại là cho phép hiển thị confirmation
+      // ======================================================
+      if (
+        paymentmethod === "Payment on Delivery" ||
+        paymentmethod === "COD"
+      ) {
+        return res.sendStatus(200);
+      }
+
+      // ======================================================
+      // 2. Thanh toán thẻ đang chờ xác nhận
+      // ======================================================
+      if (
+        paymentmethod === "Card" &&
+        paymentstatus === "Pending"
+      ) {
+        return res.sendStatus(205);
+      }
+
+      // ======================================================
+      // 3. Thanh toán thẻ thành công
+      // ======================================================
+      if (
+        paymentmethod === "Card" &&
+        paymentstatus === "Confirmed"
+      ) {
+        return res.sendStatus(200);
+      }
+
+      // ======================================================
+      // 4. Đơn thất bại
+      // ======================================================
+      if (
+        orderstatus === "Failed" ||
+        paymentstatus === "Failed"
+      ) {
+        return res.sendStatus(210);
+      }
+
+      // ======================================================
+      // 5. Mặc định: nếu order tồn tại thì vẫn cho hiển thị
+      // ======================================================
+      return res.sendStatus(200);
+    } catch (error) {
+      console.error("Error checking order status:", error);
+      return res.status(500).json({
+        error: "Internal Server Error",
+      });
     }
   },
 );
-
 router.get(
   "/checkout/product-details/:productid/:sizeid/:colorid",
   checkoutSchema,

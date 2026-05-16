@@ -14,6 +14,8 @@ import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "./CheckoutForm";
 import Link from "next/link";
 import { useAppSelector } from "@/app/hooks";
+import { formatPrice } from "@/features/UIUpdates/CartWishlist";
+
 import {
   Description,
   Dialog,
@@ -24,6 +26,7 @@ interface ProductDetails {
   title: string;
   price: string;
   discount: string;
+  discountedprice?: string | number;
   sizename: string;
   colorname: string;
   imglink: string;
@@ -55,6 +58,7 @@ const emptyProductDetails: ProductDetails = {
   title: "",
   price: "0",
   discount: "0",
+  discountedprice: "0",
   sizename: "",
   colorname: "",
   imglink: "",
@@ -74,7 +78,7 @@ const Checkout = () => {
   const [clientSecret, setClientSecret] = useState("");
   const dataChecked = useRef(false);
   const found = useRef(false);
-  const [onlinePayment, setonlinePayment] = useState(true);
+  const [onlinePayment, setonlinePayment] = useState(false);
   const router = useRouter();
   const dataVar = useRef<ProductDetails>(emptyProductDetails);
   const data = dataVar.current;
@@ -98,19 +102,21 @@ const Checkout = () => {
     userName: "",
     is_default: true,
   });
-  const shipping = data.shippingcost;
-  const taxes = parseFloat(data.price) * (18 / 100);
-  const subTotal = parseFloat(data.price);
-  const subTotalWithoutTax =
-    parseFloat(data.price) - (parseFloat(data.price) * 18) / 100;
-  const discount = parseFloat(data.price) - parseFloat(data.discount);
-  const totalAmount = subTotal + shipping + paymentCharge - discount;
-  const formattedSubTotal = subTotalWithoutTax.toFixed(2);
-  const formattedShipping = shipping.toFixed(2);
-  const formattedTaxes = taxes.toFixed(2);
-  const formattedDiscount = discount.toFixed(2);
+  const originalPrice = Number(data.price || 0);
+  const discountedPrice = Number(
+    data.discountedprice ||
+      (originalPrice -
+        (originalPrice * Number(data.discount || 0)) / 100),
+  );
+  const shipping = Number(data.shippingcost || 0);
+  const taxes = discountedPrice * 0.18;
+  const paymentFee = Number(paymentCharge || 0);
+  const discountAmount = Math.max(originalPrice - discountedPrice, 0);
+  const subTotal = discountedPrice;
+  const subTotalWithoutTax = Math.max(subTotal - taxes, 0);
+  const totalAmount = subTotal + shipping + paymentFee;
+
   const [dialogType, setdialogType] = useState<null | string>(null);
-  const formattedTotalAmount = totalAmount.toFixed(2);
   const orderID = useRef(0);
   const stripePromise = loadStripe(
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string,
@@ -175,8 +181,9 @@ const Checkout = () => {
         setloading(false);
         return;
       }
-      paymentGateway(genUserData.current.userID);
-      loading && setloading(false);
+      // paymentGateway(genUserData.current.userID);
+      // loading && setloading(false);
+      setloading(false);
     } else {
       router.push("/sign-in");
     }
@@ -620,7 +627,7 @@ const Checkout = () => {
                         id="pay-on-delivery-text"
                         className="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400"
                       >
-                        +$15 payment processing fee
+                        +{formatPrice(15000)} phí xử lý thanh toán
                       </p>
                     </div>
                   </div>
@@ -704,9 +711,11 @@ const Checkout = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="font-medium text-3xl">${data.discount}</p>
+                    <p className="font-medium text-3xl">
+                      {formatPrice(discountedPrice)}
+                    </p>
                     <p className="font-medium text-xl line-through">
-                      ${data.price}
+                      {formatPrice(originalPrice)}
                     </p>
                   </div>
                 </div>
@@ -840,7 +849,7 @@ const Checkout = () => {
                     Subtotal
                   </dt>
                   <dd className="text-base font-medium text-gray-900 dark:text-white">
-                    ${formattedSubTotal}
+                    {formatPrice(subTotalWithoutTax)}
                   </dd>
                 </dl>
 
@@ -849,7 +858,7 @@ const Checkout = () => {
                     Shipping Charge
                   </dt>
                   <dd className="text-base font-medium text-gray-900">
-                    ${formattedShipping}
+                    {formatPrice(shipping)}
                   </dd>
                 </dl>
 
@@ -859,7 +868,7 @@ const Checkout = () => {
                       Payment Processing Charge
                     </dt>
                     <dd className="text-base font-medium text-gray-900 dark:text-white">
-                      ${paymentCharge}
+                      {formatPrice(paymentFee)}
                     </dd>
                   </dl>
                 )}
@@ -869,7 +878,7 @@ const Checkout = () => {
                     Taxes
                   </dt>
                   <dd className="text-base font-medium text-gray-900 dark:text-white">
-                    ${formattedTaxes}
+                    {formatPrice(taxes)}
                   </dd>
                 </dl>
 
@@ -878,7 +887,7 @@ const Checkout = () => {
                     Discount
                   </dt>
                   <dd className="text-base font-medium text-green-500 dark:text-white">
-                    ${formattedDiscount}
+                    {formatPrice(discountAmount)}
                   </dd>
                 </dl>
 
@@ -887,7 +896,7 @@ const Checkout = () => {
                     Total
                   </dt>
                   <dd className="text-base font-bold text-gray-900 dark:text-white">
-                    ${formattedTotalAmount}
+                    {formatPrice(totalAmount)}
                   </dd>
                 </dl>
               </div>

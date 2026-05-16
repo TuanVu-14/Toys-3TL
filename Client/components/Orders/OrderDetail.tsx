@@ -6,6 +6,7 @@ import Loading from '../Loading';
 import Link from 'next/link';
 import OrderNotFound from './OrderNotFound';
 import NotLoggedin from './NotLoggedin';
+import { formatPrice } from '@/features/UIUpdates/CartWishlist';
 // Interface for address
 interface Address {
   username: string;
@@ -31,6 +32,7 @@ interface Order {
   mobile_number: string;
   title: string;
   discount: string;
+  discountedprice?: string;
   price:string;
   shippingcost: string;
   quantity: number;
@@ -59,6 +61,7 @@ const emptyOrder: Order = {
   mobile_number: "",
   title: "",
   discount: "0.00",
+  discountedprice: "0.00",
   price:"0.00",
   shippingcost: "0.00",
   quantity: 0,
@@ -102,17 +105,26 @@ const OrderDetail = () => {
     const dataChecked = useRef(false);
     const loggedIn = useRef(true);
     const paymentCharge = useRef(0);
-    const shipping = parseFloat(data.shippingcost);
-    const taxes = parseFloat(data.price) * 0.18 * data.quantity;
-    const subTotal = parseFloat(data.price) * data.quantity;
-    const subTotalWithoutTax = (parseFloat(data.price) * 0.82) * data.quantity; // 100% - 18% tax
-    const discount = (parseFloat(data.price) - parseFloat(data.discount)) * data.quantity;
-    const totalAmount = subTotalWithoutTax - discount + shipping + taxes + paymentCharge.current; // Assuming paymentCharge is 0 for simplicity
-    const formattedSubTotal = subTotalWithoutTax.toFixed(2);
-    const formattedShipping = shipping.toFixed(2);
-    const formattedTaxes = taxes.toFixed(2);
-    const formattedDiscount = discount.toFixed(2);
-    const formattedTotalAmount = totalAmount.toFixed(2);
+
+    const originalPrice = Number(data.price || 0);
+    const discountPercent = Number(data.discount || 0);
+    const quantity = Number(data.quantity || 1);
+    const shipping = Number(data.shippingcost || 0);
+
+    // Giá sau giảm cho 1 sản phẩm.
+    // Nếu backend chưa trả discountedprice thì tự tính từ price và discount (%).
+    const discountedUnitPrice = Number(
+      data.discountedprice ||
+        Math.round(originalPrice * (100 - discountPercent) / 100)
+    );
+
+    // Logic hiển thị cho khách hàng:
+    // Subtotal = giá sau giảm * số lượng
+    // Discount = số tiền đã giảm
+    // Total = Subtotal + Shipping + COD fee
+    const subTotal = discountedUnitPrice * quantity;
+    const discountAmount = Math.max((originalPrice - discountedUnitPrice) * quantity, 0);
+    const totalAmount = subTotal + shipping + paymentCharge.current;
     const params = useParams<{ orderid: string }>()
     async function fetchData(){
       const response = await orderDetailHandler(params.orderid);
@@ -122,7 +134,7 @@ const OrderDetail = () => {
             dataVar.current = response.data.data
             found.current = true;
             dataChecked.current = true;
-            if(response.data.data.paymentmethod==='Payment on Delivery') paymentCharge.current=15;
+            if(response.data.data.paymentmethod==='Payment on Delivery') paymentCharge.current = 15000;
             setloading(false);
           };
           break;
@@ -223,7 +235,16 @@ const OrderDetail = () => {
                 {data.colorname != null && <p className='text-sm font-medium'>Color: <span className='font-semibold'>{data.colorname}</span></p>}
                 <p className='text-lg text-silver'>Quantity: <span className='text-black font-semibold'>{data.quantity}</span></p>
               </div>
-              <p className='font-medium text-3xl'>${data.discount}</p>
+             <div className="text-right">
+                <p className="font-medium text-3xl">
+                  {formatPrice(discountedUnitPrice)}
+                </p>
+                {originalPrice > discountedUnitPrice && (
+                  <p className="font-medium text-xl line-through text-gray-400">
+                    {formatPrice(originalPrice)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -231,30 +252,26 @@ const OrderDetail = () => {
         <div className="flex flex-col border-[1px] rounded-xl px-6 py-6 gap-5">
           <div className='flex justify-between'>
             <p className='text-lg text-silver'>Subtotal</p>
-            <p className='text-xl font-semibold'>${formattedSubTotal}</p>
+            <p className='text-xl font-semibold'>{formatPrice(subTotal)}</p>
           </div>
           <div className='flex justify-between'>
             <p className='text-lg text-silver'>Shipping Charge</p>
-            <p className='text-xl font-semibold'>${formattedShipping}</p>
+            <p className='text-xl font-semibold'>{formatPrice(shipping)}</p>
           </div>
           {dataVar.current.paymentmethod==='Payment on Delivery' &&
           <div className='flex justify-between'>
             <p className='text-lg text-silver'>Payment Processing Charge</p>
-            <p className='text-xl font-semibold'>${paymentCharge.current}</p>
+            <p className='text-xl font-semibold'>{formatPrice(Number(paymentCharge.current))}</p>
           </div>
           }
-          <div className='flex justify-between'>
-            <p className='text-lg text-silver'>Taxes</p>
-            <p className='text-xl font-semibold'>${formattedTaxes}</p>
-          </div>
-          <div className='flex justify-between'>
+<div className='flex justify-between'>
             <p className='text-lg text-silver'>Discount</p>
-            <p className='text-xl font-semibold'>${formattedDiscount}</p>
+            <p className='text-xl font-semibold text-green-600'>-{formatPrice(discountAmount)}</p>
           </div>
           <div className='w-full h-[1px] bg-gray-100'></div>
           <div className='flex justify-between'>
             <p className='text-2xl font-medium'>Total</p>
-            <p className='font-semibold text-2xl'>${formattedTotalAmount}</p>
+            <p className='font-semibold text-2xl'>{formatPrice(totalAmount)}</p>
           </div>
         </div>
       </div>}

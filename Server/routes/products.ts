@@ -200,28 +200,38 @@ router.get('/product/:productID',productIDSchema,async (req:Request,res:Response
             ])
             const [reviewCounts,reviews] = await review(productID);
             const assignedData = result.rows[0];
-            const data = {
-                productid:assignedData.productid,
-                title:assignedData.title,
-                description:assignedData.description,
-                stock:assignedData.stock,
-                discountedprice:assignedData.discount,
-                price:assignedData.price,
-                stars:assignedData.stars,
-                seller:assignedData.company_name,
-                reviewcount:reviewCounts,
-                categories:{subcategory:assignedData.categoryname,maincategory:assignedData.maincategory},
-                imglink:assignedData.imglink,
-                imgalt:assignedData.imgalt,
-                imgcollection:images,
-                colors:colors,
-                sizes:sizes,
-                reviews,
-                brand_name: assignedData.brand_name,
-                manufacturer_info: assignedData.manufacturer_info,
-                certification_details: assignedData.certification_details,
-                collection_names: assignedData.collection_names,
-            }
+            const price = Number(assignedData.price);
+const discount = Number(assignedData.discount || 0);
+const discountedPrice = Math.round(price * (100 - discount) / 100);
+
+const data = {
+  productid: assignedData.productid,
+  title: assignedData.title,
+  description: assignedData.description,
+  stock: assignedData.stock,
+
+  price: price,
+  discount: discount,
+  discountedprice: discountedPrice,
+
+  stars: assignedData.stars,
+  seller: assignedData.company_name,
+  reviewcount: reviewCounts,
+  categories: {
+    subcategory: assignedData.categoryname,
+    maincategory: assignedData.maincategory,
+  },
+  imglink: assignedData.imglink,
+  imgalt: assignedData.imgalt,
+  imgcollection: images,
+  colors,
+  sizes,
+  reviews,
+  brand_name: assignedData.brand_name,
+  manufacturer_info: assignedData.manufacturer_info,
+  certification_details: assignedData.certification_details,
+  collection_names: assignedData.collection_names,
+};
             const updateViewQuery = `UPDATE productparams SET views = views + 1 WHERE productid = $1`
             await client.query(updateViewQuery,[productID])
             res.status(200).json({data});

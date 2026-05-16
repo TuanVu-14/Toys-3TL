@@ -61,10 +61,13 @@ export async function orderStatusDataHandler({
   orderID: string | string[];
 }) {
   const sendingKey = await encrypt(authKey);
+
   try {
     const response = await axios.get(`${url}/api/orders/status/${orderID}`, {
       headers: { authorization: `Bearer ${sendingKey}` },
+      validateStatus: () => true,
     });
+
     return { status: response.status };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };

@@ -84,6 +84,7 @@ interface Product {
   colors: ProductColor[] | [];
   sizes: ProductSize[] | [];
   reviews: Review[] | [];
+  discount: number;
 }
 const defaultData = {
   productid: 1,
@@ -106,6 +107,7 @@ const defaultData = {
   colors: [],
   sizes: [],
   reviews: [],
+  discount: 0,
 };
 const IDGenerator = () => {
   const ID = Math.round(Math.random() * 1000 * 1000 * 100);
@@ -337,16 +339,17 @@ const ProductPage = () => {
                     </div>
                     <div className="flex gap-5 items-center">
                      <span className="text-red-600 font-bold">
-  {formatPrice(data.price, (data as any).discount)}
-</span>
+{formatPrice(data.discountedprice)}</span>
 
 <span className="text-gray-400 line-through">
   {formatPrice(data.price)}
 </span>
 
-<p className="text-yellow-500">
-  {Number((data as any).discount || 0)}% off
-</p>
+{Number(data.discount || 0) > 0 && (
+  <p className="text-yellow-500">
+    {Number(data.discount)}% off
+  </p>
+)}
                     </div>
                     <p>
                       <span className="font-semibold">In stock</span>: Dispatch
