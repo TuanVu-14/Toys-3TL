@@ -78,7 +78,7 @@ const Checkout = () => {
   const [clientSecret, setClientSecret] = useState("");
   const dataChecked = useRef(false);
   const found = useRef(false);
-  const [onlinePayment, setonlinePayment] = useState(false);
+  const [onlinePayment, setonlinePayment] = useState(true);
   const router = useRouter();
   const dataVar = useRef<ProductDetails>(emptyProductDetails);
   const data = dataVar.current;
@@ -181,9 +181,8 @@ const Checkout = () => {
         setloading(false);
         return;
       }
-      // paymentGateway(genUserData.current.userID);
-      // loading && setloading(false);
-      setloading(false);
+      paymentGateway(genUserData.current.userID);
+      loading && setloading(false);
     } else {
       router.push("/sign-in");
     }

@@ -111,20 +111,15 @@ const OrderDetail = () => {
     const quantity = Number(data.quantity || 1);
     const shipping = Number(data.shippingcost || 0);
 
-    // Giá sau giảm cho 1 sản phẩm.
-    // Nếu backend chưa trả discountedprice thì tự tính từ price và discount (%).
     const discountedUnitPrice = Number(
       data.discountedprice ||
         Math.round(originalPrice * (100 - discountPercent) / 100)
     );
 
-    // Logic hiển thị cho khách hàng:
-    // Subtotal = giá sau giảm * số lượng
-    // Discount = số tiền đã giảm
-    // Total = Subtotal + Shipping + COD fee
     const subTotal = discountedUnitPrice * quantity;
+    const taxes = subTotal * 0.18;
     const discountAmount = Math.max((originalPrice - discountedUnitPrice) * quantity, 0);
-    const totalAmount = subTotal + shipping + paymentCharge.current;
+    const totalAmount = Number(data.totalamount || 0) || (subTotal + shipping + paymentCharge.current);
     const params = useParams<{ orderid: string }>()
     async function fetchData(){
       const response = await orderDetailHandler(params.orderid);
@@ -264,9 +259,13 @@ const OrderDetail = () => {
             <p className='text-xl font-semibold'>{formatPrice(Number(paymentCharge.current))}</p>
           </div>
           }
-<div className='flex justify-between'>
+          <div className='flex justify-between'>
+            <p className='text-lg text-silver'>Taxes</p>
+            <p className='text-xl font-semibold'>{formatPrice(taxes)}</p>
+          </div>
+          <div className='flex justify-between'>
             <p className='text-lg text-silver'>Discount</p>
-            <p className='text-xl font-semibold text-green-600'>-{formatPrice(discountAmount)}</p>
+            <p className='text-xl font-semibold text-green-600'>{formatPrice(discountAmount)}</p>
           </div>
           <div className='w-full h-[1px] bg-gray-100'></div>
           <div className='flex justify-between'>
