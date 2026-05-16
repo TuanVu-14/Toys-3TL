@@ -35,7 +35,7 @@ const SignIn = () => {
 	});
     return (
         <>
-        <section className={`bg-gray-50 h-screen w-screen flex items-start lg:items-center overflow-x-hidden`}>
+        <section className={`bg-pink-50 h-screen w-screen flex items-start lg:items-center overflow-x-hidden`}>
         {loading && <div className='w-full h-full absolute'>{loading && <div className='absolute left-0 right-0 top-[30%] z-50'><Loading/></div>}</div> }
             <section className="w-[95%] mx-auto flex justify-center">
                 <div className='flex lg:h-[650px] justify-between items-center gap-10'>
@@ -43,7 +43,7 @@ const SignIn = () => {
                         <div>
                             <Link href="#" className="flex items-center text-2xl mb-2 font-semibold text-gray-900">
                                 <img className="w-12 h-12 mr-2" src="https://www.strivemindz.com/images/offerings/icons/ecommerce.png" alt="logo"/>
-                                H-Comm    
+                                3-TL    
                             </Link>
                             <div className='flex flex-col gap-5'>
                                 {loginFeatures.map((each,index)=>
@@ -70,7 +70,7 @@ const SignIn = () => {
                         <img className="w-12 h-12 mr-2" src="https://www.strivemindz.com/images/offerings/icons/ecommerce.png" alt="logo"/>
                         H-Comm    
                     </Link>
-                        <div className="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
+                        <div className="w-full bg-pink-30 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
                             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
                                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
                                     Welcome back

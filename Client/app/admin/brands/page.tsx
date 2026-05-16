@@ -1,299 +1,134 @@
 "use client";
 
-import AdminLayout from "@/components/Admin/AdminLayout";
 import React, { useEffect, useState } from "react";
-import {
-  getAdminBrands,
-  createAdminBrand,
-  deleteAdminBrand,
-  updateAdminBrand,
-} from "@/app/api/admin";
+import AdminLayout from "@/components/Admin/AdminLayout";
+import { createAdminBrand, deleteAdminBrand, getAdminBrands, updateAdminBrand } from "@/app/api/admin";
 
 type Brand = {
   brandid: number;
+  brand_id?: number;
   name: string;
-  description?: string;
-  logo_url?: string;
+  slug?: string;
+  manufacturer?: string;
   manufacturer_info?: string;
+  country?: string;
+  description?: string;
+  safety_certificates?: string;
   certification_details?: string;
+  website?: string;
+  logo_url?: string;
+  is_active?: boolean;
   product_count?: number;
 };
+
+const inputClass = "mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900";
+
+function slugify(value: string) {
+  return value.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
 
 function BrandsContent() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [manufacturerInfo, setManufacturerInfo] = useState("");
-  const [certifications, setCertifications] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState({ name: "", slug: "", manufacturer: "", country: "", description: "", safety_certificates: "", website: "", logo_url: "" });
 
   const fetchBrands = async () => {
     setLoading(true);
-    setError(null);
+    setError("");
     try {
       const response = await getAdminBrands();
       setBrands(response.data?.data || []);
-    } catch (err) {
-      setError("Không lấy được danh sách thương hiệu. Vui lòng thử lại.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Không lấy được danh sách thương hiệu. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddBrand = async () => {
-    if (!name.trim()) {
-      setError("Vui lòng nhập tên thương hiệu");
-      return;
-    }
-    setIsAdding(true);
-    try {
-      if (editingId) {
-        await updateAdminBrand(editingId, {
-          name: name.trim(),
-          description: description.trim() || undefined,
-          manufacturer_info: manufacturerInfo.trim() || undefined,
-          certification_details: certifications.trim() || undefined,
-          logo_url: logoUrl.trim() || undefined,
-        });
-        setEditingId(null);
-      } else {
-        await createAdminBrand({
-          name: name.trim(),
-          description: description.trim() || undefined,
-          manufacturer_info: manufacturerInfo.trim() || undefined,
-          certification_details: certifications.trim() || undefined,
-          logo_url: logoUrl.trim() || undefined,
-        });
-      }
-      resetForm();
-      await fetchBrands();
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          "Không lưu được thương hiệu. Vui lòng thử lại.",
-      );
-    } finally {
-      setIsAdding(false);
-    }
-  };
-
-  const handleEditBrand = (brand: Brand) => {
-    setEditingId(brand.brandid);
-    setName(brand.name);
-    setDescription(brand.description || "");
-    setManufacturerInfo(brand.manufacturer_info || "");
-    setCertifications(brand.certification_details || "");
-    setLogoUrl(brand.logo_url || "");
-  };
-
-  const handleDeleteBrand = async (brandID: number) => {
-    if (!confirm("Bạn có chắc muốn xóa thương hiệu này không?")) return;
-    try {
-      await deleteAdminBrand(brandID);
-      await fetchBrands();
-    } catch (err) {
-      setError("Không xóa được thương hiệu. Vui lòng thử lại.");
-    }
-  };
+  useEffect(() => { fetchBrands(); }, []);
 
   const resetForm = () => {
-    setName("");
-    setDescription("");
-    setManufacturerInfo("");
-    setCertifications("");
-    setLogoUrl("");
-    setError(null);
-  };
-
-  const handleCancel = () => {
     setEditingId(null);
-    resetForm();
+    setForm({ name: "", slug: "", manufacturer: "", country: "", description: "", safety_certificates: "", website: "", logo_url: "" });
   };
 
-  useEffect(() => {
-    fetchBrands();
-  }, []);
+  const submit = async () => {
+    if (!form.name.trim()) return setError("Vui lòng nhập tên thương hiệu.");
+    const payload = { ...form, name: form.name.trim(), slug: form.slug.trim() || slugify(form.name) };
+    try {
+      if (editingId) await updateAdminBrand(editingId, payload);
+      else await createAdminBrand(payload);
+      resetForm();
+      fetchBrands();
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Không lưu được thương hiệu.");
+    }
+  };
+
+  const edit = (brand: Brand) => {
+    setEditingId(brand.brandid || brand.brand_id || null);
+    setForm({
+      name: brand.name || "",
+      slug: brand.slug || "",
+      manufacturer: brand.manufacturer || brand.manufacturer_info || "",
+      country: brand.country || "",
+      description: brand.description || "",
+      safety_certificates: brand.safety_certificates || brand.certification_details || "",
+      website: brand.website || "",
+      logo_url: brand.logo_url || "",
+    });
+  };
+
+  const remove = async (id: number) => {
+    if (!confirm("Ẩn thương hiệu này khỏi admin?")) return;
+    try {
+      await deleteAdminBrand(id);
+      fetchBrands();
+    } catch (err: any) {
+      setError(err?.response?.data?.error || "Không ẩn được thương hiệu.");
+    }
+  };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                🏭 Quản lý thương hiệu
-              </h3>
-              <p className="text-sm text-slate-500">
-                Quản lý nhà sản xuất, thông tin chứng chỉ an toàn và logo thương
-                hiệu.
-              </p>
-            </div>
-            <button
-              onClick={fetchBrands}
-              className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-            >
-              Tải lại
-            </button>
-          </div>
+        <div className="flex items-center justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div><h2 className="text-2xl font-bold text-slate-900">🏭 Quản lý thương hiệu</h2><p className="mt-1 text-sm text-slate-500">Quản lý nhà sản xuất, chứng chỉ an toàn và logo thương hiệu.</p></div>
+          <button onClick={fetchBrands} className="rounded-2xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white">Tải lại</button>
         </div>
-
-        {error && (
-          <div className="rounded-2xl bg-rose-50 p-4 text-sm text-rose-700">
-            {error}
+        {error ? <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900">Danh sách thương hiệu</h3>
+          <div className="mt-4 space-y-3">
+            {loading ? <p className="text-sm text-slate-500">Đang tải...</p> : null}
+            {!loading && brands.length === 0 ? <p className="py-8 text-center text-slate-500">Không có thương hiệu nào.</p> : null}
+            {brands.map((brand) => (
+              <div key={brand.brandid} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4">
+                <div className="flex items-center gap-3">
+                  {brand.logo_url ? <img src={brand.logo_url} alt={brand.name} className="h-10 w-10 rounded-xl object-cover" /> : <div className="h-10 w-10 rounded-xl bg-rose-50" />}
+                  <div><p className="font-bold text-slate-900">{brand.name} {!brand.is_active && <span className="text-xs text-rose-500">• Ẩn</span>}</p><p className="text-xs text-slate-500">{brand.product_count || 0} sản phẩm • {brand.safety_certificates || brand.certification_details || "Chưa có chứng chỉ"}</p></div>
+                </div>
+                <div className="flex gap-2"><button onClick={() => edit(brand)} className="rounded-xl border px-3 py-1.5 text-xs font-semibold">Sửa</button><button onClick={() => remove(brand.brandid)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">Ẩn</button></div>
+              </div>
+            ))}
           </div>
-        )}
-
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h4 className="text-base font-semibold text-slate-900">
-              Danh sách thương hiệu
-            </h4>
-            <p className="mt-1 text-sm text-slate-500">
-              Hiển thị các nhà sản xuất hiện có.
-            </p>
-            <div className="mt-6 space-y-4">
-              {loading ? (
-                <p className="text-center text-slate-500">Đang tải...</p>
-              ) : brands.length === 0 ? (
-                <p className="text-center text-slate-500">
-                  Không có thương hiệu nào.
-                </p>
-              ) : (
-                brands.map((brand) => (
-                  <div
-                    key={brand.brandid}
-                    className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex gap-3">
-                      {brand.logo_url && (
-                        <img
-                          src={brand.logo_url}
-                          alt={brand.name}
-                          className="h-12 w-12 rounded-lg object-cover"
-                        />
-                      )}
-                      <div>
-                        <p className="font-semibold text-slate-900">
-                          {brand.name}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {brand.product_count || 0} sản phẩm
-                          {brand.certification_details &&
-                            ` • ${brand.certification_details}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => handleEditBrand(brand)}
-                        className="rounded-2xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBrand(brand.brandid)}
-                        className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h4 className="text-base font-semibold text-slate-900">
-              {editingId ? "Sửa thương hiệu" : "Thêm thương hiệu"}
-            </h4>
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700">
-                  Tên thương hiệu <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900"
-                  placeholder="VD: LEGO, Hasbro..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700">
-                  Logo URL
-                </label>
-                <input
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700">
-                  Mô tả ngắn
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900"
-                  rows={2}
-                  placeholder="Mô tả về thương hiệu..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700">
-                  Thông tin nhà sản xuất
-                </label>
-                <textarea
-                  value={manufacturerInfo}
-                  onChange={(e) => setManufacturerInfo(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900"
-                  rows={2}
-                  placeholder="Địa chỉ, liên hệ nhà sản xuất..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700">
-                  Chứng chỉ an toàn
-                </label>
-                <input
-                  value={certifications}
-                  onChange={(e) => setCertifications(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-900"
-                  placeholder="VD: CE, ASTM, ISO 8124"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={handleAddBrand}
-                  disabled={isAdding || !name.trim()}
-                  className="flex-1 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-                >
-                  {isAdding ? "Đang lưu..." : editingId ? "Cập nhật" : "Thêm"}
-                </button>
-                {editingId && (
-                  <button
-                    onClick={handleCancel}
-                    className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                  >
-                    Hủy
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
-        </div>
+        </section>
+        <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900">{editingId ? "Sửa thương hiệu" : "Thêm thương hiệu"}</h3>
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="text-xs font-semibold text-slate-600">Tên thương hiệu *<input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: editingId ? form.slug : slugify(e.target.value) })} placeholder="VD: LEGO, Hasbro..." /></label>
+            <label className="text-xs font-semibold text-slate-600">Slug<input className={inputClass} value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="lego" /></label>
+            <label className="text-xs font-semibold text-slate-600">Nhà sản xuất<input className={inputClass} value={form.manufacturer} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} /></label>
+            <label className="text-xs font-semibold text-slate-600">Quốc gia<input className={inputClass} value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} /></label>
+            <label className="text-xs font-semibold text-slate-600">Website<input className={inputClass} value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} /></label>
+            <label className="text-xs font-semibold text-slate-600">Logo URL<input className={inputClass} value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} /></label>
+            <label className="text-xs font-semibold text-slate-600 md:col-span-2">Chứng chỉ an toàn<input className={inputClass} value={form.safety_certificates} onChange={(e) => setForm({ ...form, safety_certificates: e.target.value })} placeholder="CE, ASTM, EN71..." /></label>
+            <label className="text-xs font-semibold text-slate-600 md:col-span-2">Mô tả<textarea className={inputClass} rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+          </div>
+          <div className="mt-5 flex gap-2"><button onClick={submit} className="rounded-2xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white">{editingId ? "Cập nhật" : "Thêm"}</button>{editingId ? <button onClick={resetForm} className="rounded-2xl border px-5 py-2 text-sm font-semibold">Hủy</button> : null}</div>
+        </section>
       </div>
     </AdminLayout>
   );
