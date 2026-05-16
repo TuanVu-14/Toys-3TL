@@ -1,179 +1,83 @@
-import express, { Request, Response } from 'express';
-import { client } from '../data/DB';
-import { categoryFilterSchema, categorySchema, filterSchema, getCategorySchema, getProductNameSchema, MainSubCategorySchema } from '../validators/siteDataValidation';
-import { matchedData, validationResult } from 'express-validator';
+import express, { Request, Response } from "express";
+import { client } from "../data/DB";
+
 const router = express.Router();
-const articleTable = 'articles';
-const categoryTable = 'categories';
-const productTable = 'products';
-router.get('/articles',async (req:Request,res:Response)=>{
-    const query = `SELECT * FROM ${articleTable}`
-    try {
-        const response = await client.query(query);
-        res.status(200).json({data:response.rows});
-    } catch (error) {
-        res.status(404).json({error:'Server Error'});
-    }
-});
-const fetchProducts = async (categoryid:number) => {
-    const query = `SELECT products.productid,products.title,categories.name AS category,products.price,products.discount,productparams.stars,productparams.isnew,productparams.issale,productparams.isdiscount FROM products 
-    INNER JOIN categories ON products.categoryid = categories.categoryid 
-    INNER JOIN productparams ON products.productid = productparams.productid
-    WHERE products.categoryid = $1`;
-    try {
-        const response = await client.query(query, [categoryid]);
-        if (response.rows.length === 0) return [];
 
-        const products = await Promise.all(
-            response.rows.map(async (product) => {
-                const productID = product.productid;
+const normalizeText = (value: unknown) => String(value ?? "").trim();
 
-                const [colors, sizes, reviewCount,images] = await Promise.all([
-                    getColors(productID),
-                    getSizes(productID),
-                    review(productID),
-                    getImage(productID)
-                ]);
+function slugSql(column: string) {
+  return `regexp_replace(lower(${column}), '[^a-z0-9]+', '-', 'g')`;
+}
 
-                return {
-                    ...product,
-                    colors,
-                    sizes,
-                    reviewCount,
-                    images
-                };
-            })
-        );
+async function getImage(productID: number) {
+  try {
+    const result = await client.query(
+      `SELECT imageid, imglink, imgalt
+       FROM productimages
+       WHERE productid = $1 AND isprimary = true
+       LIMIT 1`,
+      [productID],
+    );
 
-        return products;
-    } catch (error) {
-        return [];
-    }
-};
+    return result.rows[0] || { imageid: 0, imglink: "", imgalt: "" };
+  } catch {
+    return { imageid: 0, imglink: "", imgalt: "" };
+  }
+}
 
-const review = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT reviews.reviewid
-             FROM reviews 
-             INNER JOIN users ON users.userid = reviews.userid 
-             WHERE productid = $1 `,
-            [productID]
-        );
-        return result.rowCount === 0 ? 0 : result.rowCount;
-    } catch (error) {
-        return 0;
-    }
-};
+async function getColors(productID: number) {
+  try {
+    const result = await client.query(
+      `SELECT colorid, colorname, colorclass
+       FROM productcolors
+       WHERE productid = $1`,
+      [productID],
+    );
 
-const getColors = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT colorid, colorname, colorclass 
-             FROM productcolors 
-             WHERE productid = $1`,
-            [productID]
-        );
-        return result.rows.length === 0 ? [] : result.rows;
-    } catch (error) {
-        return [];
-    }
-};
+    return result.rows;
+  } catch {
+    return [];
+  }
+}
 
-const getSizes = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT sizeid, sizename, instock 
-             FROM productsizes 
-             WHERE productid = $1`,
-            [productID]
-        );
-        return result.rows.length === 0 ? [] : result.rows;
-    } catch (error) {
-        return [];
-    }
-};
-const getImage = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT imageid, imglink, imgalt 
-             FROM productimages 
-             WHERE productid = $1 AND isprimary = true`,
-            [productID]
-        );
-        return result.rows[0];
-    } catch (error) {
-        return {imageid:0,imglink:'',imgalt:''};
-    }
-};
-router.get('/category/:category',categorySchema,async (req:Request, res:Response) => {
-    if(validationResult(req).isEmpty()){
-        const { category } = req.params;
-        const query = `SELECT categoryid, name FROM ${categoryTable} WHERE maincategory = $1`;
-        const value = [category.toUpperCase()];
-    
-        try {
-            const response = await client.query(query, value);
-            const productsPromises = response.rows.map(each => fetchProducts(each.categoryid));
-            const products = await Promise.all(productsPromises);
-    
-            const data = {
-                categories: response.rows,
-                products: products.flat() // Flatten the array of products
-            };
-    
-            res.status(200).json({ data });
-        } catch (error) {
-            res.status(500).json({ error: 'Server Error' });
-        }
-    }else res.status(500).json({error:'Validation Error'})
-});
-const fetchFilteredProducts = async (minPrice:string,maxPrice:string,categoryID:number,minRating:string) => {
-    const query = `SELECT products.productid,products.title,categories.name AS category,products.price,products.discount,productparams.stars,productparams.isnew,productparams.issale,productparams.isdiscount FROM products 
-    INNER JOIN categories ON products.categoryid = categories.categoryid 
-    INNER JOIN productparams ON products.productid = productparams.productid
-    WHERE products.categoryid = $1 AND products.discount >= $2 AND products.discount <= $3 AND productparams.stars >= $4`;
-    try {
-        const response = await client.query(query, [categoryID,minPrice,maxPrice,minRating]);
-        if (response.rows.length === 0) return [];
+async function getSizes(productID: number) {
+  try {
+    const result = await client.query(
+      `SELECT sizeid, sizename, instock
+       FROM productsizes
+       WHERE productid = $1`,
+      [productID],
+    );
 
-        const products = await Promise.all(
-            response.rows.map(async (product) => {
-                const productID = product.productid;
+    return result.rows;
+  } catch {
+    return [];
+  }
+}
 
-                const [colors, sizes, reviewCount,images] = await Promise.all([
-                    getColors(productID),
-                    getSizes(productID),
-                    review(productID),
-                    getImage(productID)
-                ]);
+async function getReviewCount(productID: number) {
+  try {
+    const result = await client.query(
+      `SELECT COUNT(*)::int AS count
+       FROM reviews
+       WHERE productid = $1 AND COALESCE(status, 'approved') <> 'hidden'`,
+      [productID],
+    );
 
-                return {
-                    ...product,
-                    colors,
-                    sizes,
-                    reviewCount,
-                    images
-                };
-            })
-        );
+    return result.rows[0]?.count || 0;
+  } catch {
+    return 0;
+  }
+}
 
-        return products;
-    } catch (error) {
-        return [];
-    }
-};
 async function enrichProducts(rows: any[]) {
-  if (rows.length === 0) return [];
-
-  const products = await Promise.all(
+  return Promise.all(
     rows.map(async (product) => {
-      const productID = product.productid;
-
+      const productID = Number(product.productid);
       const [colors, sizes, reviewCount, images] = await Promise.all([
         getColors(productID),
         getSizes(productID),
-        review(productID),
+        getReviewCount(productID),
         getImage(productID),
       ]);
 
@@ -184,427 +88,353 @@ async function enrichProducts(rows: any[]) {
         reviewCount,
         images,
       };
-    })
+    }),
   );
-
-  return products;
 }
 
-function buildProductCatalogConditions(
-  req: Request,
-  params: any[],
-  startIndex: number
-) {
+async function resolveCategoryIDs(categoryValue: string) {
+  const raw = normalizeText(categoryValue);
+  const lower = raw.toLowerCase();
+
+  if (!raw) return [];
+
+  const exactCategory = await client.query(
+    `SELECT categoryid, name, slug, maincategory
+     FROM categories
+     WHERE lower(slug) = $1
+        OR lower(name) = $1
+        OR ${slugSql("name")} = $1
+     ORDER BY categoryid
+     LIMIT 1`,
+    [lower],
+  );
+
+  if (exactCategory.rows.length > 0) {
+    return [exactCategory.rows[0].categoryid];
+  }
+
+  const byMainCategory = await client.query(
+    `SELECT categoryid
+     FROM categories
+     WHERE lower(maincategory) = $1
+        OR ${slugSql("maincategory")} = $1
+     ORDER BY categoryid`,
+    [lower],
+  );
+
+  return byMainCategory.rows.map((row) => row.categoryid);
+}
+
+async function getSiblingCategories(categoryValue: string) {
+  const raw = normalizeText(categoryValue);
+  const lower = raw.toLowerCase();
+
+  const current = await client.query(
+    `SELECT categoryid, name, slug, maincategory
+     FROM categories
+     WHERE lower(slug) = $1
+        OR lower(name) = $1
+        OR lower(maincategory) = $1
+        OR ${slugSql("name")} = $1
+        OR ${slugSql("maincategory")} = $1
+     ORDER BY categoryid
+     LIMIT 1`,
+    [lower],
+  );
+
+  if (current.rows.length === 0) {
+    return [];
+  }
+
+  const maincategory = current.rows[0].maincategory;
+
+  const categories = await client.query(
+    `SELECT categoryid, name, slug, maincategory
+     FROM categories
+     WHERE maincategory = $1
+     ORDER BY categoryid`,
+    [maincategory],
+  );
+
+  return categories.rows;
+}
+
+function buildCatalogWhere(req: Request, params: any[]) {
   let sql = "";
-  let index = startIndex;
 
-  const {
-    age_group,
-    gender,
-    material,
-    skill_type,
-    brand,
-    collection_id,
-  } = req.query;
+  const add = (condition: string, value: unknown) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      params.push(value);
+      sql += ` AND ${condition.replace("?", `$${params.length}`)}`;
+    }
+  };
 
-  if (age_group) {
-    sql += ` AND products.age_group = $${index++}`;
-    params.push(age_group);
-  }
+  add("products.age_group = ?", req.query.age_group);
+  add("lower(products.gender) = lower(?)", req.query.gender);
+  add("lower(products.material) = lower(?)", req.query.material);
+  add("lower(products.skill_type) = lower(?)", req.query.skill_type);
+  add("lower(products.brand) = lower(?)", req.query.brand);
 
-  if (gender) {
-    sql += ` AND products.gender = $${index++}`;
-    params.push(gender);
-  }
-
-  if (material) {
-    sql += ` AND products.material = $${index++}`;
-    params.push(material);
-  }
-
-  if (skill_type) {
-    sql += ` AND products.skill_type = $${index++}`;
-    params.push(skill_type);
-  }
-
-  if (brand) {
-    // Hỗ trợ cả cột products.brand (text) hoặc join theo brands.name
-    sql += ` AND (products.brand = $${index} OR EXISTS (
-      SELECT 1
-      FROM brands b
-      WHERE b.brandid = products.brandid
-        AND b.name = $${index}
-    ))`;
-    params.push(brand);
-    index++;
-  }
-
-  if (collection_id) {
+  if (req.query.collection_id) {
+    params.push(Number(req.query.collection_id));
     sql += ` AND EXISTS (
       SELECT 1
       FROM collection_products cp
-      WHERE cp.product_id = products.productid
-        AND cp.collection_id = $${index}
+      WHERE cp.productid = products.productid
+        AND cp.collection_id = $${params.length}
     )`;
-    params.push(Number(collection_id));
-    index++;
   }
 
-  return { sql, nextIndex: index };
+  return sql;
 }
 
-// ============================================================
-// GET /api/filter/category/:minPrice/:maxPrice/:categoryID/:minRating/:categoryName
-// ============================================================
-router.get(
-  '/filter/category/:minPrice/:maxPrice/:categoryID/:minRating/:categoryName',
-  filterSchema,
-  async (req: Request, res: Response) => {
-    const result = validationResult(req);
+async function fetchProductsByCategoryIDs(categoryIDs: number[], extraWhere = "", extraParams: any[] = []) {
+  if (categoryIDs.length === 0) return [];
 
-    if (!result.isEmpty()) {
-      return res.status(500).json({ error: 'Validation Error' });
-    }
+  const categoryParams = categoryIDs.map((_, index) => `$${index + 1}`).join(",");
+  const params = [...categoryIDs, ...extraParams];
 
-    const {
-      minPrice,
-      maxPrice,
-      categoryID,
-      minRating,
-      categoryName,
-    } = matchedData(req);
+  const result = await client.query(
+    `SELECT products.productid,
+            products.title,
+            categories.name AS category,
+            categories.slug AS category_slug,
+            products.price,
+            products.discount,
+            productparams.stars,
+            productparams.isnew,
+            productparams.issale,
+            productparams.isdiscount
+     FROM products
+     INNER JOIN categories ON products.categoryid = categories.categoryid
+     INNER JOIN productparams ON products.productid = productparams.productid
+     WHERE products.categoryid IN (${categoryParams})
+       AND COALESCE(products.is_active, true) = true
+       ${extraWhere}
+     ORDER BY products.productid DESC`,
+    params,
+  );
 
-    try {
-      const baseQuery = `
-        SELECT
-          products.productid,
-          products.title,
-          categories.name AS category,
-          products.price,
-          products.discount,
-          productparams.stars,
-          productparams.isnew,
-          productparams.issale,
-          productparams.isdiscount
-        FROM products
-        INNER JOIN categories
-          ON products.categoryid = categories.categoryid
-        INNER JOIN productparams
-          ON products.productid = productparams.productid
-      `;
+  return enrichProducts(result.rows);
+}
 
-      if (categoryID != 0) {
-        const params: any[] = [
-          categoryID,
-          minPrice,
-          maxPrice,
-          minRating,
-        ];
-
-        let query = `
-          ${baseQuery}
-          WHERE products.categoryid = $1
-            AND products.price >= $2
-            AND products.price <= $3
-            AND productparams.stars >= $4
-        `;
-
-        const extra = buildProductCatalogConditions(req, params, 5);
-        query += extra.sql + ' ORDER BY products.productid DESC';
-
-        const response = await client.query(query, params);
-        const products = await enrichProducts(response.rows);
-
-        return res.status(200).json({ data: products });
-      }
-
-      // categoryID = 0 => lấy tất cả category thuộc main category
-      const categoryResponse = await client.query(
-        `SELECT categoryid FROM ${categoryTable} WHERE maincategory = $1`,
-        [String(categoryName).toUpperCase()]
-      );
-
-      const allProducts: any[] = [];
-
-      for (const row of categoryResponse.rows) {
-        const params: any[] = [
-          row.categoryid,
-          minPrice,
-          maxPrice,
-          minRating,
-        ];
-
-        let query = `
-          ${baseQuery}
-          WHERE products.categoryid = $1
-            AND products.price >= $2
-            AND products.price <= $3
-            AND productparams.stars >= $4
-        `;
-
-        const extra = buildProductCatalogConditions(req, params, 5);
-        query += extra.sql;
-
-        const response = await client.query(query, params);
-        allProducts.push(...response.rows);
-      }
-
-      const products = await enrichProducts(allProducts);
-      return res.status(200).json({ data: products });
-    } catch (error) {
-      console.error('filter/category error:', error);
-      return res.status(500).json({ error: 'failed' });
-    }
+router.get("/articles", async (_req: Request, res: Response) => {
+  try {
+    const response = await client.query("SELECT * FROM articles ORDER BY createdat DESC NULLS LAST");
+    res.status(200).json({ data: response.rows });
+  } catch {
+    res.status(200).json({ data: [] });
   }
-);
+});
 
-// ============================================================
-// GET /api/filter/category-only/:categoryID/:categoryName
-// ============================================================
-router.get(
-  '/filter/category-only/:categoryID/:categoryName',
-  getCategorySchema,
-  async (req: Request, res: Response) => {
-    if (!validationResult(req).isEmpty()) {
-      return res.status(500).json({ error: 'Validation Error' });
-    }
+router.get("/category/:category", async (req: Request, res: Response) => {
+  try {
+    const categoryValue = normalizeText(req.params.category);
+    const categoryIDs = await resolveCategoryIDs(categoryValue);
+    const categories = await getSiblingCategories(categoryValue);
+    const products = await fetchProductsByCategoryIDs(categoryIDs);
 
-    const { categoryID, categoryName } = matchedData(req);
-
-    try {
-      const baseQuery = `
-        SELECT
-          products.productid,
-          products.title,
-          categories.name AS category,
-          products.price,
-          products.discount,
-          productparams.stars,
-          productparams.isnew,
-          productparams.issale,
-          productparams.isdiscount
-        FROM products
-        INNER JOIN categories
-          ON products.categoryid = categories.categoryid
-        INNER JOIN productparams
-          ON products.productid = productparams.productid
-      `;
-
-      if (categoryID != 0) {
-        const params: any[] = [categoryID];
-
-        let query = `
-          ${baseQuery}
-          WHERE products.categoryid = $1
-        `;
-
-        const extra = buildProductCatalogConditions(req, params, 2);
-        query += extra.sql + ' ORDER BY products.productid DESC';
-
-        const response = await client.query(query, params);
-        const products = await enrichProducts(response.rows);
-
-        return res.status(200).json({ data: products });
-      }
-
-      const categoryResponse = await client.query(
-        `SELECT categoryid FROM ${categoryTable} WHERE maincategory = $1`,
-        [String(categoryName).toUpperCase()]
-      );
-
-      const allProducts: any[] = [];
-
-      for (const row of categoryResponse.rows) {
-        const params: any[] = [row.categoryid];
-
-        let query = `
-          ${baseQuery}
-          WHERE products.categoryid = $1
-        `;
-
-        const extra = buildProductCatalogConditions(req, params, 2);
-        query += extra.sql;
-
-        const response = await client.query(query, params);
-        allProducts.push(...response.rows);
-      }
-
-      const products = await enrichProducts(allProducts);
-      return res.status(200).json({ data: products });
-    } catch (error) {
-      console.error('filter/category-only error:', error);
-      return res.status(500).json({ error: 'Failed' });
-    }
-  }
-);async function searchProducts(productName:string){
-    const query = `SELECT products.productid, products.title, categories.name AS category, 
-        products.price, products.discount, productparams.stars, 
-        productparams.isnew, productparams.issale, productparams.isdiscount 
-        FROM products 
-        INNER JOIN categories ON products.categoryid = categories.categoryid 
-        INNER JOIN productparams ON products.productid = productparams.productid
-        WHERE products.title ILIKE '%' || $1 || '%' 
-        OR products.description ILIKE '%' || $1 || '%' 
-        OR products.tags ILIKE '%' || $1 || '%'`;
-    try {
-        const response = await client.query(query, [productName]);
-        if (response.rows.length === 0) return [];
-
-        const products = await Promise.all(
-            response.rows.map(async (product) => {
-                const productID = product.productid;
-
-                const [colors, sizes, reviewCount,images] = await Promise.all([
-                    getColors(productID),
-                    getSizes(productID),
-                    review(productID),
-                    getImage(productID)
-                ]);
-
-                return {
-                    ...product,
-                    colors,
-                    sizes,
-                    reviewCount,
-                    images
-                };
-            })
-        );
-
-        return products;
-    } catch (error) {
-        return [];
-    }
-}
-async function searchFilteredProducts(productName:string,minPrice:string,maxPrice:string,rating:string){
-    const query = `SELECT products.productid, products.title, categories.name AS category, 
-       products.price, products.discount, productparams.stars, 
-       productparams.isnew, productparams.issale, productparams.isdiscount 
-        FROM products 
-        INNER JOIN categories ON products.categoryid = categories.categoryid 
-        INNER JOIN productparams ON products.productid = productparams.productid
-        WHERE products.discount >= $2 
-        AND products.discount <= $3 
-        AND productparams.stars >= $4 
-        AND (
-      products.title ILIKE '%' || $1 || '%' 
-      OR products.description ILIKE '%' || $1 || '%' 
-      OR products.tags ILIKE '%' || $1 || '%')`;
-    try {
-        const response = await client.query(query, [productName,minPrice,maxPrice,rating]);
-        if (response.rows.length === 0) return [];
-
-        const products = await Promise.all(
-            response.rows.map(async (product) => {
-                const productID = product.productid;
-
-                const [colors, sizes, reviewCount,images] = await Promise.all([
-                    getColors(productID),
-                    getSizes(productID),
-                    review(productID),
-                    getImage(productID)
-                ]);
-
-                return {
-                    ...product,
-                    colors,
-                    sizes,
-                    reviewCount,
-                    images
-                };
-            })
-        );
-
-        return products;
-    } catch (error) {
-        return [];
-    }
-}
-const removeDuplicates = (products: any[]) => {
-    const seen = new Set();
-    return products.filter(product => {
-      const duplicate = seen.has(product.productid);
-      seen.add(product.productid);
-      return !duplicate;
+    res.status(200).json({
+      data: {
+        categories,
+        products,
+      },
     });
-};
-router.get('/search/product/:productName',getProductNameSchema, async(req:Request,res:Response)=>{
-    if(validationResult(req).isEmpty()){
-        const {productName} = req.params;
-        const filteredProductName = productName.split('-');
-        try {
-            const productsPromises = filteredProductName.map(each => searchProducts(each));
-            const products = await Promise.all(productsPromises);
-            const flatProducts = products.flat();
-            const uniqueProducts = removeDuplicates(flatProducts);
-            res.status(200).json({data:uniqueProducts});
-        } catch (error) {
-            res.status(500)
-        }
-    }else res.status(500).json({error:'Validation Error'})
+  } catch (error) {
+    console.error("GET /category/:category error:", error);
+    res.status(500).json({ error: "Server Error" });
+  }
 });
-router.get('/search/filtered-product/:productName/:minPrice/:maxPrice/:rating',async(req:Request,res:Response)=>{
-    if(validationResult(req).isEmpty()){
-        const {productName,minPrice,maxPrice,rating} = req.params;
-        const filteredProductName = productName.split('-');
-        try {
-            const productsPromises = filteredProductName.map(each => searchFilteredProducts(each,minPrice,maxPrice,rating));
-            const products = await Promise.all(productsPromises);
-            const flatProducts = products.flat();
-            const uniqueProducts = removeDuplicates(flatProducts);
-            return res.status(200).json({data:uniqueProducts});
-        } catch (error) {
-            return res.sendStatus(500);
-        }
-    }else res.status(500).json({error:'Validation Error'})
-    
+
+router.get("/filter/category/:minPrice/:maxPrice/:categoryID/:minRating/:categoryName", async (req: Request, res: Response) => {
+  try {
+    const minPrice = Number(req.params.minPrice || 0);
+    const maxPrice = Number(req.params.maxPrice || 999999999);
+    const minRating = Number(req.params.minRating || 0);
+    const categoryID = Number(req.params.categoryID || 0);
+
+    const categoryIDs = categoryID !== 0
+      ? [categoryID]
+      : await resolveCategoryIDs(req.params.categoryName);
+
+    const extraParams: any[] = [];
+    let extraWhere = "";
+
+    extraParams.push(minPrice);
+    extraWhere += ` AND products.price >= $${categoryIDs.length + extraParams.length}`;
+
+    extraParams.push(maxPrice);
+    extraWhere += ` AND products.price <= $${categoryIDs.length + extraParams.length}`;
+
+    extraParams.push(minRating);
+    extraWhere += ` AND COALESCE(productparams.stars, 0) >= $${categoryIDs.length + extraParams.length}`;
+
+    const reqParamsForCatalog = [...categoryIDs, ...extraParams];
+    const catalogWhere = buildCatalogWhere(req, reqParamsForCatalog);
+    const catalogExtraParams = reqParamsForCatalog.slice(categoryIDs.length + extraParams.length);
+
+    const products = await fetchProductsByCategoryIDs(
+      categoryIDs,
+      extraWhere + catalogWhere,
+      [...extraParams, ...catalogExtraParams],
+    );
+
+    res.status(200).json({ data: products });
+  } catch (error) {
+    console.error("GET /filter/category error:", error);
+    res.status(500).json({ error: "Failed" });
+  }
 });
-// Helper function to capitalize the first letter of a string
-const capitalizeFirstLetter = (string: string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-};
-  
-// Helper function to format subCategory
-const formatSubCategory = (string: string) => {
-    return string
-    .split('-')
-    .map(word => capitalizeFirstLetter(word))
-    .join(' ');
-};
-router.get('/sub-category/:mainCategory/:subCategory',MainSubCategorySchema, async (req: Request, res: Response) => {
-    if(validationResult(req).isEmpty()){
-        const { mainCategory, subCategory } = matchedData(req);
-  
-        // Capitalize mainCategory
-        const formattedMainCategory = mainCategory.toUpperCase();
-      
-        // Format subCategory
-        const formattedSubCategory = formatSubCategory(subCategory);
-        const query = `SELECT categoryid FROM categories WHERE maincategory = $1 AND name = $2`;
-        try {
-          // Assuming you have a function to query the database
-          const queryCategory = await client.query(query,[formattedMainCategory,formattedSubCategory]);
-          if(queryCategory.rows.length > 0) {
-            const categoryID = queryCategory.rows[0].categoryid;
-            const products = await fetchProducts(categoryID);
-            return res.status(200).json({data:products,categoryid:categoryID});
-          }
-          res.status(200).json({data:[],categoryid:0});
-        } catch (error) {
-          console.error('Error fetching data:', error);
-          return res.status(500).json({ error: 'Failed to fetch data' });
-        }
-    }else res.status(500).json({error:'Validation Error'})
+
+router.get("/filter/category-only/:categoryID/:categoryName", async (req: Request, res: Response) => {
+  try {
+    const categoryID = Number(req.params.categoryID || 0);
+
+    const categoryIDs = categoryID !== 0
+      ? [categoryID]
+      : await resolveCategoryIDs(req.params.categoryName);
+
+    const params = [...categoryIDs];
+    const extraWhere = buildCatalogWhere(req, params);
+    const extraParams = params.slice(categoryIDs.length);
+
+    const products = await fetchProductsByCategoryIDs(categoryIDs, extraWhere, extraParams);
+
+    res.status(200).json({ data: products });
+  } catch (error) {
+    console.error("GET /filter/category-only error:", error);
+    res.status(500).json({ error: "Failed" });
+  }
 });
-router.get('/sub-category/filtered-product/:categoryID/:minPrice/:maxPrice/:rating',categoryFilterSchema,async(req:Request,res:Response)=>{
-    if(validationResult(req).isEmpty()){
-        const {categoryID,minPrice,maxPrice,rating} = matchedData(req);
-        try {
-            const products = await Promise.all(await fetchFilteredProducts(minPrice,maxPrice,parseInt(categoryID),rating));
-            res.status(200).json({data:products});
-        } catch (error) {
-            res.status(500)
-        }
-    }else res.status(500).json({error:'Validation Error'})
+
+async function searchProducts(keyword: string, filters?: { minPrice?: number; maxPrice?: number; rating?: number }) {
+  const words = keyword
+    .split("-")
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  if (words.length === 0) return [];
+
+  const params: any[] = [];
+  const wordConditions = words.map((word) => {
+    params.push(`%${word}%`);
+    const idx = `$${params.length}`;
+
+    return `(products.title ILIKE ${idx}
+      OR products.description ILIKE ${idx}
+      OR products.tags ILIKE ${idx}
+      OR products.age_group ILIKE ${idx}
+      OR products.gender ILIKE ${idx}
+      OR products.material ILIKE ${idx}
+      OR products.skill_type ILIKE ${idx}
+      OR products.brand ILIKE ${idx}
+      OR categories.name ILIKE ${idx}
+      OR categories.slug ILIKE ${idx}
+      OR categories.maincategory ILIKE ${idx})`;
+  });
+
+  let extra = "";
+
+  if (filters?.minPrice !== undefined) {
+    params.push(filters.minPrice);
+    extra += ` AND products.price >= $${params.length}`;
+  }
+
+  if (filters?.maxPrice !== undefined) {
+    params.push(filters.maxPrice);
+    extra += ` AND products.price <= $${params.length}`;
+  }
+
+  if (filters?.rating !== undefined) {
+    params.push(filters.rating);
+    extra += ` AND COALESCE(productparams.stars, 0) >= $${params.length}`;
+  }
+
+  const response = await client.query(
+    `SELECT products.productid,
+            products.title,
+            categories.name AS category,
+            products.price,
+            products.discount,
+            productparams.stars,
+            productparams.isnew,
+            productparams.issale,
+            productparams.isdiscount
+     FROM products
+     INNER JOIN categories ON products.categoryid = categories.categoryid
+     INNER JOIN productparams ON products.productid = productparams.productid
+     WHERE COALESCE(products.is_active, true) = true
+       AND (${wordConditions.join(" OR ")})
+       ${extra}
+     ORDER BY products.productid DESC`,
+    params,
+  );
+
+  return enrichProducts(response.rows);
+}
+
+router.get("/search/product/:productName", async (req: Request, res: Response) => {
+  try {
+    const products = await searchProducts(req.params.productName);
+    res.status(200).json({ data: products });
+  } catch (error) {
+    console.error("GET /search/product error:", error);
+    res.status(500).json({ error: "Server Error" });
+  }
 });
+
+router.get("/search/filtered-product/:productName/:minPrice/:maxPrice/:rating", async (req: Request, res: Response) => {
+  try {
+    const products = await searchProducts(req.params.productName, {
+      minPrice: Number(req.params.minPrice || 0),
+      maxPrice: Number(req.params.maxPrice || 999999999),
+      rating: Number(req.params.rating || 0),
+    });
+
+    res.status(200).json({ data: products });
+  } catch (error) {
+    console.error("GET /search/filtered-product error:", error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+router.get("/sub-category/:mainCategory/:subCategory", async (req: Request, res: Response) => {
+  try {
+    const categoryIDs = await resolveCategoryIDs(req.params.subCategory);
+    const products = await fetchProductsByCategoryIDs(categoryIDs);
+
+    res.status(200).json({
+      data: products,
+      categoryid: categoryIDs[0] || 0,
+    });
+  } catch (error) {
+    console.error("GET /sub-category error:", error);
+    res.status(500).json({ error: "Failed to fetch data" });
+  }
+});
+
+router.get("/sub-category/filtered-product/:categoryID/:minPrice/:maxPrice/:rating", async (req: Request, res: Response) => {
+  try {
+    const categoryID = Number(req.params.categoryID || 0);
+    if (!categoryID) return res.status(200).json({ data: [] });
+
+    const minPrice = Number(req.params.minPrice || 0);
+    const maxPrice = Number(req.params.maxPrice || 999999999);
+    const rating = Number(req.params.rating || 0);
+
+    const products = await fetchProductsByCategoryIDs(
+      [categoryID],
+      ` AND products.price >= $2
+        AND products.price <= $3
+        AND COALESCE(productparams.stars, 0) >= $4`,
+      [minPrice, maxPrice, rating],
+    );
+
+    res.status(200).json({ data: products });
+  } catch (error) {
+    console.error("GET /sub-category/filtered-product error:", error);
+    res.status(500).json({ error: "Failed" });
+  }
+});
+
 export default router;

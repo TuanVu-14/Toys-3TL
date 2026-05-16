@@ -1,41 +1,59 @@
-import React, {useState, useEffect} from 'react'
-import { categoryDropDown } from '@/app/data'
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { categoryDropDown } from '@/app/data';
+
 const Category = () => {
-    const [margin, setMargin] = useState(10);
-    const [opacity, setOpacity] = useState(0);
-    
-    useEffect(() => {
-        const timer = setTimeout(() => {
-        setMargin(0);
-        setOpacity(1);
-        }, 5);
+  const [ready, setReady] = useState(false);
 
-        // Cleanup function to clear the timeout if the component unmounts
-        return () => clearTimeout(timer);
-    }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), 10);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
-    <div style={{
-        marginTop: `${margin * 0.25}rem`,
-        opacity: opacity,
-        transition: 'margin-top 0.2s ease-in-out, opacity 0.3s ease-in-out'
-      }} className='xl:min-h-[450px] xl:min-w-[1280px] min-h-[400px] min-w-[1000px] xl:-left-40 z-20 absolute bg-white flex gap-5 rounded-lg drop-shadow-md px-8 py-8'>
-        {categoryDropDown.map((each,index)=>
-            <div key={index} className='flex-1'>
-                <div className='relative border-b-[1px] pb-3 mb-5 group'>
-                <a href={`/categories/${each.catLink}`} className='font-semibold text-base'>{each.title}</a>
-            </div>
-                <div className='flex flex-col gap-2 mb-8 mt-5'>
-                    {each.subCategories.map((each,index)=>
-                    <a href={each.link} className='text-silver hover:text-salmon relative inline-block w-fit group' key={index}>{each.title}
-                        <div className="absolute bottom-[-1px] left-0 h-[2px] w-0 bg-salmon group-hover:w-full transition-all duration-300 rounded"></div>
-                    </a>
-                    )}
-                </div>
-                <a href={each.imgRedirectLink}><img height={80} width={300} className='rounded-lg object-cover' src={each.imgLink}/></a>
-            </div>
-        )}
-    </div>
-  )
-}
+    <div
+      className={`fixed left-1/2 top-[265px] z-[9999] w-[min(1280px,calc(100vw-48px))] -translate-x-1/2 rounded-xl bg-white p-8 shadow-2xl ring-1 ring-black/5 transition-all duration-200 ${
+        ready ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
+      }`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="grid max-h-[620px] grid-cols-4 gap-x-8 gap-y-8 overflow-y-auto pr-1">
+        {categoryDropDown.map((category) => (
+          <div key={category.title} className="min-w-0">
+            <Link href={category.catLink} className="block">
+              <h3 className="mb-4 border-b border-gray-200 pb-3 text-[18px] font-bold capitalize text-gray-900 hover:text-salmon">
+                {category.title}
+              </h3>
+            </Link>
 
-export default Category
+            <div className="mb-6 flex flex-col gap-3">
+              {category.subCategories.map((sub) => (
+                <Link
+                  key={`${category.title}-${sub.title}`}
+                  href={sub.link}
+                  className="text-[16px] capitalize tracking-wide text-gray-500 transition hover:text-salmon"
+                >
+                  {sub.title}
+                </Link>
+              ))}
+            </div>
+
+            {category.imgLink && (
+              <Link href={category.imgRedirectLink || category.catLink} className="block overflow-hidden rounded-lg">
+                <img
+                  src={category.imgLink}
+                  alt={category.imgAlt || category.title}
+                  className="h-[120px] w-full rounded-lg object-cover transition duration-300 hover:scale-105"
+                />
+              </Link>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Category;

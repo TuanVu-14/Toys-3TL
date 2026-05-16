@@ -1,178 +1,218 @@
 import express, { Request, Response } from 'express';
 import { client } from '../data/DB';
+
 const router = express.Router();
-router.get('/home/banner',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT * FROM banners`;
-    try {
-        const response = await client.query(fetchQuery);
-        res.status(200).json({data:response.rows})
-    } catch (error) {
-        res.sendStatus(500)
-    }
+
+const PRIMARY_IMAGE_SQL = `
+  LEFT JOIN LATERAL (
+    SELECT imageid, imglink, imgalt
+    FROM productimages pi
+    WHERE pi.productid = p.productid
+    ORDER BY COALESCE(pi.isprimary, false) DESC, pi.imageid ASC
+    LIMIT 1
+  ) img ON true
+`;
+
+const PRODUCT_SELECT_SQL = `
+  SELECT
+    p.productid,
+    p.title,
+    c.name AS category,
+    c.name AS category_name,
+    c.slug AS category_slug,
+    c.maincategory,
+    p.price,
+    p.discount,
+    COALESCE(pp.stars, 0) AS stars,
+    COALESCE(pp.isnew, false) AS isnew,
+    COALESCE(pp.issale, false) AS issale,
+    COALESCE(pp.isdiscount, false) AS isdiscount,
+    COALESCE(pp.views, 0) AS views,
+    COALESCE(pp.sold, 0) AS sold,
+    COALESCE(pp.rating, 0) AS rating,
+    COALESCE(img.imageid, 0) AS imageid,
+    COALESCE(img.imglink, '/images/no-image.png') AS imglink,
+    COALESCE(img.imgalt, p.title) AS imgalt
+  FROM products p
+  LEFT JOIN categories c ON c.categoryid = p.categoryid
+  LEFT JOIN productparams pp ON pp.productid = p.productid
+  ${PRIMARY_IMAGE_SQL}
+  WHERE COALESCE(p.is_active, true) = true
+`;
+
+const toProductCard = (row: any) => ({
+  productid: row.productid,
+  title: row.title,
+  category: row.category || row.category_name || '',
+  category_name: row.category_name || row.category || '',
+  category_slug: row.category_slug || '',
+  maincategory: row.maincategory || '',
+  price: row.price,
+  discount: row.discount,
+  stars: Number(row.stars || 0),
+  isnew: !!row.isnew,
+  issale: !!row.issale,
+  isdiscount: !!row.isdiscount,
+  views: Number(row.views || 0),
+  sold: Number(row.sold || 0),
+  rating: Number(row.rating || 0),
+  images: {
+    imageid: Number(row.imageid || 0),
+    imglink: row.imglink || '/images/no-image.png',
+    imgalt: row.imgalt || row.title || '',
+  },
+  imglink: row.imglink || '/images/no-image.png',
+  imgalt: row.imgalt || row.title || '',
 });
-const getImage = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT imageid, imglink, imgalt 
-             FROM productimages 
-             WHERE productid = $1 AND isprimary = true`,
-            [productID]
-        );
-        return result.rows[0];
-    } catch (error) {
-        return {imageid:0,imglink:'',imgalt:''};
-    }
-};
-router.get('/home/deals',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT deals.productid,products.title,productparams.stars,products.description,products.price,products.discount,deals.sold,deals.available,productparams.rating,productimages.imglink,productimages.imgalt,deals.end_time
-    FROM deals 
-    INNER JOIN products ON deals.productid = products.productid 
-    INNER JOIN productparams ON productparams.productid = deals.productid
-    INNER JOIN productimages ON productimages.productid = deals.productid
-    WHERE deals.productid = productimages.productid AND productimages.isprimary = true`;
-    try {
-        const response = await client.query(fetchQuery);
-        res.status(200).json({data:response.rows})
-    } catch (error) {
-        res.sendStatus(500)
-    }
-})
-router.get('/home/trending',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,categories.maincategory
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY productparams.views DESC
-    LIMIT 8`;
-    const fetchQuery1 = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,categories.maincategory
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY productparams.rating DESC
-    LIMIT 8`;
-    const fetchQuery2 = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,categories.maincategory
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY products.createdat DESC
-    LIMIT 8`;
-    try {
-        const response = await client.query(fetchQuery);
-        const response1 = await client.query(fetchQuery1);
-        const response2 = await client.query(fetchQuery2);
-        res.status(200).json({data:{trending:response.rows,top_rated:response1.rows,new_arrival:response2.rows}})
-    } catch (error) {
-        res.sendStatus(500)
-    }
+
+async function getColors(productID: number) {
+  try {
+    const result = await client.query(
+      `SELECT colorid, colorname AS name, colorname, colorclass FROM productcolors WHERE productid = $1`,
+      [productID],
+    );
+    return result.rows;
+  } catch {
+    return [];
+  }
+}
+
+async function getSizes(productID: number) {
+  try {
+    const result = await client.query(
+      `SELECT sizeid, sizename AS name, sizename, instock FROM productsizes WHERE productid = $1`,
+      [productID],
+    );
+    return result.rows;
+  } catch {
+    return [];
+  }
+}
+
+async function getReviewCount(productID: number) {
+  try {
+    const result = await client.query(`SELECT COUNT(*)::int AS count FROM reviews WHERE productid = $1`, [productID]);
+    return result.rows[0]?.count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function hydrateProducts(rows: any[]) {
+  return Promise.all(
+    rows.map(async (row) => {
+      const [colors, sizes, reviewCount] = await Promise.all([
+        getColors(row.productid),
+        getSizes(row.productid),
+        getReviewCount(row.productid),
+      ]);
+      return { ...toProductCard(row), colors, sizes, reviewCount };
+    }),
+  );
+}
+
+router.get('/home/banner', async (_req: Request, res: Response) => {
+  try {
+    const response = await client.query(`
+      SELECT
+        bannerid AS id,
+        bannerid,
+        toptitle,
+        middletitle,
+        bottomtitle,
+        imglink,
+        startprice,
+        buttontitle,
+        redirect_link,
+        createdat,
+        updatedat
+      FROM banners
+      ORDER BY bannerid ASC
+    `);
+
+    res.status(200).json({ data: response.rows });
+  } catch (error) {
+    console.error('GET /home/banner error:', error);
+    res.status(500).json({ data: [] });
+  }
 });
-router.get('/home/best-sellers',async(req:Request,res:Response)=>{
-    const fetchQuery = `SELECT products.productid,products.title,products.price,products.discount,productimages.imglink,productimages.imgalt,categories.name AS category_name,productparams.stars,productparams.rating
-    FROM products 
-    INNER JOIN productparams ON productparams.productid = products.productid
-    INNER JOIN productimages ON productimages.productid = products.productid
-    INNER JOIN categories ON categories.categoryid = products.categoryid
-    WHERE productimages.isprimary = true
-    ORDER BY productparams.sold DESC
-    LIMIT 4`;
-    try {
-        const response = await client.query(fetchQuery);
-        res.status(200).json({data:response.rows})
-    } catch (error) {
-        res.sendStatus(500)
-    }
+
+router.get('/home/deals', async (_req: Request, res: Response) => {
+  try {
+    const response = await client.query(`
+      SELECT
+        d.productid,
+        p.title,
+        p.description,
+        p.price,
+        p.discount,
+        d.sold,
+        d.available,
+        d.end_time,
+        COALESCE(pp.stars, 0) AS stars,
+        COALESCE(pp.rating, 0) AS rating,
+        COALESCE(img.imglink, '/images/no-image.png') AS imglink,
+        COALESCE(img.imgalt, p.title) AS imgalt
+      FROM deals d
+      INNER JOIN products p ON p.productid = d.productid
+      LEFT JOIN productparams pp ON pp.productid = d.productid
+      LEFT JOIN LATERAL (
+        SELECT imglink, imgalt
+        FROM productimages pi
+        WHERE pi.productid = d.productid
+        ORDER BY COALESCE(pi.isprimary, false) DESC, pi.imageid ASC
+        LIMIT 1
+      ) img ON true
+      WHERE COALESCE(p.is_active, true) = true
+      ORDER BY d.end_time ASC
+    `);
+    res.status(200).json({ data: response.rows });
+  } catch (error) {
+    console.error('GET /home/deals error:', error);
+    res.status(500).json({ data: [] });
+  }
 });
-const fetchProducts = async () => {
-    const query = `SELECT products.productid,products.title,categories.name AS category,categories.maincategory,products.price,products.discount,productparams.stars,productparams.isnew,productparams.issale,productparams.isdiscount FROM products 
-    INNER JOIN categories ON products.categoryid = categories.categoryid 
-    INNER JOIN productparams ON products.productid = productparams.productid
-    ORDER BY productparams.stars DESC,productparams.rating DESC
-    LIMIT 12`;
-    try {
-        const response = await client.query(query, []);
-        if (response.rows.length === 0) return [];
 
-        const products = await Promise.all(
-            response.rows.map(async (product) => {
-                const productID = product.productid;
+router.get('/home/trending', async (_req: Request, res: Response) => {
+  try {
+    const [trending, topRated, newArrival] = await Promise.all([
+      client.query(`${PRODUCT_SELECT_SQL} ORDER BY COALESCE(pp.views, 0) DESC, p.createdat DESC LIMIT 8`),
+      client.query(`${PRODUCT_SELECT_SQL} ORDER BY COALESCE(pp.rating, 0) DESC, COALESCE(pp.stars, 0) DESC LIMIT 8`),
+      client.query(`${PRODUCT_SELECT_SQL} ORDER BY p.createdat DESC, p.productid DESC LIMIT 8`),
+    ]);
 
-                const [colors, sizes, reviewCount,images] = await Promise.all([
-                    getColors(productID),
-                    getSizes(productID),
-                    review(productID),
-                    getImage(productID)
-                ]);
-
-                return {
-                    ...product,
-                    colors,
-                    sizes,
-                    reviewCount,
-                    images
-                };
-            })
-        );
-
-        return products;
-    } catch (error) {
-        console.error(error)
-        return [];
-    }
-};
-
-const review = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT reviews.reviewid
-             FROM reviews 
-             INNER JOIN users ON users.userid = reviews.userid 
-             WHERE productid = $1 `,
-            [productID]
-        );
-        return result.rowCount === 0 ? 0 : result.rowCount;
-    } catch (error) {
-        return 0;
-    }
-};
-
-const getColors = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT colorid, colorname, colorclass 
-             FROM productcolors 
-             WHERE productid = $1`,
-            [productID]
-        );
-        return result.rows.length === 0 ? [] : result.rows;
-    } catch (error) {
-        return [];
-    }
-};
-
-const getSizes = async (productID:number) => {
-    try {
-        const result = await client.query(
-            `SELECT sizeid, sizename, instock 
-             FROM productsizes 
-             WHERE productid = $1`,
-            [productID]
-        );
-        return result.rows.length === 0 ? [] : result.rows;
-    } catch (error) {
-        return [];
-    }
-};
-router.get('/home/products',async(req:Request,res:Response)=>{
-    try {
-        const response = await fetchProducts();
-        res.status(200).json({data:response})
-    } catch (error) {
-        res.sendStatus(500)
-    }
+    res.status(200).json({
+      data: {
+        trending: trending.rows.map(toProductCard),
+        top_rated: topRated.rows.map(toProductCard),
+        new_arrival: newArrival.rows.map(toProductCard),
+      },
+    });
+  } catch (error) {
+    console.error('GET /home/trending error:', error);
+    res.status(500).json({ data: { trending: [], top_rated: [], new_arrival: [] } });
+  }
 });
+
+router.get('/home/best-sellers', async (_req: Request, res: Response) => {
+  try {
+    const response = await client.query(`${PRODUCT_SELECT_SQL} ORDER BY COALESCE(pp.sold, 0) DESC, p.createdat DESC LIMIT 8`);
+    res.status(200).json({ data: response.rows.map(toProductCard) });
+  } catch (error) {
+    console.error('GET /home/best-sellers error:', error);
+    res.status(500).json({ data: [] });
+  }
+});
+
+router.get('/home/products', async (_req: Request, res: Response) => {
+  try {
+    const response = await client.query(`${PRODUCT_SELECT_SQL} ORDER BY COALESCE(pp.stars, 0) DESC, COALESCE(pp.rating, 0) DESC, p.createdat DESC LIMIT 12`);
+    const products = await hydrateProducts(response.rows);
+    res.status(200).json({ data: products });
+  } catch (error) {
+    console.error('GET /home/products error:', error);
+    res.status(500).json({ data: [] });
+  }
+});
+
 export default router;
