@@ -585,6 +585,136 @@ async function updateOrderStatusHandler(req: Request, res: Response) {
     res.status(500).json({ error: error?.message || "Server Error" });
   }
 }
+router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Response) => {
+  const { orderID } = req.params;
+
+  try {
+    const orderResult = await client.query(
+      `
+      SELECT
+        o.orderid,
+        o.userid,
+        o.totalamount,
+        o.orderstatus,
+        o.order_status,
+        o.delivery_status,
+        o.tracking_number,
+        o.createdat,
+        o.updatedat,
+        o.is_gift,
+        o.gift_message,
+        o.gift_wrapping_type,
+
+        u.username AS customer_name,
+        u.email AS customer_email,
+        u.mobile_number AS customer_phone,
+
+        a.username AS receiver_name,
+        a.contactnumber AS receiver_phone,
+        a.addressline1,
+        a.addressline2,
+        a.city,
+        a.state,
+        a.country,
+        a.postalcode,
+
+        p.paymentid,
+        p.paymentmethod,
+        p.paymentstatus,
+        p.amount AS paid_amount,
+        p.transactionid,
+
+        s.shippingid,
+        s.shippingmethod,
+        COALESCE(s.shippingcost, 0) AS shippingcost,
+        s.trackingnumber,
+        s.shippedat,
+        s.deliveredat,
+        s.shipped_at,
+        s.delivered_at
+      FROM orders o
+      LEFT JOIN users u ON u.userid = o.userid
+      LEFT JOIN LATERAL (
+        SELECT *
+        FROM shipping s1
+        WHERE s1.orderid = o.orderid
+        ORDER BY s1.shippingid DESC
+        LIMIT 1
+      ) s ON true
+      LEFT JOIN addresses a ON a.addressid = s.addressid
+      LEFT JOIN LATERAL (
+        SELECT *
+        FROM payments p1
+        WHERE p1.orderid = o.orderid
+        ORDER BY p1.paymentid DESC
+        LIMIT 1
+      ) p ON true
+      WHERE o.orderid = $1
+      LIMIT 1
+      `,
+      [orderID],
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy đơn hàng" });
+    }
+
+    const itemsResult = await client.query(
+      `
+      SELECT
+        oi.orderitemid,
+        oi.orderid,
+        oi.productid,
+        oi.quantity,
+        oi.colorid,
+        oi.sizeid,
+        oi.gift_wrapping,
+        oi.gift_wrap_style,
+        oi.gift_message,
+
+        pr.title,
+        pr.price,
+        COALESCE(pr.discount, 0) AS discount,
+        pr.brand,
+        pr.age_group,
+        pr.skill_type,
+
+        pc.colorname,
+        ps.sizename,
+
+        ROUND((pr.price * oi.quantity), 2) AS raw_total,
+        ROUND((pr.price * oi.quantity) * COALESCE(pr.discount, 0) / 100.0, 2) AS discount_amount,
+        ROUND((pr.price * oi.quantity) * (1 - COALESCE(pr.discount, 0) / 100.0), 2) AS line_total
+      FROM orderitems oi
+      LEFT JOIN products pr ON pr.productid = oi.productid
+      LEFT JOIN productcolors pc ON pc.colorid = oi.colorid
+      LEFT JOIN productsizes ps ON ps.sizeid = oi.sizeid
+      WHERE oi.orderid = $1
+      ORDER BY oi.orderitemid ASC
+      `,
+      [orderID],
+    );
+
+    const items = itemsResult.rows;
+    const subtotal = items.reduce((sum: number, item: any) => sum + Number(item.line_total || 0), 0);
+    const shippingCost = Number(orderResult.rows[0].shippingcost || 0);
+
+    return res.status(200).json({
+      data: {
+        ...orderResult.rows[0],
+        items,
+        subtotal,
+        shippingcost: shippingCost,
+        grand_total: Number(orderResult.rows[0].totalamount || subtotal + shippingCost),
+      },
+    });
+  } catch (error) {
+    console.error("GET /admin/orders/:orderID error:", error);
+    return res.status(500).json({ error: "Server Error" });
+  }
+});
+
+
 router.put("/admin/orders/:orderID/status", adminAuth, updateOrderStatusHandler);
 router.patch("/admin/orders/:orderID/status", adminAuth, updateOrderStatusHandler);
 
@@ -1078,6 +1208,90 @@ router.post("/admin/settings", adminAuth, async (req: Request, res: Response) =>
     }
 
     res.status(200).json({ message: "Settings updated" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
+  try {
+    const finishedStatus = ["Delivered", "Completed"];
+    const [summary, topProducts, paymentBreakdown, revenueByDay] = await Promise.all([
+      client.query(
+        `
+        SELECT
+          COALESCE(SUM(CASE WHEN o.orderstatus = ANY($1) OR o.delivery_status = ANY($1) THEN o.totalamount ELSE 0 END), 0) AS revenue,
+          COALESCE(SUM(CASE WHEN (o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)) AND o.createdat >= NOW() - INTERVAL '7 days' THEN o.totalamount ELSE 0 END), 0) AS weekly_revenue,
+          COUNT(*) FILTER (WHERE o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)) AS completed_orders,
+          (SELECT COUNT(*) FROM users WHERE createdat >= NOW() - INTERVAL '30 days') AS new_customers
+        FROM orders o
+        `,
+        [finishedStatus],
+      ),
+      client.query(
+        `
+        SELECT
+          pr.title,
+          COALESCE(SUM(oi.quantity), 0)::int AS sold_quantity,
+          COALESCE(SUM((pr.price * oi.quantity) * (1 - COALESCE(pr.discount, 0) / 100.0)), 0) AS revenue
+        FROM orderitems oi
+        INNER JOIN products pr ON pr.productid = oi.productid
+        INNER JOIN orders o ON o.orderid = oi.orderid
+        WHERE o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)
+        GROUP BY pr.productid, pr.title
+        ORDER BY sold_quantity DESC, revenue DESC
+        LIMIT 10
+        `,
+        [finishedStatus],
+      ),
+      client.query(
+        `
+        SELECT
+          COALESCE(p.paymentmethod, 'Không rõ') AS paymentmethod,
+          COUNT(DISTINCT o.orderid)::int AS orders,
+          COALESCE(SUM(o.totalamount), 0) AS total
+        FROM orders o
+        LEFT JOIN payments p ON p.orderid = o.orderid
+        WHERE o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)
+        GROUP BY COALESCE(p.paymentmethod, 'Không rõ')
+        ORDER BY total DESC
+        `,
+        [finishedStatus],
+      ),
+      client.query(
+        `
+        SELECT
+          DATE_TRUNC('day', createdat)::date AS day,
+          COUNT(*)::int AS orders,
+          COALESCE(SUM(totalamount), 0) AS revenue
+        FROM orders
+        WHERE (orderstatus = ANY($1) OR delivery_status = ANY($1))
+          AND createdat >= NOW() - INTERVAL '14 days'
+        GROUP BY DATE_TRUNC('day', createdat)::date
+        ORDER BY day ASC
+        `,
+        [finishedStatus],
+      ),
+    ]);
+
+    const row = summary.rows[0] || {};
+    const totalOrders = Number(row.completed_orders || 0);
+    const newCustomers = Number(row.new_customers || 0);
+
+    res.status(200).json({
+      data: {
+        revenue: Number(row.revenue || 0),
+        weeklyRevenue: Number(row.weekly_revenue || 0),
+        completedOrders: totalOrders,
+        newCustomers,
+        conversionRate: newCustomers ? Number(((totalOrders / newCustomers) * 100).toFixed(2)) : 0,
+        bestSeller: topProducts.rows[0]?.title || null,
+        topProducts: topProducts.rows,
+        paymentBreakdown: paymentBreakdown.rows,
+        revenueByDay: revenueByDay.rows,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server Error" });

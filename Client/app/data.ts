@@ -1,34 +1,16 @@
 const navBtns = [
   { name: 'Home', isExtendable: false, extendables: [], catLink: '/' },
-  { name: 'Categories', isExtendable: false, extendables: [], catLink: '/categories' },
-  {
-    name: 'Lego',
-    isExtendable: true,
-    extendables: [
-      { title: 'LEGO lắp ráp', link: '/categories/lego-building' },
-      { title: 'Đồ chơi xây dựng', link: '/categories/lego-building' },
-      { title: 'Tư duy logic', link: '/categories/lego-building' },
-    ],
-    catLink: '/categories/lego-building',
-  },
+  { name: 'Categories', isExtendable: false, extendables: [], catLink: '/categories/lego-building' },
+  { name: 'Lego', isExtendable: false, extendables: [], catLink: '/categories/lego-building' },
   { name: 'New arrival', isExtendable: false, extendables: [], catLink: '/categories/new-arrival' },
   { name: 'Best sellers', isExtendable: false, extendables: [], catLink: '/categories/best-sellers' },
-  {
-    name: 'Sale',
-    isExtendable: true,
-    extendables: [
-      { title: 'Đang giảm giá', link: '/categories/sale' },
-      { title: 'Khuyến mãi theo mùa', link: '/categories/sale' },
-    ],
-    catLink: '/categories/sale',
-  },
+  { name: 'Sale', isExtendable: false, extendables: [], catLink: '/categories/sale' },
   { name: 'Blog', isExtendable: false, extendables: [], catLink: '/blog' },
 ];
-
 const categoryDropDown = [
   {
     title: 'LEGO & Building',
-    catLink: '/categories/lego-building',
+    catLink: '/lego-building',
     imgLink: '/images/sale.jpg',
     imgAlt: 'LEGO & Building',
     imgRedirectLink: '/categories/lego-building',
@@ -42,7 +24,7 @@ const categoryDropDown = [
   },
   {
     title: 'STEM & Science',
-    catLink: '/categories/stem-science',
+    catLink: '/stem-science',
     imgLink: '/images/sale2.jpg',
     imgAlt: 'STEM & Science',
     imgRedirectLink: '/categories/stem-science',
@@ -56,7 +38,7 @@ const categoryDropDown = [
   },
   {
     title: 'Remote Control',
-    catLink: '/categories/remote-control',
+    catLink: '/remote-control',
     imgLink: '/images/sale3.jpg',
     imgAlt: 'Remote Control',
     imgRedirectLink: '/categories/remote-control',
@@ -70,7 +52,7 @@ const categoryDropDown = [
   },
   {
     title: 'Dolls & Figures',
-    catLink: '/categories/dolls-figures',
+    catLink: '/dolls-figures',
     imgLink: '/images/sale4.png',
     imgAlt: 'Dolls & Figures',
     imgRedirectLink: '/categories/dolls-figures',
@@ -84,8 +66,8 @@ const categoryDropDown = [
   },
   {
     title: 'Board Games',
-    catLink: '/categories/board-games',
-    imgLink: '/images/sale.jpg',
+    catLink: '/board-games',
+    imgLink: '',
     imgAlt: 'Board Games',
     imgRedirectLink: '/categories/board-games',
     subCategories: [
@@ -98,8 +80,8 @@ const categoryDropDown = [
   },
   {
     title: 'Outdoor & Baby',
-    catLink: '/categories/outdoor-toys',
-    imgLink: '/images/sale2.jpg',
+    catLink: '/outdoor-toys',
+    imgLink: '',
     imgAlt: 'Outdoor & Baby',
     imgRedirectLink: '/categories/outdoor-toys',
     subCategories: [
@@ -112,8 +94,8 @@ const categoryDropDown = [
   },
   {
     title: 'Creative & Puzzle',
-    catLink: '/categories/arts-crafts',
-    imgLink: '/images/sale3.jpg',
+    catLink: '/arts-crafts',
+    imgLink: '',
     imgAlt: 'Creative & Puzzle',
     imgRedirectLink: '/categories/arts-crafts',
     subCategories: [
@@ -126,8 +108,8 @@ const categoryDropDown = [
   },
   {
     title: 'Musical Toys',
-    catLink: '/categories/musical-toys',
-    imgLink: '/images/sale4.png',
+    catLink: '/musical-toys',
+    imgLink: '',
     imgAlt: 'Musical Toys',
     imgRedirectLink: '/categories/musical-toys',
     subCategories: [

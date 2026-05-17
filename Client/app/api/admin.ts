@@ -100,4 +100,14 @@ export async function deleteAdminReview(reviewID: number) { return adminClient.d
 export async function getAdminSettings() { return adminClient.get("/admin/settings"); }
 export async function updateAdminSettings(settings: any) { return adminClient.post("/admin/settings", { settings }); }
 
+export async function getAdminOrderDetail(orderID: number) {
+  return adminClient.get(`/admin/orders/${orderID}`);
+}
+
+export async function getAdminReports() {
+  return adminClient.get("/admin/reports");
+}
+
+
+
 export default adminClient;
