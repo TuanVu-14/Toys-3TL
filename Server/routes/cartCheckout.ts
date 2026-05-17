@@ -1,17 +1,12 @@
 import express, { Request, Response } from "express";
 import { client } from "../data/DB";
-import {
-  paymentCreationSchema,
-  userIDSchema,
-} from "../validators/cartCheckoutValidation";
-import Stripe from "stripe";
+import { paymentCreationSchema, userIDSchema } from "../validators/cartCheckoutValidation";
 import { validationResult, matchedData } from "express-validator";
+
 const router = express.Router();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
-const IDGenerator = () => {
-  const ID = Math.round(Math.random() * 1000 * 1000 * 100);
-  return ID;
-};
+const SHIPPING_CHARGE = 30000;
+const COD_FEE = 15000;
+const IDGenerator = () => Math.round(Math.random() * 1000 * 1000 * 100);
 
 function getGiftOptions(req: Request) {
   return {
@@ -20,505 +15,215 @@ function getGiftOptions(req: Request) {
     gift_message: req.body.gift_message || null,
   };
 }
-function getDateTimeFiveDaysFromNow() {
-  const today = new Date();
-  const fiveDaysFromNow = new Date(today);
-  fiveDaysFromNow.setDate(today.getDate() + 5);
 
-  const year = fiveDaysFromNow.getFullYear();
-  const month = String(fiveDaysFromNow.getMonth() + 1).padStart(2, "0"); // Months are zero-indexed
-  const date = String(fiveDaysFromNow.getDate()).padStart(2, "0");
-  const hours = String(fiveDaysFromNow.getHours()).padStart(2, "0");
-  const minutes = String(fiveDaysFromNow.getMinutes()).padStart(2, "0");
-  const seconds = String(fiveDaysFromNow.getSeconds()).padStart(2, "0");
-
-  return `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
+function getDeliveryDate() {
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 5);
+  return deliveryDate.toISOString().replace("T", " ").slice(0, 19);
 }
 
-const calculateCartAmount = async (userID: any) => {
-  const shippingcharge = 10;
-  const productCheckQuery =
-    "SELECT products.discount,cartitems.quantity FROM cartitems INNER JOIN products ON cartitems.productid = products.productid WHERE userid = $1";
-  const productCheckResult = await client.query(productCheckQuery, [userID]);
-  const priceCalc = productCheckResult.rows.reduce((sum, item) => {
-    return sum + (parseFloat(item.discount) + shippingcharge) * item.quantity;
-  }, 0);
-  const price = priceCalc * 100;
-  // Calculate the order total on the server to prevent
-  // people from directly manipulating the amount on the client
-  return price;
-};
-router.post(
-  "/create/cart-payment/create-payment-intent",
-  userIDSchema,
-  async (req: Request, res: Response) => {
-    const result = validationResult(req);
-    if (result.isEmpty()) {
-      const data = matchedData(req);
-      const userID = data.userID;
-      const { gift_wrapping, gift_wrap_style, gift_message } = getGiftOptions(req);
-      // Create a PaymentIntent with the order amount and currency
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: await calculateCartAmount(userID),
-        currency: "usd",
-        // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-        automatic_payment_methods: {
-          enabled: true,
-        },
-        metadata: {
-          userID,
-          orderType: "cart",
-        },
-      });
-
-      res.send({
-        clientSecret: paymentIntent.client_secret,
-      });
-    } else {
-      res.status(500).json({ message: "Validation error" });
-    }
-  },
-);
-async function fetchProductData(
-  productid: string,
-  colorid: string,
-  sizeid: string,
-  quantity: number,
-) {
-  try {
-    // Fetch product details
-    const productQuery = `
-      SELECT
-        p.title,
-        p.price,
-        p.discount,
-        ps.sizename,
-        pc.colorname,
-        pi.imglink,
-        pi.imgalt
-      FROM products p
-      JOIN productSizes ps ON ps.productid = p.productid AND ps.sizeid = $2
-      JOIN productcolors pc ON pc.productid = p.productid AND pc.colorid = $3
-      JOIN productimages pi ON pi.productid = p.productid AND pi.isprimary = true
-      WHERE p.productid = $1
-    `;
-    const productResult = await client.query(productQuery, [
-      productid,
-      sizeid,
-      colorid,
-    ]);
-
-    if (productResult.rows.length === 0) {
-      return [];
-    }
-
-    const productDetails = productResult.rows[0];
-
-    return {
-      title: productDetails.title,
-      price: productDetails.price,
-      discount: productDetails.discount,
-      sizename: productDetails.sizename,
-      colorname: productDetails.colorname,
-      imglink: productDetails.imglink,
-      imgalt: productDetails.imgalt,
-      shippingcost: 10,
-      quantity,
-    };
-  } catch (error) {
-    return error;
-  }
+async function fetchProductData(productid: string, colorid: string, sizeid: string, quantity: number) {
+  const productQuery = `
+    SELECT p.title,
+           p.price,
+           COALESCE(p.discount, 0) AS discount,
+           ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100) AS discountedprice,
+           ps.sizename,
+           pc.colorname,
+           pi.imglink,
+           pi.imgalt
+    FROM products p
+    JOIN productsizes ps ON ps.productid = p.productid AND ps.sizeid = $2
+    JOIN productcolors pc ON pc.productid = p.productid AND pc.colorid = $3
+    JOIN productimages pi ON pi.productid = p.productid AND pi.isprimary = true
+    WHERE p.productid = $1 AND p.is_active = true
+  `;
+  const productResult = await client.query(productQuery, [productid, sizeid, colorid]);
+  if (productResult.rows.length === 0) return null;
+  return { ...productResult.rows[0], shippingcost: SHIPPING_CHARGE, quantity };
 }
-router.get(
-  "/checkout-cart/product-details/:userID",
-  userIDSchema,
-  async (req: Request, res: Response) => {
-    const result = validationResult(req);
-    if (result.isEmpty()) {
-      const data = matchedData(req);
-      const userID = data.userID;
-      try {
-        // Fetch product details
-        const cartlistQuery = `SELECT productid,sizeid,colorid,quantity FROM cartitems WHERE userid = $1`;
-        const cartItems = await client.query(cartlistQuery, [userID]);
-        if (cartItems.rows.length === 0) {
-          return res.status(404).json({ error: "cart items not found" });
-        }
-        const productResult = await Promise.all(
-          cartItems.rows.map((each) =>
-            fetchProductData(
-              each.productid,
-              each.colorid,
-              each.sizeid,
-              each.quantity,
-              
-            ),
-          ),
-        );
 
-        if (productResult.length === 0) {
-          return res.status(404).json({ error: "Product details not found" });
-        }
-        res.status(200).json({ products: productResult });
-      } catch (error) {
-        console.error("Error fetching product details:", error);
-        res.status(500).json({ error: "Internal Server Error" });
-      }
-    } else {
-      res.status(500).json({ message: "Validation error" });
-    }
-  },
-);
-async function createCashOrder(
-  userid: string,
-  productid: string,
-  colorid: string,
-  sizeid: string,
-  quantity: number,
-  gift_wrapping: boolean = false,
-  gift_wrap_style: string | null = null,
-  gift_message: string | null = null
-) {
-  const orderid = IDGenerator();
-  const shippingid = IDGenerator();
-  const paymentid = IDGenerator();
-  const transactionid = `TS-${IDGenerator()}-${paymentid}-${orderid}`;
-  const orderitemid = IDGenerator();
-  const trackingnumber = `IN${orderid}-${paymentid}-${transactionid}`;
-  const deliveryDate = getDateTimeFiveDaysFromNow();
-  const paymentCharge = 15;
+async function getDefaultAddress(userid: number | string) {
+  const result = await client.query(`SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true`, [userid]);
+  return result.rows[0]?.addressid;
+}
+
+router.get("/checkout-cart/product-details/:userID", userIDSchema, async (req: Request, res: Response) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
+  const { userID } = matchedData(req);
+
   try {
-    // Check if product with given productid, colorid, and sizeid exists
-    const productQuery = `
-      SELECT p.discount
-      FROM products p
-      JOIN productcolors pc ON pc.productid = p.productid AND pc.colorid = $2
-      JOIN productSizes ps ON ps.productid = p.productid AND ps.sizeid = $3
-      WHERE p.productid = $1
-    `;
-    const productResult = await client.query(productQuery, [
-      productid,
-      colorid,
-      sizeid,
-    ]);
+    const cartItems = await client.query(`SELECT productid, sizeid, colorid, quantity FROM cartitems WHERE userid = $1`, [userID]);
+    if (cartItems.rows.length === 0) return res.status(404).json({ error: "cart items not found" });
 
-    if (productResult.rows.length === 0) {
-      return 404;
-    }
-    const addressQuery = `
-      SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true
-    `;
-    const addressResult = await client.query(addressQuery, [userid]);
-
-    if (addressResult.rows.length === 0) {
-      return 404;
-    }
-    const addressid = addressResult.rows[0].addressid;
-    const amount = productResult.rows[0].discount;
-    const shippingcharge = 10 * quantity;
-
-    // Insert into orders table
-    const orderQuery = `
-      INSERT INTO orders (orderid, userid, totalamount, orderstatus, order_code)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-    `;
-    const totalAmount = (
-      shippingcharge +
-      paymentCharge +
-      parseFloat(amount) * quantity
-    ).toFixed(2);
-    await client.query(orderQuery, [
-      orderid,
-      userid,
-      totalAmount,
-      "Confirmed",
-      "IN",
-    ]);
-
-    // Insert into shipping table
-    const shippingQuery = `
-      INSERT INTO shipping (shippingid, orderid, addressid, shippingmethod, shippingcost, trackingnumber, deliveredat)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `;
-    await client.query(shippingQuery, [
-      shippingid,
-      orderid,
-      addressid,
-      "Express",
-      shippingcharge,
-      trackingnumber,
-      deliveryDate,
-    ]);
-
-    // Insert into payments table
-    const paymentQuery = `
-      INSERT INTO payments (paymentid, orderid, paymentmethod, paymentstatus, amount, transactionid,billingaddress)
-      VALUES ($1, $2, $3, $4, $5, $6,$7)
-      RETURNING *
-    `;
-    await client.query(paymentQuery, [
-      paymentid,
-      orderid,
-      "Payment on Delivery",
-      "Pending",
-      parseFloat(amount) * quantity,
-      transactionid,
-      addressid,
-    ]);
-
-    // Insert into orderitems table
-    await client.query(
-      `
-        INSERT INTO orderitems (
-          orderitemid, orderid, productid, quantity, shippingid, paymentid, colorid, sizeid,
-          gift_wrapping, gift_wrap_style, gift_message
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      `,
-      [
-        orderitemid,
-        orderid,
-        productid,
-        quantity,
-        shippingid,
-        paymentid,
-        colorid,
-        sizeid,
-        gift_wrapping,
-        gift_wrap_style,
-        gift_message,
-      ],
+    const products = await Promise.all(
+      cartItems.rows.map((each) => fetchProductData(each.productid, each.colorid, each.sizeid, each.quantity))
     );
+    const validProducts = products.filter(Boolean);
+    if (validProducts.length === 0) return res.status(404).json({ error: "Product details not found" });
 
-    const updateViewQuery = `UPDATE productparams SET sold = sold + 1 WHERE productid = $1`;
-    await client.query(updateViewQuery, [productid]);
-    return 200;
+    return res.status(200).json({ products: validProducts });
   } catch (error) {
-    return 500;
+    console.error("Error fetching cart checkout details:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
-}
-router.post(
-  "/cart-payment-on-delivery/create-order",
-  userIDSchema,
-  async (req: Request, res: Response) => {
-    const result = validationResult(req);
-    if (result.isEmpty()) {
-      const data = matchedData(req);
-const userID = data.userID;
+});
 
-const {
-  gift_wrapping = false,
-  gift_wrap_style = null,
-  gift_message = null,
-} = req.body;
+async function createCartOrder({
+  userID,
+  paymentMethod,
+  paymentStatus,
+  paymentFee,
+  gift_wrapping,
+  gift_wrap_style,
+  gift_message,
+}: {
+  userID: string | number;
+  paymentMethod: string;
+  paymentStatus: string;
+  paymentFee: number;
+  gift_wrapping: boolean;
+  gift_wrap_style: string | null;
+  gift_message: string | null;
+}) {
+  await client.query("BEGIN");
+  try {
+    const cartItems = await client.query(`SELECT productid, sizeid, colorid, quantity FROM cartitems WHERE userid = $1`, [userID]);
+    if (cartItems.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return { status: 404, error: "cart items not found" };
+    }
 
-try {
-  const cartlistQuery = `SELECT productid,sizeid,colorid,quantity FROM cartitems WHERE userid = $1`;
-  const cartItems = await client.query(cartlistQuery, [userID]);
+    const addressid = await getDefaultAddress(userID);
+    if (!addressid) {
+      await client.query("ROLLBACK");
+      return { status: 404, error: "Address not found" };
+    }
 
-  if (cartItems.rows.length === 0) {
-    return res.status(404).json({ error: "cart items not found" });
-  }
+    let itemsAmount = 0;
+    let totalShipping = 0;
+    const orderItems: any[] = [];
 
-  await Promise.all(
-    cartItems.rows.map((each) =>
-      createCashOrder(
-        userID,
-        each.productid,
-        each.colorid,
-        each.sizeid,
-        each.quantity,
-        gift_wrapping,
-        gift_wrap_style,
-        gift_message
+    for (const item of cartItems.rows) {
+      const product = await fetchProductData(item.productid, item.colorid, item.sizeid, item.quantity);
+      if (!product) continue;
+      const lineAmount = Number(product.discountedprice) * Number(item.quantity);
+      itemsAmount += lineAmount;
+      totalShipping += SHIPPING_CHARGE * Number(item.quantity);
+      orderItems.push({ ...item, lineAmount });
+    }
+
+    if (orderItems.length === 0) {
+      await client.query("ROLLBACK");
+      return { status: 404, error: "Product details not found" };
+    }
+
+    const totalAmount = itemsAmount + totalShipping + paymentFee;
+    const orderResult = await client.query(
+      `
+      INSERT INTO orders (
+        userid, totalamount, orderstatus, order_code,
+        is_gift, gift_message, gift_wrapping_type,
+        order_status, delivery_status
       )
-    )
-  );
-
-  res.status(200).json({ message: "Successfully created orders" });
-} catch (error) {
-  res.status(500).json({ error: "Server Internal Server" });
-}
-    } else {
-      res.status(500).json({ message: "Validation error" });
-    }
-  },
-);
-async function createCardOrder(
-  userid: string,
-  productid: string,
-  colorid: string,
-  sizeid: string,
-  paymentid: string,
-  paymentStatus: string,
-  quantity: number,
-  gift_wrapping: boolean = false,
-  gift_wrap_style: string | null = null,
-  gift_message: string | null = null
-) {
-  const paymentState = paymentStatus === "Succeeded" ? "Confirmed" : "Pending";
-  const orderid = IDGenerator();
-  const paymentID = IDGenerator();
-  const shippingid = IDGenerator();
-  const transactionid = `TS-${IDGenerator()}-${paymentID}-${orderid}`;
-  const orderitemid = IDGenerator();
-  const trackingnumber = `IN${orderid}-${paymentID}-${transactionid}`;
-  const deliveryDate = getDateTimeFiveDaysFromNow();
-  const paymentCharge = 0;
-  try {
-    // Check if product with given productid, colorid, and sizeid exists
-    const productQuery = `
-      SELECT p.discount
-      FROM products p
-      JOIN productcolors pc ON pc.productid = p.productid AND pc.colorid = $2
-      JOIN productSizes ps ON ps.productid = p.productid AND ps.sizeid = $3
-      WHERE p.productid = $1
-    `;
-    const productResult = await client.query(productQuery, [
-      productid,
-      colorid,
-      sizeid,
-    ]);
-
-    if (productResult.rows.length === 0) {
-      return 404;
-    }
-    const addressQuery = `
-      SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true
-    `;
-    const addressResult = await client.query(addressQuery, [userid]);
-
-    if (addressResult.rows.length === 0) {
-      return 404;
-    }
-    const addressid = addressResult.rows[0].addressid;
-    const amount = productResult.rows[0].discount;
-    const shippingcharge = 10 * quantity;
-
-    // Insert into orders table
-    const orderQuery = `
-      INSERT INTO orders (orderid, userid, totalamount, orderstatus, order_code)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *
-    `;
-    const totalAmount = (
-      shippingcharge +
-      paymentCharge +
-      parseFloat(amount) * quantity
-    ).toFixed(2);
-    await client.query(orderQuery, [
-      orderid,
-      userid,
-      totalAmount,
-      "Confirmed",
-      "IN",
-    ]);
-
-    // Insert into shipping table
-    const shippingQuery = `
-      INSERT INTO shipping (shippingid, orderid, addressid, shippingmethod, shippingcost, trackingnumber, deliveredat)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `;
-    await client.query(shippingQuery, [
-      shippingid,
-      orderid,
-      addressid,
-      "Express",
-      shippingcharge,
-      trackingnumber,
-      deliveryDate,
-    ]);
-
-    // Insert into payments table
-    const paymentQuery = `
-      INSERT INTO payments (paymentid, orderid, paymentmethod, paymentstatus, amount, transactionid,billingaddress,paymentgateway_id)
-      VALUES ($1, $2, $3, $4, $5, $6,$7,$8)
-      RETURNING *
-    `;
-    await client.query(paymentQuery, [
-      paymentID,
-      orderid,
-      "Card",
-      paymentState,
-      parseFloat(amount) * quantity,
-      transactionid,
-      addressid,
-      paymentid,
-    ]);
-
-    // Insert into orderitems table
-    await client.query(
-      `
-        INSERT INTO orderitems (
-          orderitemid, orderid, productid, quantity, shippingid, paymentid, colorid, sizeid,
-          gift_wrapping, gift_wrap_style, gift_message
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING orderid
       `,
-      [
-        orderitemid,
-        orderid,
-        productid,
-        quantity,
-        shippingid,
-        paymentID,
-        colorid,
-        sizeid,
-        gift_wrapping,
-        gift_wrap_style,
-        gift_message,
-      ],
+      [userID, totalAmount, "Confirmed", "IN", gift_wrapping, gift_message, gift_wrap_style, "Confirmed", "Confirmed"]
     );
 
-    const updateViewQuery = `UPDATE productparams SET sold = sold + 1 WHERE productid = $1`;
-    await client.query(updateViewQuery, [productid]);
-    return 200;
+    const orderid = orderResult.rows[0].orderid;
+    const shippingid = IDGenerator();
+    const paymentid = IDGenerator();
+    const transactionid = `${paymentMethod.replace(/\s+/g, "-").toUpperCase()}-${orderid}-${paymentid}`;
+    const trackingnumber = `IN${orderid}-${paymentid}`;
+
+    await client.query(
+      `INSERT INTO shipping (shippingid, orderid, addressid, shippingmethod, shippingcost, trackingnumber, deliveredat)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [shippingid, orderid, addressid, "Giao hàng tiêu chuẩn", totalShipping, trackingnumber, getDeliveryDate()]
+    );
+
+    await client.query(
+      `INSERT INTO payments (paymentid, orderid, paymentmethod, paymentstatus, amount, transactionid, billingaddress, paymentgateway_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [paymentid, orderid, paymentMethod, paymentStatus, itemsAmount, transactionid, addressid, paymentStatus === "Paid" ? `DEMO-${Date.now()}` : null]
+    );
+
+    for (const item of orderItems) {
+      const orderitemid = IDGenerator();
+      await client.query(
+        `
+        INSERT INTO orderitems (
+          orderitemid, orderid, productid, quantity, shippingid, paymentid,
+          colorid, sizeid, gift_wrapping, gift_wrap_style, gift_message
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `,
+        [
+          orderitemid,
+          orderid,
+          item.productid,
+          item.quantity,
+          shippingid,
+          paymentid,
+          item.colorid,
+          item.sizeid,
+          gift_wrapping,
+          gift_wrap_style,
+          gift_message,
+        ]
+      );
+      await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2 WHERE productid = $1`, [item.productid, item.quantity]);
+      await client.query(`UPDATE products SET stock = GREATEST(stock - $2, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`, [item.productid, item.quantity]);
+    }
+
+    await client.query(`DELETE FROM cartitems WHERE userid = $1`, [userID]);
+    await client.query("COMMIT");
+    return { status: 200, orderid };
   } catch (error) {
-    console.error("Error creating order:", error);
-    return 500;
+    await client.query("ROLLBACK");
+    console.error("Error creating cart order:", error);
+    return { status: 500, error: "Internal Server Error" };
   }
 }
-router.post(
-  "/cart-card/create-order",
-  paymentCreationSchema,
-  async (req: Request, res: Response) => {
-    const result = validationResult(req);
-    if (result.isEmpty()) {
-      const data = matchedData(req);
-      const { userID, paymentid, paymentstatus } = data;
-      const { gift_wrapping, gift_wrap_style, gift_message } = getGiftOptions(req);
-      try {
-        const cartlistQuery = `SELECT productid,sizeid,colorid,quantity FROM cartitems WHERE userid = $1`;
-        const cartItems = await client.query(cartlistQuery, [userID]);
-        if (cartItems.rows.length === 0) {
-          return res.status(404).json({ error: "cart items not found" });
-        }
 
-        cartItems.rows.map(
-          async (each) =>
-            await createCardOrder(
-              userID,
-              each.productid,
-              each.colorid,
-              each.sizeid,
-              paymentid,
-              paymentstatus,
-              each.quantity,
-            ),
-        );
+router.post("/cart-payment-on-delivery/create-order", userIDSchema, async (req: Request, res: Response) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
+  const { userID } = matchedData(req);
+  const gift = getGiftOptions(req);
 
-        res.status(200).json({ message: "Successfully created orders" });
-      } catch (error) {
-        res.status(500).json({ error: "Server Internal Server" });
-      }
-    } else {
-      console.log(result);
-      res.status(500).json({ message: "Validation error" });
-    }
-  },
-);
+  const created = await createCartOrder({
+    userID,
+    paymentMethod: "Thanh toán khi nhận hàng",
+    paymentStatus: "Pending",
+    paymentFee: COD_FEE,
+    ...gift,
+  });
+
+  if (created.status === 200) return res.status(200).json({ orderid: created.orderid, message: "Successfully created order" });
+  return res.status(created.status).json({ error: created.error });
+});
+
+router.post("/cart-online/create-order", paymentCreationSchema, async (req: Request, res: Response) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
+  const { userID } = matchedData(req);
+  const gift = getGiftOptions(req);
+  const paymentMethod = String(req.body.paymentMethod || "Thanh toán online");
+
+  const created = await createCartOrder({
+    userID,
+    paymentMethod,
+    paymentStatus: "Paid",
+    paymentFee: 0,
+    ...gift,
+  });
+
+  if (created.status === 200) return res.status(200).json({ orderid: created.orderid, message: "Successfully created order" });
+  return res.status(created.status).json({ error: created.error });
+});
 
 export default router;

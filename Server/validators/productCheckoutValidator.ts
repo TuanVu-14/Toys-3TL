@@ -1,169 +1,59 @@
-import { checkSchema } from 'express-validator';
+import { checkSchema } from "express-validator";
+import type { Location } from "express-validator";
+
+const idBody = {
+  in: ["body"] as Location[],
+  isInt: true,
+  toInt: true,
+  isLength: { options: { min: 1, max: 10 } },
+  notEmpty: true,
+  trim: true,
+};
+
+const idParam = {
+  in: ["params"] as Location[],
+  isInt: true,
+  toInt: true,
+  isLength: { options: { min: 1, max: 15 } },
+  notEmpty: true,
+  trim: true,
+};
+
 const orderCreationSchema = checkSchema({
-    userid: {
-        in: ['body'],
-        errorMessage: 'The userID must be provided',
-        isInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
-    },
-    productid: {
-        in: ['body'],
-        errorMessage: 'The productid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    colorid: {
-        in: ['body'],
-        errorMessage: 'The colorid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    sizeid: {
-        in: ['body'],
-        errorMessage: 'The sizeid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    }
+  userid: { ...idBody, errorMessage: "The userID must be provided" },
+  productid: { ...idBody, errorMessage: "The productid must be provided correctly" },
+  colorid: { ...idBody, errorMessage: "The colorid must be provided correctly" },
+  sizeid: { ...idBody, errorMessage: "The sizeid must be provided correctly" },
 });
+
 const orderCreationSchema2 = checkSchema({
-    userid: {
-        in: ['body'],
-        errorMessage: 'The userID must be provided',
-        isInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
-    },
-    productid: {
-        in: ['body'],
-        errorMessage: 'The productid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    colorid: {
-        in: ['body'],
-        errorMessage: 'The colorid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    sizeid: {
-        in: ['body'],
-        errorMessage: 'The sizeid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    paymentid: {
-        in: ['body'],
-        errorMessage: 'The paymentID must be provided',
-        isLength:{options:{min:1,max:255}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    paymentStatus: {
-        in: ['body'],
-        errorMessage: 'The paymentStatus must be provided correctly',
-        isString:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    }
+  userid: { ...idBody, errorMessage: "The userID must be provided" },
+  productid: { ...idBody, errorMessage: "The productid must be provided correctly" },
+  colorid: { ...idBody, errorMessage: "The colorid must be provided correctly" },
+  sizeid: { ...idBody, errorMessage: "The sizeid must be provided correctly" },
+  paymentMethod: {
+    in: ["body"] as Location[],
+    optional: true,
+    isString: true,
+    isLength: { options: { min: 1, max: 100 } },
+    trim: true,
+    escape: true,
+  },
 });
+
 const OrderIDSchema = checkSchema({
-    orderID: {
-        in: ['params'],
-        errorMessage: 'The productid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:15}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    }
+  orderID: { ...idParam, errorMessage: "The orderID must be provided correctly" },
 });
+
 const checkoutSchema = checkSchema({
-    productid: {
-        in: ['params'],
-        errorMessage: 'The productid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    sizeid: {
-        in: ['params'],
-        errorMessage: 'The sizeid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    colorid: {
-        in: ['params'],
-        errorMessage: 'The colorid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    }
+  productid: { ...idParam, errorMessage: "The productid must be provided correctly" },
+  sizeid: { ...idParam, errorMessage: "The sizeid must be provided correctly" },
+  colorid: { ...idParam, errorMessage: "The colorid must be provided correctly" },
 });
+
 const createPaymentIntent = checkSchema({
-    item: {
-        in: ['body'],
-        errorMessage: 'The productid must be provided correctly',
-        isInt:true,
-        toInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        trim:true,
-        escape:true
-    },
-    userID: {
-        in: ['body'],
-        errorMessage: 'The userID must be provided',
-        isInt:true,
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
-    }
+  item: { ...idBody, errorMessage: "The productid must be provided correctly" },
+  userID: { ...idBody, errorMessage: "The userID must be provided" },
 });
-export {orderCreationSchema,orderCreationSchema2,checkoutSchema,OrderIDSchema,createPaymentIntent}
+
+export { orderCreationSchema, orderCreationSchema2, checkoutSchema, OrderIDSchema, createPaymentIntent };

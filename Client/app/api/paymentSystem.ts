@@ -3,13 +3,12 @@
 import axios from "axios";
 import { sign } from "jsonwebtoken";
 
-async function encrypt(key: string) {
-  const encryptedKey = await sign({}, key);
-  return encryptedKey;
-}
-
 const url = process.env.BACKEND_URL;
 const authKey = process.env.AUTH_KEY as string;
+
+async function encrypt(key: string) {
+  return sign({}, key);
+}
 
 type GiftOptions = {
   gift_wrapping?: boolean;
@@ -17,31 +16,38 @@ type GiftOptions = {
   gift_message?: string;
 };
 
-type PaymentMethodPayload = {
-  paymentmethod?: string;
+export type PaymentMethod = {
+  id: number;
+  name: string;
+  type: string;
+  status: boolean;
+  config?: {
+    provider?: string;
+    fee?: number;
+    description?: string;
+    icon?: string;
+    qrImageUrl?: string;
+    qrPayload?: string;
+    bankBin?: string;
+    bankAccount?: string;
+    bankAccountName?: string;
+    storeName?: string;
+  };
 };
 
-// Stripe đã tắt. Giữ function này để các import cũ không bị lỗi build,
-// nhưng không gọi backend Stripe nữa.
-export default async function paymentGatewayHandler() {
-  return {
-    status: 410,
-    error: "Stripe payment gateway is disabled",
-  };
+async function authHeaders() {
+  const sendingKey = await encrypt(authKey);
+  return { authorization: `Bearer ${sendingKey}` };
 }
 
 export async function paymentMethodsHandler() {
-  const sendingKey = await encrypt(authKey);
-
   try {
     const response = await axios.get(`${url}/api/payment-methods`, {
-      headers: { authorization: `Bearer ${sendingKey}` },
-      validateStatus: () => true,
+      headers: await authHeaders(),
     });
-
-    return { status: response.status, data: response.data };
+    return { status: response.status, data: response.data as PaymentMethod[] };
   } catch (error) {
-    return { status: 500, error: "Internal Server Error" };
+    return { status: 500, data: [] as PaymentMethod[], error: "Internal Server Error" };
   }
 }
 
@@ -54,36 +60,23 @@ export async function checkoutProductDataHandler({
   colorID: string;
   sizeID: string;
 }) {
-  const sendingKey = await encrypt(authKey);
-
   try {
     const response = await axios.get(
       `${url}/api/checkout/product-details/${productID}/${sizeID}/${colorID}`,
-      {
-        headers: { authorization: `Bearer ${sendingKey}` },
-        validateStatus: () => true,
-      },
+      { headers: await authHeaders() }
     );
-
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
   }
 }
 
-export async function orderStatusDataHandler({
-  orderID,
-}: {
-  orderID: string | string[];
-}) {
-  const sendingKey = await encrypt(authKey);
-
+export async function orderStatusDataHandler({ orderID }: { orderID: string | string[] }) {
   try {
     const response = await axios.get(`${url}/api/orders/status/${orderID}`, {
-      headers: { authorization: `Bearer ${sendingKey}` },
+      headers: await authHeaders(),
       validateStatus: () => true,
     });
-
     return { status: response.status };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -98,48 +91,30 @@ export async function paymentOnDeliveryHandler({
   gift_wrapping = false,
   gift_wrap_style = "",
   gift_message = "",
-  paymentmethod = "Thanh toán khi nhận hàng",
 }: {
   userid: number;
   productid: string | string[];
   colorid: string | string[];
   sizeid: string | string[];
-} & GiftOptions &
-  PaymentMethodPayload) {
-  const sendingKey = await encrypt(authKey);
-
+} & GiftOptions) {
   try {
     const response = await axios.post(
       `${url}/api/payment-on-delivery/create-order`,
-      {
-        userid,
-        productid,
-        colorid,
-        sizeid,
-        gift_wrapping,
-        gift_wrap_style,
-        gift_message,
-        paymentmethod,
-      },
-      {
-        headers: { authorization: `Bearer ${sendingKey}` },
-        validateStatus: () => true,
-      },
+      { userid, productid, colorid, sizeid, gift_wrapping, gift_wrap_style, gift_message },
+      { headers: await authHeaders() }
     );
-
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
   }
 }
 
-export async function cardCheckoutHandler({
+export async function onlineCheckoutHandler({
   userid,
   productid,
   colorid,
   sizeid,
-  paymentid,
-  paymentStatus,
+  paymentMethod,
   gift_wrapping = false,
   gift_wrap_style = "",
   gift_message = "",
@@ -148,31 +123,23 @@ export async function cardCheckoutHandler({
   productid: string | string[];
   colorid: string | string[];
   sizeid: string | string[];
-  paymentid: string;
-  paymentStatus: string;
+  paymentMethod: string;
 } & GiftOptions) {
-  const sendingKey = await encrypt(authKey);
-
   try {
     const response = await axios.post(
-      `${url}/api/card/create-order`,
+      `${url}/api/online/create-order`,
       {
         userid,
         productid,
         colorid,
         sizeid,
-        paymentid,
-        paymentStatus,
+        paymentMethod,
         gift_wrapping,
         gift_wrap_style,
         gift_message,
       },
-      {
-        headers: { authorization: `Bearer ${sendingKey}` },
-        validateStatus: () => true,
-      },
+      { headers: await authHeaders() }
     );
-
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -180,54 +147,10 @@ export async function cardCheckoutHandler({
 }
 
 export async function checkoutCartProductDataHandler(userID: number) {
-  const sendingKey = await encrypt(authKey);
-
   try {
-    const response = await axios.get(
-      `${url}/api/checkout-cart/product-details/${userID}`,
-      {
-        headers: { authorization: `Bearer ${sendingKey}` },
-        validateStatus: () => true,
-      },
-    );
-
-    return { status: response.status, data: response.data };
-  } catch (error) {
-    return { status: 500, error: "Internal Server Error" };
-  }
-}
-
-export async function cartCardCheckoutHandler({
-  userID,
-  paymentid,
-  paymentstatus,
-  gift_wrapping = false,
-  gift_wrap_style = "",
-  gift_message = "",
-}: {
-  userID: number;
-  paymentid: string;
-  paymentstatus: string;
-} & GiftOptions) {
-  const sendingKey = await encrypt(authKey);
-
-  try {
-    const response = await axios.post(
-      `${url}/api/cart-card/create-order`,
-      {
-        userID,
-        paymentid,
-        paymentstatus,
-        gift_wrapping,
-        gift_wrap_style,
-        gift_message,
-      },
-      {
-        headers: { authorization: `Bearer ${sendingKey}` },
-        validateStatus: () => true,
-      },
-    );
-
+    const response = await axios.get(`${url}/api/checkout-cart/product-details/${userID}`, {
+      headers: await authHeaders(),
+    });
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -242,33 +165,46 @@ export async function cartCashCheckoutHandler({
 }: {
   userID: number;
 } & GiftOptions) {
-  const sendingKey = await encrypt(authKey);
-
   try {
     const response = await axios.post(
       `${url}/api/cart-payment-on-delivery/create-order`,
-      {
-        userID,
-        gift_wrapping,
-        gift_wrap_style,
-        gift_message,
-      },
-      {
-        headers: { authorization: `Bearer ${sendingKey}` },
-        validateStatus: () => true,
-      },
+      { userID, gift_wrapping, gift_wrap_style, gift_message },
+      { headers: await authHeaders() }
     );
-
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
   }
 }
 
-// Stripe đã tắt. Giữ function này để các import cũ không bị lỗi build.
-export async function paymentGatewayCartHandler() {
-  return {
-    status: 410,
-    error: "Stripe payment gateway is disabled",
-  };
+export async function cartOnlineCheckoutHandler({
+  userID,
+  paymentMethod,
+  gift_wrapping = false,
+  gift_wrap_style = "",
+  gift_message = "",
+}: {
+  userID: number;
+  paymentMethod: string;
+} & GiftOptions) {
+  try {
+    const response = await axios.post(
+      `${url}/api/cart-online/create-order`,
+      { userID, paymentMethod, gift_wrapping, gift_wrap_style, gift_message },
+      { headers: await authHeaders() }
+    );
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    return { status: 500, error: "Internal Server Error" };
+  }
 }
+
+// Giữ export cũ để các file khác chưa sửa không bị lỗi import.
+export default async function paymentGatewayHandler() {
+  return { status: 410, clientSecret: "", error: "Stripe was removed" };
+}
+export async function paymentGatewayCartHandler() {
+  return { status: 410, clientSecret: "", error: "Stripe was removed" };
+}
+export const cardCheckoutHandler = onlineCheckoutHandler;
+export const cartCardCheckoutHandler = cartOnlineCheckoutHandler;
