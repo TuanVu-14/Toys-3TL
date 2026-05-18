@@ -26,7 +26,7 @@ const Signup = () => {
         }else toggleIsPassword();
     };
   return (
-    <section className={`bg-gray-50 h-screen w-screen relative flex items-start lg:items-center overflow-x-hidden`}>
+    <section className={`bg-pink-50 h-screen w-screen relative flex items-start lg:items-center overflow-x-hidden`}>
         {loading && <div className='w-full h-full absolute'>{loading && <div className='absolute left-0 right-0 top-[30%] z-50'><Loading/></div>}</div> }
         <section className="w-[95%] mx-auto flex justify-center">
             <div className='flex lg:h-[800px] justify-between gap-10'>

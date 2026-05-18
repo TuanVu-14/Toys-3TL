@@ -1,153 +1,156 @@
-import React,{useEffect, useRef, useState} from 'react'
-import { CheckIcon, ShoppingCartIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
-import DropdownMenu from './Dropdown';
+import React, { useEffect, useRef, useState } from 'react';
+import { ShoppingCartIcon } from '@heroicons/react/24/outline';
 import formatDate from '@/app/api/dateConvert';
 import { ordersHandler } from '@/app/api/orders';
 import Link from 'next/link';
 import Loading from '../Loading';
-import { useRouter } from 'next/navigation';
 import NotLoggedin from './NotLoggedin';
 import NoOrders from './NoOrders';
-interface orderDataflow{
-    orderid:number;
-    totalamount:number;
-    orderstatus:string;
-    createdat:string;
-    deliveredat:string;
-    title:string;
-    imglink:string;
-    imgalt:string;
-    description:string;
-    discount:number;
-    order_code:string;
-    productid:string
-}
-const Order = () => {
-    const router = useRouter();
-    const [menu, setmenu] = useState<null | number>(null);
-    const loggedIn = useRef(true);
-    const found = useRef(false);
-    const dataVar = useRef<orderDataflow[]>([])
-    const data = dataVar.current;
-    const [loading, setLoading] = useState(true);
-    const toggleMenu = (index:number)=>{
-        if(typeof(menu)==='number') setmenu(null);
-        else setmenu(index);
-    };
-    async function orderData(){
-        const temp_data = await ordersHandler();
-        switch (temp_data.status) {
-            case 200:
-                if(temp_data.data.data != undefined){
-                    dataVar.current = temp_data.data.data;
-                    found.current = true;
-                }
-                setLoading(false);
-                break;
-            case 250:
-                loggedIn.current = false;
-                setLoading(false);
-                break;
-            default:
-                setLoading(false);
-                break;
-        }
-    }
-    useEffect(() => {
-      orderData();
-    }, [])
-    const Dropdown = [
-        {
-            title:'View',
-            link:'/order-detail/',
-        },
-        {
-            title:'Invoice',
-            link:'/order-detail/',
-        }
-    ]
-  return (
-    <div className='flex flex-col gap-10'>
-        <section className='border-t-[1px]'></section>
-        <section className='w-[95%] mx-auto flex flex-col gap-2'>
-            <p className='font-semibold text-3xl'>Order history</p>
-            <p className='text-silver text-sm'>Check the status of recent orders, manage returns, and discover similar products.</p>
-        </section>
-        <section className='flex gap-8 flex-col mb-10 relative'>
-            {(loggedIn.current && !loading && data.length===0) && <NoOrders/>}
-            {(!loggedIn.current && !loading) && <NotLoggedin/>}
-            {loading && <div className='h-[300px]'></div>}
-            {loading && <div className='absolute left-0 right-0 z-50'><Loading/></div>}
-            {data.map((order,index) => <section key={index} className='min-w-[90%] max-w-[90%] md:max-w-[720px] lg:min-w-[900px] mx-auto rounded-xl gap-5 border-[1px]'>
-                <div className='px-5 py-5'>
-                    <div className='flex gap-8 justify-between items-center  border-b-[1px] pb-4'>
-                        <div className='flex gap-10 items-center'>
-                            <div className='flex flex-col gap-1'>
-                                <p className='font-medium text-sm'>Order number</p>
-                                <p className='text-silver font-medium text-sm'>{order.order_code}{order.orderid}</p>
-                            </div>
-                            <div className='hidden md:flex-col gap-1 md:flex'>
-                                <p className='font-medium text-sm'>Date placed</p>
-                                <p className='text-silver font-medium text-sm'>{formatDate(order.createdat)}</p>
-                            </div>
-                            <div className='flex flex-col gap-1'>
-                                <p className='font-medium text-sm'>Total amount</p>
-                                <p className='font-medium text-sm'>${order.totalamount}</p>
-                            </div>
-                        </div>
-                        <div onClick={()=>toggleMenu(index)} className='flex flex-col gap-1 md:hidden'>
-                                <EllipsisVerticalIcon className='h-[25px] text-silver hover:text-black cursor-pointer'/>
-                                <div className='relative'>
-                                    {menu===index && <DropdownMenu options={Dropdown} orderid={order.orderid}/>}
-                                </div>
-                        </div>
-                        <div className='gap-5 hidden md:flex'>
-                            <button onClick={()=>router.push(`/order-detail/${order.orderid}`)} className='border-[1px] border-gray-300 py-2 px-3 rounded-lg bg-white text-davysilver font-medium text-sm transition-colors duration-150 hover:bg-btnpurple hover:text-white'>View Order</button>
-                            <button className='border-[1px] border-gray-300 py-2 px-3 rounded-lg bg-white text-davysilver font-medium text-sm transition-colors duration-150 hover:bg-btnpurple hover:text-white'>View Invoice</button>
-                        </div>
-                    </div>
-                    <div className='flex gap-8 py-5 px-2 border-b-[1px]'>
-                        <div>
-                            <Link href={`/product/${order.productid}`}><img className='rounded-lg max-h-[150px] min-w-[150px] cursor-pointer' alt={order.imgalt} src={order.imglink}/></Link>
-                        </div>
-                        <div className='flex flex-col gap-2 w-full'>
-                            <div className='flex justify-between flex-col gap-2 sm:gap-0 sm:flex-row'>
-                                <Link href={`/product/${order.productid}`}><div className='font-medium text-sm cursor-pointer'>{order.title}</div></Link>
-                                <div className='font-medium'>${order.discount}</div>
-                            </div>
-                            <div>
-                                <p className='text-silver text-sm hidden sm:block'>{order.description}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className='flex justify-between flex-col sm:flex-row items-end pt-2'>
-                        {order.orderstatus==='Delivered' ? 
-                            <div className='flex items-center gap-2 mx-auto sm:mx-0'>
-                                <div className='rounded-full w-6 bg-green-400 px-1 py-1 text-white'>
-                                    <CheckIcon/>
-                                </div>
-                                <p className='text-sm font-medium'>Delivered on {formatDate(order.deliveredat)}</p>
-                            </div>
-                        :
-                            <div className='flex items-center gap-2 mx-auto sm:mx-0'>
-                                <div className='rounded-full w-6 bg-yellow-400 px-1 py-1 text-white'>
-                                    <ShoppingCartIcon/>
-                                </div>
-                                <p className='text-sm font-medium'>Coming on {formatDate(order.deliveredat)}</p>
-                            </div>
-                        }
-                        <div className='mt-3 mb-3 h-[1px] bg-gray-200 w-full flex sm:hidden'></div>
-                        <div className='w-full justify-evenly flex sm:w-auto'>
-                            <Link href={`/product/${order.productid}`}><button className='sm:border-r-[1px] sm:px-4 text-sm font-medium text-btnpurple'>View product</button></Link>
-                            <div className='h-[20px] border-r-[1px] bg-gray-200 w-[1px] flex sm:hidden'></div>
-                            <button className='px-4 text-sm font-medium text-btnpurple'>Buy again</button>
-                        </div>
-                    </div>
-                </div>
-            </section>)}
-        </section>
-    </div>
-  )
+import { formatPrice } from '@/features/UIUpdates/CartWishlist';
+
+interface OrderDataflow {
+  orderid: number;
+  totalamount: number | string;
+  orderstatus: string;
+  createdat: string;
+  deliveredat: string;
+  title: string;
+  imglink: string;
+  imgalt: string;
+  description: string;
+  discount?: number | string;
+  price?: number | string;
+  discountedprice?: number | string;
+  productprice?: number | string;
+  order_code: string;
+  productid: string | number;
 }
 
-export default Order
+const getLinePrice = (order: OrderDataflow) => {
+  if (order.discountedprice !== undefined) return order.discountedprice;
+  if (order.productprice !== undefined) return order.productprice;
+  if (order.price !== undefined) {
+    const price = Number(order.price || 0);
+    const discount = Number(order.discount || 0);
+    return Math.round(price * (100 - discount) / 100);
+  }
+  return order.totalamount;
+};
+
+const Order = () => {
+  const loggedIn = useRef(true);
+  const found = useRef(false);
+  const dataVar = useRef<OrderDataflow[]>([]);
+  const data = dataVar.current;
+  const [loading, setLoading] = useState(true);
+
+  async function orderData() {
+    const tempData = await ordersHandler();
+    switch (tempData.status) {
+      case 200:
+        if (tempData.data.data !== undefined) {
+          dataVar.current = tempData.data.data;
+          found.current = true;
+        }
+        setLoading(false);
+        break;
+      case 250:
+        loggedIn.current = false;
+        setLoading(false);
+        break;
+      default:
+        setLoading(false);
+        break;
+    }
+  }
+
+  useEffect(() => {
+    orderData();
+  }, []);
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <h1 className="text-3xl font-bold tracking-tight text-gray-900">Order history</h1>
+      <p className="mt-2 text-sm text-gray-500">
+        Check the status of recent orders, manage returns, and discover similar products.
+      </p>
+
+      {loading && <Loading />}
+      {loggedIn.current && !loading && data.length === 0 && <NoOrders />}
+      {!loggedIn.current && !loading && <NotLoggedin />}
+
+      <div className="mt-8 space-y-6">
+        {data.map((order) => (
+          <div key={order.orderid} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="grid grid-cols-1 gap-4 border-b border-gray-200 pb-5 md:grid-cols-4 md:items-center">
+              <div>
+                <p className="font-semibold text-gray-900">Order number</p>
+                <p className="mt-1 text-sm text-gray-600">{order.order_code}{order.orderid}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Date placed</p>
+                <p className="mt-1 text-sm text-gray-600">{formatDate(order.createdat)}</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Total amount</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">{formatPrice(order.totalamount)}</p>
+              </div>
+              <div className="flex gap-3 md:justify-end">
+                <Link
+                  href={`/order-detail/${order.orderid}`}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-btnpurple hover:text-white"
+                >
+                  View Order
+                </Link>
+                <Link
+                  href={`/order-detail/${order.orderid}?invoice=1`}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-btnpurple hover:text-white"
+                >
+                  View Invoice
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 py-5 md:grid-cols-[240px_1fr_auto] md:items-start">
+              <Link href={`/product/${order.productid}`}>
+                <img
+                  src={order.imglink}
+                  alt={order.imgalt || order.title}
+                  className="h-24 w-full rounded-lg object-cover md:w-60"
+                />
+              </Link>
+              <div>
+                <Link href={`/product/${order.productid}`} className="font-semibold text-gray-900 hover:text-btnpurple">
+                  {order.title}
+                </Link>
+                <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600">{order.description}</p>
+              </div>
+              <p className="text-right font-semibold text-gray-900">{formatPrice(getLinePrice(order))}</p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-4">
+              <div className="flex items-center gap-2 font-semibold text-gray-900">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-yellow-400 text-white">
+                  <ShoppingCartIcon className="h-5 w-5" />
+                </span>
+                {order.orderstatus === 'Delivered'
+                  ? `Delivered on ${formatDate(order.deliveredat)}`
+                  : `Coming on ${formatDate(order.deliveredat)}`}
+              </div>
+              <div className="flex items-center divide-x divide-gray-200 text-sm font-medium">
+                <Link href={`/product/${order.productid}`} className="px-4 text-indigo-600 hover:text-indigo-500">
+                  View product
+                </Link>
+                <Link href={`/product/${order.productid}`} className="px-4 text-indigo-600 hover:text-indigo-500">
+                  Buy again
+                </Link>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Order;
