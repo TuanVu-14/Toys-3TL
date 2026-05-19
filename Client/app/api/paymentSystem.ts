@@ -35,6 +35,13 @@ export type PaymentMethod = {
   };
 };
 
+type CartCardCheckoutPayload = {
+  userID: number;
+  paymentid?: string;
+  paymentstatus?: string;
+  paymentMethod?: string;
+} & GiftOptions;
+
 async function authHeaders() {
   const sendingKey = await encrypt(authKey);
   return { authorization: `Bearer ${sendingKey}` };
@@ -45,9 +52,14 @@ export async function paymentMethodsHandler() {
     const response = await axios.get(`${url}/api/payment-methods`, {
       headers: await authHeaders(),
     });
+
     return { status: response.status, data: response.data as PaymentMethod[] };
   } catch (error) {
-    return { status: 500, data: [] as PaymentMethod[], error: "Internal Server Error" };
+    return {
+      status: 500,
+      data: [] as PaymentMethod[],
+      error: "Internal Server Error",
+    };
   }
 }
 
@@ -65,18 +77,24 @@ export async function checkoutProductDataHandler({
       `${url}/api/checkout/product-details/${productID}/${sizeID}/${colorID}`,
       { headers: await authHeaders() }
     );
+
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
   }
 }
 
-export async function orderStatusDataHandler({ orderID }: { orderID: string | string[] }) {
+export async function orderStatusDataHandler({
+  orderID,
+}: {
+  orderID: string | string[];
+}) {
   try {
     const response = await axios.get(`${url}/api/orders/status/${orderID}`, {
       headers: await authHeaders(),
       validateStatus: () => true,
     });
+
     return { status: response.status };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -100,9 +118,18 @@ export async function paymentOnDeliveryHandler({
   try {
     const response = await axios.post(
       `${url}/api/payment-on-delivery/create-order`,
-      { userid, productid, colorid, sizeid, gift_wrapping, gift_wrap_style, gift_message },
+      {
+        userid,
+        productid,
+        colorid,
+        sizeid,
+        gift_wrapping,
+        gift_wrap_style,
+        gift_message,
+      },
       { headers: await authHeaders() }
     );
+
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -140,6 +167,7 @@ export async function onlineCheckoutHandler({
       },
       { headers: await authHeaders() }
     );
+
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -148,9 +176,11 @@ export async function onlineCheckoutHandler({
 
 export async function checkoutCartProductDataHandler(userID: number) {
   try {
-    const response = await axios.get(`${url}/api/checkout-cart/product-details/${userID}`, {
-      headers: await authHeaders(),
-    });
+    const response = await axios.get(
+      `${url}/api/checkout-cart/product-details/${userID}`,
+      { headers: await authHeaders() }
+    );
+
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -171,6 +201,7 @@ export async function cartCashCheckoutHandler({
       { userID, gift_wrapping, gift_wrap_style, gift_message },
       { headers: await authHeaders() }
     );
+
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -193,6 +224,40 @@ export async function cartOnlineCheckoutHandler({
       { userID, paymentMethod, gift_wrapping, gift_wrap_style, gift_message },
       { headers: await authHeaders() }
     );
+
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    return { status: 500, error: "Internal Server Error" };
+  }
+}
+
+export async function cartCardCheckoutHandler({
+  userID,
+  paymentid = "",
+  paymentstatus = "Pending",
+  paymentMethod = "Thanh toán online",
+  gift_wrapping = false,
+  gift_wrap_style = "",
+  gift_message = "",
+}: CartCardCheckoutPayload) {
+  try {
+    const response = await axios.post(
+      `${url}/api/cart-online/create-order`,
+      {
+        userID,
+        paymentid,
+        paymentstatus,
+        paymentMethod,
+        gift_wrapping,
+        gift_wrap_style,
+        gift_message,
+      },
+      {
+        headers: await authHeaders(),
+        validateStatus: () => true,
+      }
+    );
+
     return { status: response.status, data: response.data };
   } catch (error) {
     return { status: 500, error: "Internal Server Error" };
@@ -203,8 +268,9 @@ export async function cartOnlineCheckoutHandler({
 export default async function paymentGatewayHandler() {
   return { status: 410, clientSecret: "", error: "Stripe was removed" };
 }
+
 export async function paymentGatewayCartHandler() {
   return { status: 410, clientSecret: "", error: "Stripe was removed" };
 }
+
 export const cardCheckoutHandler = onlineCheckoutHandler;
-export const cartCardCheckoutHandler = cartOnlineCheckoutHandler;

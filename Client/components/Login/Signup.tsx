@@ -1,6 +1,6 @@
 import { CheckIcon } from '@heroicons/react/24/outline'
 import React, { useState } from 'react'
-import { loginFeatures } from '@/app/data';
+import { loginFeatures, type LoginFeature } from '@/app/data';
 import Link from 'next/link';
 import { Checkbox } from '@headlessui/react'
 import { useApp } from '@/Helpers/AccountDialog';
@@ -37,7 +37,7 @@ const Signup = () => {
                             H-Comm    
                         </a>
                         <div className='flex flex-col gap-5'>
-                            {loginFeatures.map((each,index)=>
+                            {loginFeatures.map((each: LoginFeature, index: number) =>
                             <div key={index} className='flex gap-4 items-start'>
                                 <CheckIcon width={25} className='text-white bg-primary-600 rounded-full py-1 px-1 mt-2'/>
                                 <div>

@@ -191,7 +191,34 @@ const testimonial = {
 
 const paymentSecure = [];
 const aboutUS = { section1: [], section2: { title: '', imgLink: '', imgAlt: '', listPoints: [] }, section3: { title: '', description: [] } };
-const loginFeatures = [];
+export type LoginFeature = {
+  title: string;
+  description: string;
+  iconType: string;
+};
+
+const loginFeatures: LoginFeature[] = [
+  {
+    title: "Track Your Orders",
+    description: "Keep tabs on your purchases with real-time order tracking and updates.",
+    iconType: "search",
+  },
+  {
+    title: "Personalized Recommendations",
+    description: "Log in to receive product suggestions tailored to your shopping preferences.",
+    iconType: "star",
+  },
+  {
+    title: "Wishlist Management",
+    description: "Save your favorite items to your wishlist for quick and easy future purchases.",
+    iconType: "heart",
+  },
+  {
+    title: "Secure Checkout",
+    description: "Enjoy a fast, secure, and hassle-free checkout process every time you shop with us.",
+    iconType: "lock",
+  },
+];
 const serviceFeatures = [];
 const allCategories = [
   { name: 'LEGO & Building', link: '/categories/lego-building' },
