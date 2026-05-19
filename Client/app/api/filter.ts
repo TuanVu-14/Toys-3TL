@@ -20,6 +20,23 @@ type ProductCatalogFilters = {
   collection_id?: string | number;
 };
 
+export async function catalogFilterOptionsHandler() {
+  const sendingKey = await encrypt(authKey);
+
+  try {
+    const response = await axios.get(`${url}/api/catalog/filters`, {
+      headers: {
+        authorization: `Bearer ${sendingKey}`,
+      },
+    });
+
+    return { status: response.status, data: response.data };
+  } catch (error) {
+    console.error("catalogFilterOptionsHandler error:", error);
+    return { status: 500, error: "Internal Server Error" };
+  }
+}
+
 export async function categoryFilterHandler({
   minPrice,
   maxPrice,
@@ -56,7 +73,7 @@ export async function categoryFilterHandler({
           brand,
           collection_id,
         },
-      }
+      },
     );
 
     return { status: response.status, data: response.data };
@@ -96,7 +113,7 @@ export async function categoryOnlyFilterHandler({
           brand,
           collection_id,
         },
-      }
+      },
     );
 
     return { status: response.status, data: response.data };

@@ -1,30 +1,31 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Quickview from '../ProductUi/Quickview';
 import Stars from '../ProductUi/Stars';
 import NoProduct from './NoProduct';
 import Loading from '../Loading';
 import Link from 'next/link';
 import { formatPrice } from '@/features/UIUpdates/CartWishlist';
+
 interface Color {
-  colorid:number;
+  colorid: number;
   name: string;
   colorname: string;
   colorclass: string;
 }
 
 interface Size {
-  sizeid:number;
+  sizeid: number;
   name: string;
-  sizename:string;
+  sizename: string;
   instock: boolean;
 }
+
 interface ProductImage {
   imageid: number;
   imglink: string;
   imgalt: string;
 }
 
-// Interface for products
 interface Product {
   productid: number;
   title: string;
@@ -35,17 +36,18 @@ interface Product {
   isnew: boolean;
   issale: boolean;
   isdiscount: boolean;
-  colors: Color[]; // assuming colors is an array of strings
-  sizes: Size[];  // assuming sizes is an array of strings
+  colors: Color[];
+  sizes: Size[];
   reviewCount: number;
-  images: ProductImage;
+  images: ProductImage | ProductImage[];
 }
+
 const defaultProduct: Product = {
   productid: 0,
-  title: "",
-  category: "",
-  price: "0.00",
-  discount: "0.00",
+  title: '',
+  category: '',
+  price: '0',
+  discount: '0',
   stars: 0,
   isnew: false,
   issale: false,
@@ -53,82 +55,150 @@ const defaultProduct: Product = {
   colors: [],
   sizes: [],
   reviewCount: 0,
-  images: {
-      imageid: 0,
-      imglink: "",
-      imgalt: ""
-  }
+  images: { imageid: 0, imglink: '', imgalt: '' },
 };
-const ProductCard = ({ product }:{ product:Product }) => {
+
+const getProductImage = (images: Product['images']) => {
+  if (Array.isArray(images)) {
+    return images.find((img) => img?.imglink)?.imglink || '';
+  }
+
+  return images?.imglink || '';
+};
+
+const getProductAlt = (product: Product) => {
+  if (Array.isArray(product.images)) {
+    return product.images.find((img) => img?.imgalt)?.imgalt || product.title;
+  }
+
+  return product.images?.imgalt || product.title;
+};
+
+const ProductCard = ({ product }: { product: Product }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [productData, setproductData] = useState(defaultProduct);
+  const [productData, setProductData] = useState<Product>(defaultProduct);
   const [open, setOpen] = useState(false);
+
+  const imageSrc = useMemo(() => getProductImage(product.images), [product.images]);
+  const imageAlt = useMemo(() => getProductAlt(product), [product]);
+  const discountNumber = Number(product.discount || 0);
+  const hasDiscount = product.isdiscount && discountNumber > 0;
+
   return (
-    <div
-      className='relative flex flex-col border-[1px] rounded-xl lg:max-h-[400px] sm:max-w-[220px] p-1 overflow-hidden transition-shadow duration-300 hover:shadow-lg'
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Quickview open={open} setOpen={setOpen} product={productData} />
-      {product.issale && (
-        <div className="absolute top-2 -left-8 bg-black text-white px-10 py-1 z-10 rotate-[320deg] text-[12px] uppercase rounded">
-          SALE
-        </div>
-      )}
-      {product.isnew && (
-        <div className="absolute top-2 -left-8 bg-salmon text-white px-10 py-1 z-10 rotate-[320deg] text-[12px] uppercase rounded">
-          New
-        </div>
-      )}
-      {product.isdiscount && (
-        <div className="absolute top-2 left-2 bg-green-500 text-white px-2 text-md uppercase rounded">
-          {product.discount}%
-        </div>  
-      )}
-      <div className={`relative transition-transform mb-1 duration-300 ${isHovered && 'scale-105'}`}>
-        <img className='min-w-[200px] min-h-[210px]' src={product.images.imglink} alt={product.title} />
+    <>
+      <div
+        className="group relative flex h-[470px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {product.issale && (
+          <span className="absolute left-0 top-0 z-10 bg-black px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+            Sale
+          </span>
+        )}
+
+        {product.isnew && (
+          <span className="absolute left-0 top-0 z-10 bg-pink-400 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+            New
+          </span>
+        )}
+
+        {hasDiscount && (
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-primary-600 px-3 py-1 text-xs font-semibold text-white">
+            -{discountNumber}%
+          </span>
+        )}
+
+        <Link href={`/product/${product.productid}`} className="block">
+          <div className="relative h-[260px] w-full overflow-hidden bg-gray-50">
+            {imageSrc ? (
+              <img
+                src={imageSrc}
+                alt={imageAlt}
+                className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gray-100 text-sm text-gray-400">
+                Không có ảnh
+              </div>
+            )}
+          </div>
+        </Link>
+
         {isHovered && (
           <button
-            className='absolute bottom-2 left-1/2 rounded-xl transform -translate-x-1/2 w-[100px] h-[30px] flex items-center justify-center bg-black bg-opacity-50 text-white text-sm uppercase transition-opacity duration-300'
-            onClick={() => {setOpen(true);setproductData(product)}}>
+            type="button"
+            onClick={() => {
+              setOpen(true);
+              setProductData(product);
+            }}
+            className="absolute left-1/2 top-[210px] z-20 -translate-x-1/2 rounded-full bg-black/80 px-6 py-2 text-sm font-semibold uppercase text-white transition hover:bg-black"
+          >
             Quickview
           </button>
         )}
-      </div>
-      <div className='pl-4 pr-4 flex flex-col gap-2'>
-        <Link href={`/product/${product.productid}`}><p className='text-[14px] text-salmon'>{product.category}</p></Link>
-        <Link href={`/product/${product.productid}`}><p className='tracking-[1px] text-silver hover:text-davysilver'>{product.title}</p></Link>
-        <div className='flex items-center gap-2'>
-          <Stars stars={product.stars}/>
-          {product.reviewCount > 0 && <p className=' text-silver'>{product.reviewCount}</p>}
-        </div>
-        <div className='flex mb-5 items-center gap-4'>
-         <p className="font-bold text-[18px] text-red-500">
-  {formatPrice(product.price, product.discount)}
-</p>
 
-<p className="line-through text-gray-400">
-  {formatPrice(product.price)}
-</p>
+        <div className="flex flex-1 flex-col px-6 py-4">
+          <p className="mb-2 line-clamp-1 text-sm font-medium text-pink-400">{product.category}</p>
+
+          <Link href={`/product/${product.productid}`}>
+            <h3 className="mb-3 min-h-[56px] text-lg font-medium leading-7 text-gray-700 line-clamp-2 hover:text-primary-600">
+              {product.title}
+            </h3>
+          </Link>
+
+          <div className="mb-3 flex min-h-[24px] items-center gap-2">
+            <Stars stars={Number(product.stars || 0)} />
+            {product.reviewCount > 0 && (
+              <span className="text-sm text-gray-500">{product.reviewCount}</span>
+            )}
+          </div>
+
+          <div className="mt-auto flex items-center gap-3">
+            <span className="text-xl font-bold text-red-500">
+              {formatPrice(product.price, product.discount)}
+            </span>
+            {hasDiscount && (
+              <span className="text-base text-gray-400 line-through">
+                {formatPrice(product.price)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <Quickview open={open} setOpen={setOpen} product={productData} />
+    </>
   );
 };
 
-const CategoryProducts = ({ dataChecked,products,loading }:{ dataChecked:boolean,products:Product[],loading:boolean }) => {
+const CategoryProducts = ({
+  dataChecked,
+  products,
+  loading,
+}: {
+  dataChecked: boolean;
+  products: Product[];
+  loading: boolean;
+}) => {
   return (
-    <div className='sm:ml-4 ml-auto mr-auto pb-8 max-w-[980px] flex flex-col flex-1'>
-      <p className='border-b-[1px] leading-[40px] tracking-wide font-semibold text-lg'>Products</p>
-      <div className='flex flex-wrap mt-8 gap-5 justify-center xl:w-[980px] lg:w-[720px] max-w-[980px] flex-1 relative'>
-      {loading && <div className='w-full h-[300px]'>{loading && <div className='absolute left-0 right-0 top-0 z-50'><Loading/></div>}</div> }
-        {(dataChecked && products.length === 0) && <NoProduct/>}
-        {dataChecked && products.map((each, index) => (
-          <ProductCard key={index} product={each} />
-        ))}
-      </div>
-    </div>
+    <section className="w-full">
+      <h2 className="mb-6 border-b border-gray-200 pb-3 text-2xl font-bold">Products</h2>
+
+      {loading && <Loading />}
+
+      {dataChecked && products.length === 0 && <NoProduct />}
+
+      {dataChecked && products.length > 0 && (
+        <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {products.map((each) => (
+            <ProductCard key={each.productid} product={each} />
+          ))}
+        </div>
+      )}
+    </section>
   );
-}
+};
 
 export default CategoryProducts;

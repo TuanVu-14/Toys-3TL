@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Stars from './Stars';
 import { HeartIcon } from '@heroicons/react/24/outline';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -98,12 +98,15 @@ const defaultData: Product = {
 
 const IDGenerator = () => Math.round(Math.random() * 1000 * 1000 * 100);
 
+const normalizeSlug = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '-');
+
 const ProductPage = () => {
   const { appState } = useApp();
   const router = useRouter();
   const isLogged = appState.loggedIn;
   const [btnLoading, setBtnLoading] = useState(false);
   const [stockMessage, setStockMessage] = useState('');
+  const [toast, setToast] = useState('');
   const [selectedReview, setSelectedReview] = useState<any>(null);
   const [selectedRating, setSelectedRating] = useState(1);
   const reviewRef = useRef<HTMLDivElement | null>(null);
@@ -112,6 +115,7 @@ const ProductPage = () => {
   const found = useRef(true);
   const dataVar = useRef(defaultData);
   const data = dataVar.current;
+
   const [selectedColor, setSelectedColor] = useState<ProductColor>({ colorid: 0, colorname: 'Default', colorclass: 'col_default' });
   const [selectedSize, setSelectedSize] = useState<ProductSize>({ sizeid: 0, sizename: 'Default', instock: true });
   const [selectedImage, setSelectedImage] = useState({ imgLink: '', imgAlt: '' });
@@ -120,17 +124,26 @@ const ProductPage = () => {
   const [dataChecked, setDataChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dialogType, setDialogType] = useState<any>(null);
+
   const dispatch = useAppDispatch();
   const defaultAccount = useAppSelector((state) => state.userState.defaultAccount);
-
   const maxQuantity = Number(data.stock || 0);
   const outOfStock = maxQuantity <= 0 || (data.sizes.length > 0 && !selectedSize.instock);
+
+  const images = useMemo(() => {
+    const allImages: ProductImage[] = [
+      { imageid: -1, imglink: data.imglink, imgalt: data.imgalt || data.title },
+      ...(data.imgcollection || []),
+    ].filter((img) => img.imglink);
+
+    return allImages.filter((img, index, arr) => arr.findIndex((x) => x.imglink === img.imglink) === index);
+  }, [data.imglink, data.imgalt, data.title, data.imgcollection]);
 
   const cartItemData = {
     cartItemID: IDGenerator(),
     productID: data.productid,
-    productImg: data.imglink,
-    productAlt: data.imgalt,
+    productImg: selectedImage.imgLink || data.imglink,
+    productAlt: selectedImage.imgAlt || data.imgalt,
     productName: data.title,
     productPrice: Number(data.discountedprice || 0),
     productColor: selectedColor.colorname,
@@ -142,11 +155,17 @@ const ProductPage = () => {
   const wishlistItem = {
     wishlistItemID: IDGenerator(),
     productID: data.productid,
-    productImg: data.imglink,
-    productAlt: data.imgalt,
+    productImg: selectedImage.imgLink || data.imglink,
+    productAlt: selectedImage.imgAlt || data.imgalt,
     productName: data.title,
     productPrice: Number(data.discountedprice || 0),
   };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(''), 2500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   async function dataRequest() {
     setLoading(true);
@@ -156,7 +175,7 @@ const ProductPage = () => {
         dataVar.current = response.data.data;
         setDataChecked(true);
         break;
-      case 500:
+      default:
         found.current = false;
         setDataChecked(true);
         break;
@@ -172,7 +191,7 @@ const ProductPage = () => {
     setSelectedSize(firstSize);
     colRef.current = firstColor.colorname;
     sizeRef.current = firstSize.sizename;
-    setSelectedImage({ imgLink: data.imglink, imgAlt: data.imgalt });
+    setSelectedImage({ imgLink: data.imglink, imgAlt: data.imgalt || data.title });
   }
 
   useLayoutEffect(() => {
@@ -224,10 +243,10 @@ const ProductPage = () => {
           }
         }
         dispatch(addItemToCart(cartItemData));
-        setBtnLoading(false);
+        setToast('Đã thêm sản phẩm vào giỏ hàng');
         break;
       }
-      case 'wishlist':
+      case 'wishlist': {
         if (isLogged) {
           await wishlistAddHandler({
             wishlistItemID: wishlistItem.wishlistItemID,
@@ -236,61 +255,83 @@ const ProductPage = () => {
           });
         }
         dispatch(addItemToWishlist(wishlistItem));
-        setBtnLoading(false);
+        setToast('Đã thêm sản phẩm vào yêu thích');
         break;
+      }
     }
+    setBtnLoading(false);
   }
 
   function categoryLink(maincategory: string, category: string) {
-    const splitCat = category.split(' ').join('-');
-    return `/sub-category/${maincategory}/${splitCat}`;
+    return `/sub-category/${normalizeSlug(maincategory)}/${normalizeSlug(category)}`;
   }
 
   return (
     <>
       {loading && <Loading />}
+      {toast && (
+        <div className="fixed right-5 top-24 z-[9999] rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-lg">
+          {toast}
+        </div>
+      )}
       {!dataChecked && <Loading />}
       {dataChecked && !found.current && <ProductNotFound />}
       {dataChecked && data && found.current && (
         <div className="mx-auto max-w-7xl px-4 py-10">
-          <div className="mb-8 text-sm font-medium">
-            <Link href={categoryLink(data.categories.maincategory, data.categories.subcategory)}>
-              {data.categories.maincategory} &gt; {data.categories.subcategory}
+          <div className="mb-8 flex flex-wrap items-center gap-3 text-sm font-medium">
+            <Link href="/" className="text-gray-600 hover:text-indigo-600">Trang chủ</Link>
+            <span>&gt;</span>
+            <Link href={`/categories/${normalizeSlug(data.categories.maincategory)}`} className="capitalize text-gray-600 hover:text-indigo-600">
+              {data.categories.maincategory}
+            </Link>
+            <span>&gt;</span>
+            <Link href={categoryLink(data.categories.maincategory, data.categories.subcategory)} className="capitalize text-gray-900 hover:text-indigo-600">
+              {data.categories.subcategory}
             </Link>
           </div>
 
           <div className="grid gap-10 lg:grid-cols-2">
             <div>
-              <img src={selectedImage.imgLink || data.imglink} alt={selectedImage.imgAlt || data.imgalt} className="w-full rounded-xl object-cover" />
-              <div className="mt-4 flex justify-center gap-3">
-                {data.imgcollection.map((each) => (
-                  <button key={each.imageid} onClick={() => setSelectedImage({ imgLink: each.imglink, imgAlt: each.imgalt })}>
-                    <img src={each.imglink} alt={each.imgalt} className="h-14 w-20 rounded-md object-cover ring-1 ring-gray-200" />
-                  </button>
-                ))}
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <img src={selectedImage.imgLink || data.imglink} alt={selectedImage.imgAlt || data.imgalt} className="aspect-square w-full object-contain" />
               </div>
+              {images.length > 1 && (
+                <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+                  {images.map((each) => (
+                    <button
+                      type="button"
+                      key={`${each.imageid}-${each.imglink}`}
+                      onClick={() => setSelectedImage({ imgLink: each.imglink, imgAlt: each.imgalt })}
+                      className={`h-20 w-24 flex-shrink-0 overflow-hidden rounded-lg border bg-white p-1 transition ${selectedImage.imgLink === each.imglink ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-200 hover:border-indigo-300'}`}
+                    >
+                      <img src={each.imglink} alt={each.imgalt} className="h-full w-full object-contain" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border border-gray-200 p-8">
               <h1 className="text-3xl font-bold text-gray-900">{data.title}</h1>
               <p className="mt-2 text-sm text-gray-500">By {data.seller}</p>
-              <button onClick={handleReviewClick} className="mt-3 flex items-center gap-3 text-sm">
-                <span>{data.stars}</span>
-                <Stars stars={data.stars} />
-                <span className="text-indigo-600">{data.reviewcount} reviews</span>
-              </button>
+
+              {data.reviewcount > 0 ? (
+                <button onClick={handleReviewClick} className="mt-3 flex items-center gap-3 text-sm">
+                  <span>{Number(data.stars || 0).toFixed(1)}</span>
+                  <Stars stars={Number(data.stars || 0)} />
+                  <span className="text-indigo-600">{data.reviewcount} đánh giá</span>
+                </button>
+              ) : (
+                <button onClick={handleReviewClick} className="mt-3 text-sm text-gray-500 hover:text-indigo-600">Chưa có đánh giá</button>
+              )}
 
               <div className="mt-6 border-t border-gray-200 pt-6">
                 <div className="flex items-center gap-4">
                   <p className="text-xl font-bold text-red-600">{formatPrice(data.discountedprice)}</p>
-                  {Number(data.price) > Number(data.discountedprice) && (
-                    <p className="text-gray-400 line-through">{formatPrice(data.price)}</p>
-                  )}
+                  {Number(data.price) > Number(data.discountedprice) && <p className="text-gray-400 line-through">{formatPrice(data.price)}</p>}
                   {Number(data.discount || 0) > 0 && <p className="text-yellow-600">{Number(data.discount)}% off</p>}
                 </div>
-                <p className="mt-4 font-medium">
-                  {outOfStock ? 'Out of stock' : `In stock: còn ${data.stock} sản phẩm, giao trong 5 ngày làm việc`}
-                </p>
+                <p className="mt-4 font-medium">{outOfStock ? 'Hết hàng' : `Còn ${data.stock} sản phẩm trong kho, giao trong 5 ngày làm việc`}</p>
               </div>
 
               <div className="mt-5 rounded-lg border border-gray-200 p-4 text-sm leading-7">
@@ -303,9 +344,25 @@ const ProductPage = () => {
               <div className="mt-6">
                 <p className="font-medium">Quantity</p>
                 <div className="mt-2 flex items-center">
-                  <button onClick={() => changeValue('decrease')} className="w-12 rounded-l-lg bg-gray-100 text-3xl">-</button>
-                  <span className="w-12 bg-gray-100 py-2 text-center">{quantity}</span>
-                  <button onClick={() => changeValue('increase')} className="w-12 rounded-r-lg bg-gray-100 text-3xl">+</button>
+                  <button type="button" onClick={() => changeValue('decrease')} className="w-12 rounded-l-lg bg-gray-100 text-3xl">-</button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxQuantity || 1}
+                    value={quantity}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      if (!value || value < 1) return setQuantity(1);
+                      if (value > maxQuantity) {
+                        setStockMessage(`Sản phẩm chỉ còn ${maxQuantity} sản phẩm trong kho.`);
+                        return setQuantity(maxQuantity);
+                      }
+                      setStockMessage('');
+                      setQuantity(value);
+                    }}
+                    className="w-16 bg-gray-100 py-2 text-center outline-none"
+                  />
+                  <button type="button" onClick={() => changeValue('increase')} className="w-12 rounded-r-lg bg-gray-100 text-3xl">+</button>
                 </div>
                 {stockMessage && <p className="mt-2 text-sm font-medium text-red-600">{stockMessage}</p>}
               </div>
@@ -352,8 +409,8 @@ const ProductPage = () => {
 
           <div ref={reviewRef} className="mt-10">
             <ReviewSection
-              data={data.reviews}
-              reviewCount={data.reviewcount}
+              data={data.reviews || []}
+              reviewCount={data.reviewcount || 0}
               setloading={setLoading}
               setdialogType={setDialogType}
               setselectedReview={setSelectedReview}
@@ -364,7 +421,6 @@ const ProductPage = () => {
           </div>
         </div>
       )}
-
       {dialogType && (
         <ProductDialogs
           dialogType={dialogType}

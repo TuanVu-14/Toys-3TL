@@ -264,7 +264,7 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
                                 <div className="border-gray-300 my-auto mx-auto h-8 w-8 animate-spin rounded-full border-8 border-t-blue-600" />
                             </div>
                             
-                        </div></div> : "Add to bag"}
+                        </div></div> : "Add to cart"}
                           </button>
                           <div className='w-full flex justify-center mt-2'>
                           <Link href={`/product/${product.productid}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
