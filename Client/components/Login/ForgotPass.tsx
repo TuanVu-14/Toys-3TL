@@ -91,7 +91,7 @@ const ForgotPass = () => {
         setResendDisabled(!resendDisabled);
     }
     return (
-        <section className={`bg-gray-50 h-screen w-screen flex items-start lg:items-center overflow-x-hidden ${(appState.isIncorrect || otpPopup || appState.isPassword) && 'blurbg'}`}>
+        <section className={`bg-pink-50 h-screen w-screen flex items-start lg:items-center overflow-x-hidden ${(appState.isIncorrect || otpPopup || appState.isPassword) && 'blurbg'}`}>
             {loading && <div className='w-full h-full absolute'>{loading && <div className='absolute left-0 right-0 top-[30%] z-50'><Loading/></div>}</div> }
             <Dialog open={otpPopup} onClose={() => setotpPopup(false)} className="relative z-40">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">

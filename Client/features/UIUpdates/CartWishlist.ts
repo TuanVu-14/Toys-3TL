@@ -1,78 +1,94 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-interface Item {
-  cartItemID: number;
-  productID: number;
-  productImg: string;
-  productAlt: string;
-  productName: string;
-  productPrice: number;
-  productColor: string;
-  productSize: string;
-  productStock?: number;
-  quantity: number;
+export interface CartItem {
+  cartItemID?: number
+  cartitemid?: number
+  productID?: number
+  productid?: number
+  productImg?: string
+  imglink?: string
+  productAlt?: string
+  imgalt?: string
+  productName?: string
+  title?: string
+  productPrice?: number
+  productprice?: number
+  price?: number
+  discount?: number
+  productColor?: string
+  colorname?: string
+  productSize?: string
+  sizename?: string
+  productStock?: number
+  productstock?: number
+  stock?: number
+  quantity: number
 }
 
-interface Wishlist {
-  wishlistItemID: number;
-  productID: number;
-  productImg: string;
-  productAlt: string;
-  productName: string;
-  productPrice: number;
+export interface WishlistItem {
+  wishlistItemID?: number
+  wishlistitemid?: number
+  productID?: number
+  productid?: number
+  productImg?: string
+  imglink?: string
+  productAlt?: string
+  imgalt?: string
+  productName?: string
+  title?: string
+  productPrice?: number
+  productprice?: number
+  price?: number
+  discount?: number
 }
 
 interface CartWishlistState {
-  cart: Item[];
-  wishlist: Wishlist[];
+  cart: CartItem[]
+  wishlist: WishlistItem[]
 }
 
 const initialState: CartWishlistState = {
   cart: [],
   wishlist: [],
-};
+}
 
 const cartWishlistSlice = createSlice({
   name: 'cartWishlist',
   initialState,
   reducers: {
-    setCart(state, action: PayloadAction<Item[]>) {
-      state.cart = action.payload;
+    setCart(state, action: PayloadAction<CartItem[]>) {
+      state.cart = action.payload || []
     },
-    setWishlist(state, action: PayloadAction<Wishlist[]>) {
-      state.wishlist = action.payload;
+    setWishlist(state, action: PayloadAction<WishlistItem[]>) {
+      state.wishlist = action.payload || []
     },
-    addItemToCart(state, action: PayloadAction<Item>) {
-      const existingItem = state.cart.find(
-        (item) =>
-          item.productID === action.payload.productID &&
-          item.productColor === action.payload.productColor &&
-          item.productSize === action.payload.productSize,
-      );
+    addItemToCart(state, action: PayloadAction<CartItem>) {
+      const productID = action.payload.productID ?? action.payload.productid
+      const existingItem = state.cart.find((item) => (item.productID ?? item.productid) === productID)
+
       if (existingItem) {
-        const stock = Number(existingItem.productStock || action.payload.productStock || 0);
-        const nextQuantity = existingItem.quantity + action.payload.quantity;
-        existingItem.quantity = stock > 0 ? Math.min(nextQuantity, stock) : nextQuantity;
+        existingItem.quantity += Number(action.payload.quantity || 1)
       } else {
-        state.cart.push(action.payload);
+        state.cart.push(action.payload)
       }
     },
     removeItemFromCart(state, action: PayloadAction<number>) {
-      state.cart = state.cart.filter((item) => item.productID !== action.payload);
+      state.cart = state.cart.filter((item) => (item.productID ?? item.productid) !== action.payload)
     },
     updateCartItemQuantity(state, action: PayloadAction<{ id: number; quantity: number }>) {
-      const item = state.cart.find((item) => item.productID === action.payload.id);
-      if (item) item.quantity = action.payload.quantity;
+      const item = state.cart.find((item) => (item.productID ?? item.productid) === action.payload.id)
+      if (item) item.quantity = action.payload.quantity
     },
-    addItemToWishlist(state, action: PayloadAction<Wishlist>) {
-      const existingItem = state.wishlist.find((item) => item.productID === action.payload.productID);
-      if (!existingItem) state.wishlist.push(action.payload);
+    addItemToWishlist(state, action: PayloadAction<WishlistItem>) {
+      const productID = action.payload.productID ?? action.payload.productid
+      const existingItem = state.wishlist.find((item) => (item.productID ?? item.productid) === productID)
+      if (!existingItem) state.wishlist.push(action.payload)
     },
     removeItemFromWishlist(state, action: PayloadAction<number>) {
-      state.wishlist = state.wishlist.filter((item) => item.productID !== action.payload);
+      state.wishlist = state.wishlist.filter((item) => (item.productID ?? item.productid) !== action.payload)
     },
   },
-});
+})
 
 export const {
   setCart,
@@ -82,13 +98,20 @@ export const {
   updateCartItemQuantity,
   addItemToWishlist,
   removeItemFromWishlist,
-} = cartWishlistSlice.actions;
+} = cartWishlistSlice.actions
+
+export const getProductPrice = (item: Partial<CartItem & WishlistItem>) => {
+  return Number(item.productPrice ?? item.productprice ?? item.price ?? 0)
+}
 
 export const formatPrice = (price: number | string, discount?: number | string) => {
-  const originalPrice = Number(price || 0);
-  const discountValue = Number(discount || 0);
-  const finalPrice = discountValue > 0 ? (originalPrice * (100 - discountValue)) / 100 : originalPrice;
-  return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(finalPrice)}đ`;
-};
+  const originalPrice = Number(price || 0)
+  const discountValue = Number(discount || 0)
+  const finalPrice = discountValue > 0 ? (originalPrice * (100 - discountValue)) / 100 : originalPrice
 
-export default cartWishlistSlice.reducer;
+  return `${new Intl.NumberFormat('vi-VN', {
+    maximumFractionDigits: 0,
+  }).format(finalPrice)}đ`
+}
+
+export default cartWishlistSlice.reducer

@@ -1,83 +1,197 @@
-import React,{useEffect} from 'react'
-import { Description, Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
-import { useApp } from '@/Helpers/AccountDialog';
-import { useRouter } from 'next/navigation'
-const DialogBoxes = () => {
-    const router = useRouter()
-    const { toggleAgreement,toggleIsOpenAgreement,appState,toggleIsPassword,toggleBackgroundBlur, toggleServerError,toggleIsExists,toggleIsIncorrect } = useApp();
-    // useEffect(() => {
-    //     const valuesToExclude = ['agreement', 'updates','loggedIn','backgroundBlur']; // Example keys to exclude
-    //     const filteredValues = Object.entries(appState)
-    //         .filter(([key]) => !valuesToExclude.includes(key))
-    //         .map(([, value]) => value);
+"use client";
 
-    //     const anyTrue = filteredValues.some(value => value === true);
-    //     if (anyTrue) {
-    //         toggleBackgroundBlur();
-    //     }
-    // }, [appState]);
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Description,
+} from "@headlessui/react";
+import { useRouter } from "next/navigation";
+import { useApp } from "@/Helpers/AccountDialog";
+
+const DialogBoxes = () => {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  const {
+    appState,
+    toggleAgreement,
+    toggleIsOpenAgreement,
+    toggleIsPassword,
+    toggleServerError,
+    toggleIsExists,
+    toggleIsIncorrect,
+  } = useApp();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Fix Next.js hydration error: Dialog state is client-only.
+  if (!mounted) return null;
+
   return (
     <>
-        <Dialog open={appState.isOpenAgreement} onClose={() => toggleIsOpenAgreement()} className="relative z-50">
-            <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-            <DialogPanel className="max-w-lg space-y-4 border bg-white p-8 rounded-xl text-center">
-                <DialogTitle className="font-bold">Sign Up Agreement</DialogTitle>
-                <Description>By signing up, you are creating a H-Comm account, and you agree to H-Comm <a className='text-primary-700 font-medium' href='/policy/terms&conditions'>Terms & Conditions</a> and <a className='text-primary-700 font-medium' href='/policy/privacypolicy'>Privacy Policy.</a></Description>
-                <div className="flex justify-center gap-4">
-                <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => toggleIsOpenAgreement}>Cancel</button>
-                <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => {toggleIsOpenAgreement();toggleAgreement();}}>Accept</button>
-                </div>
-            </DialogPanel>
+      <Dialog
+        open={appState.isOpenAgreement}
+        onClose={toggleIsOpenAgreement}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <DialogTitle className="text-lg font-semibold text-gray-900">
+              Sign Up Agreement
+            </DialogTitle>
+            <Description className="mt-3 text-sm leading-6 text-gray-600">
+              By signing up, you are creating a H-Comm account, and you agree to
+              H-Comm Terms &amp; Conditions and Privacy Policy.
+            </Description>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={toggleIsOpenAgreement}
+                className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toggleIsOpenAgreement();
+                  toggleAgreement();
+                }}
+                className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
+              >
+                Accept
+              </button>
             </div>
-        </Dialog>
-        <Dialog open={appState.isPassword} onClose={() => toggleIsPassword()} className="relative z-50">
-            <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-            <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                <DialogTitle className="font-bold">Password</DialogTitle>
-                <Description>Passwords don't match. Try again.</Description>
-                <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => toggleIsPassword()}>OK</button>
-                </div>
-            </DialogPanel>
-            </div>
-        </Dialog>
-        <Dialog open={appState.serverError} onClose={() => toggleServerError()} className="relative z-50">
-            <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-            <DialogPanel className="max-w-lg space-y-4 border  p-6 rounded-xl text-center drop-shadow-custom-xl bg-red-400 text-white">
-                <DialogTitle className="font-bold">Error</DialogTitle>
-                <Description>We are currently facing Down Time. Please Try again lator.</Description>
-                <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => toggleServerError()}>OK</button>
-                </div>
-            </DialogPanel>
-            </div>
-        </Dialog>
-        <Dialog open={appState.isExists} onClose={() => toggleIsExists()} className="relative z-50">
-            <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-            <DialogPanel className="max-w-lg space-y-4 border bg-white p-8 rounded-xl text-center">
-                <DialogTitle className="font-bold">Account Already Exists</DialogTitle>
-                <Description>An Account with Same Email address or Mobile number Already Exists</Description>
-                <p>Do you want to Sign in</p>
-                <div className="flex justify-center gap-4">
-                <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => toggleIsExists()}>OK</button>
-                <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => {toggleIsExists();router.push('/sign-in')}}>Sign in</button>
-                </div>
-            </DialogPanel>
-            </div>
-        </Dialog>
-        <Dialog open={appState.isIncorrect} onClose={() => toggleIsIncorrect()} className="relative z-50">
-            <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
-            <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                <DialogTitle className="font-bold">Incorrect Credentials</DialogTitle>
-                <Description>Your Email address or Password is Incorrect. Please Check Again.</Description>
-                <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => toggleIsIncorrect()}>OK</button>
-                </div>
-            </DialogPanel>
-            </div>
-        </Dialog>
-    </>
-  )
-}
+          </DialogPanel>
+        </div>
+      </Dialog>
 
-export default DialogBoxes
+      <Dialog
+        open={appState.isPassword}
+        onClose={toggleIsPassword}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <DialogTitle className="text-lg font-semibold text-gray-900">
+              Password
+            </DialogTitle>
+            <Description className="mt-3 text-sm leading-6 text-gray-600">
+              Passwords don&apos;t match. Try again.
+            </Description>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={toggleIsPassword}
+                className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
+              >
+                OK
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={appState.serverError}
+        onClose={toggleServerError}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <DialogTitle className="text-lg font-semibold text-gray-900">
+              Error
+            </DialogTitle>
+            <Description className="mt-3 text-sm leading-6 text-gray-600">
+              We are currently facing down time. Please try again later.
+            </Description>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={toggleServerError}
+                className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
+              >
+                OK
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={appState.isExists}
+        onClose={toggleIsExists}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <DialogTitle className="text-lg font-semibold text-gray-900">
+              Account Already Exists
+            </DialogTitle>
+            <Description className="mt-3 text-sm leading-6 text-gray-600">
+              An account with the same email address or mobile number already
+              exists.
+            </Description>
+            <p className="mt-2 text-sm text-gray-600">Do you want to sign in?</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={toggleIsExists}
+                className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+              >
+                OK
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toggleIsExists();
+                  router.push("/sign-in");
+                }}
+                className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
+              >
+                Sign in
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+
+      <Dialog
+        open={appState.isIncorrect}
+        onClose={toggleIsIncorrect}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
+          <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <DialogTitle className="text-lg font-semibold text-gray-900">
+              Incorrect Credentials
+            </DialogTitle>
+            <Description className="mt-3 text-sm leading-6 text-gray-600">
+              Your email address or password is incorrect. Please check again.
+            </Description>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={toggleIsIncorrect}
+                className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
+              >
+                OK
+              </button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
+    </>
+  );
+};
+
+export default DialogBoxes;

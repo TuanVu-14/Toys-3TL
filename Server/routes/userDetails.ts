@@ -50,42 +50,53 @@ const fetchSize = async (productID: number) => {
 };
 
 const fetchCartItems = async (userID: number) => {
-    const cartQuery = `
-        SELECT cartitems.productid, cartitems.quantity, products.title, products.discount, cartitems.cartitemid, 
-               productimages.imglink, productimages.imgalt
-        FROM cartitems 
-        INNER JOIN products ON cartitems.productid = products.productid 
-        INNER JOIN productimages ON cartitems.productid = productimages.productid 
-        WHERE productimages.isprimary = true AND cartitems.userid = $1;
-    `;
-    const cartValues = [userID];
-    const cartResult = await client.query(cartQuery, cartValues);
-
-    const cartItems = await Promise.all(cartResult.rows.map(async (item) => {
-        const color = await fetchColor(item.productid);
-        const size = await fetchSize(item.productid);
-        return {
-            ...item,
-            ...color,
-            ...size,
-        };
-    }));
-    return cartItems;
+  const cartQuery = `
+    SELECT
+      cartitems.cartitemid AS "cartItemID",
+      cartitems.productid AS "productID",
+      cartitems.quantity,
+      products.title AS "productName",
+      products.price AS "productPrice",
+      products.stock AS "productStock",
+      productimages.imglink AS "productImg",
+      productimages.imgalt AS "productAlt",
+      productcolors.colorclass AS "colorClass",
+      productcolors.colorname AS "productColor",
+      productcolors.colorid AS "colorID",
+      productsizes.sizeid AS "sizeID",
+      productsizes.sizename AS "productSize",
+      productsizes.instock
+    FROM cartitems
+    INNER JOIN products ON cartitems.productid = products.productid
+    LEFT JOIN productimages ON cartitems.productid = productimages.productid AND productimages.isprimary = true
+    LEFT JOIN productcolors ON cartitems.productid = productcolors.productid AND cartitems.colorid = productcolors.colorid
+    LEFT JOIN productsizes ON cartitems.productid = productsizes.productid AND cartitems.sizeid = productsizes.sizeid
+    WHERE cartitems.userid = $1;
+  `;
+  const cartValues = [userID];
+  const cartResult = await client.query(cartQuery, cartValues);
+  return cartResult.rows;
 };
 
 const fetchWishlistItems = async (userID: number) => {
-    const query = `
-        SELECT wishlistitems.productid, products.title, products.discount, wishlistitems.wishlistitemid, 
-               productimages.imglink, productimages.imgalt 
-        FROM wishlistitems 
-        INNER JOIN products ON wishlistitems.productid = products.productid 
-        INNER JOIN productimages ON products.productid = productimages.productid 
-        WHERE productimages.isprimary = true AND wishlistitems.userid = $1;
-    `;
-    const values = [userID];
-    const result = await client.query(query, values);
-    return result.rows;
+  const query = `
+    SELECT
+      wishlistitems.wishlistitemid AS "wishlistItemID",
+      wishlistitems.productid AS "productID",
+      products.title AS "productName",
+      products.price AS "productPrice",
+      productimages.imglink AS "productImg",
+      productimages.imgalt AS "productAlt"
+    FROM wishlistitems
+    INNER JOIN products ON wishlistitems.productid = products.productid
+    LEFT JOIN productimages ON products.productid = productimages.productid AND productimages.isprimary = true
+    WHERE wishlistitems.userid = $1;
+  `;
+  const values = [userID];
+  const result = await client.query(query, values);
+  return result.rows;
 };
+
 const fetchCoupons = async (userID: number) => {
     const query = `SELECT usercoupons.couponid,coupons.code,coupons.description,coupons.discountpercentage,coupons.maxdiscountamount,coupons.minpurchaseamount,coupons.validuntil 
     FROM usercoupons 
@@ -138,13 +149,30 @@ router.post('/user/cart-items',userIDSchema, async (req: Request, res: Response)
         try {
             // Query to fetch cart items by userID, including size and color
             const query = `
-                SELECT cartitems.productid,cartitems.quantity,products.title,products.discount,cartitems.cartitemid,productimages.imglink,productimages.imgalt,productcolors.colorclass,productcolors.colorname,productcolors.colorid,productsizes.sizeid,productsizes.sizename,productsizes.instock
-                 FROM cartitems INNER JOIN products ON cartitems.productid = products.productid 
-                 INNER JOIN productimages ON cartitems.productid = productimages.productid 
-                 INNER JOIN productcolors ON cartitems.productid = productcolors.productid 
-                 INNER JOIN productsizes ON cartitems.productid = productsizes.productid 
-                 WHERE productimages.isprimary = true AND cartitems.userid = $1;
-            `;
+  SELECT
+    cartitems.cartitemid AS "cartItemID",
+    cartitems.productid AS "productID",
+    cartitems.quantity,
+    products.title AS "productName",
+    products.price AS "productPrice",
+    products.stock AS "productStock",
+    productimages.imglink AS "productImg",
+    productimages.imgalt AS "productAlt",
+    productcolors.colorclass AS "colorClass",
+    productcolors.colorname AS "productColor",
+    productcolors.colorid AS "colorID",
+    productsizes.sizeid AS "sizeID",
+    productsizes.sizename AS "productSize",
+    productsizes.instock
+  FROM cartitems
+  INNER JOIN products ON cartitems.productid = products.productid
+  LEFT JOIN productimages ON cartitems.productid = productimages.productid AND productimages.isprimary = true
+  LEFT JOIN productcolors ON cartitems.productid = productcolors.productid AND cartitems.colorid = productcolors.colorid
+  LEFT JOIN productsizes ON cartitems.productid = productsizes.productid AND cartitems.sizeid = productsizes.sizeid
+  WHERE cartitems.userid = $1;
+`;
+
+
             const values = [userID];
     
             const result = await client.query(query, values);
@@ -161,24 +189,29 @@ router.post('/user/cart-items',userIDSchema, async (req: Request, res: Response)
         console.log(result);
         res.status(500).json({ message: 'Validation error' });
     }
+    
 });
-router.post('/user/wishlist-items',async (req: Request, res: Response) => {
+
+router.post('/user/wishlist-items', userIDSchema, async (req: Request, res: Response) => {
     const result = validationResult(req);
-    if(result.isEmpty()){
+    if (result.isEmpty()) {
         const { userID } = matchedData(req);
+        const query = `
+            SELECT
+                wishlistitems.wishlistitemid AS "wishlistItemID",
+                wishlistitems.productid AS "productID",
+                products.title AS "productName",
+                products.price AS "productPrice",
+                productimages.imglink AS "productImg",
+                productimages.imgalt AS "productAlt"
+            FROM wishlistitems
+            INNER JOIN products ON wishlistitems.productid = products.productid
+            LEFT JOIN productimages ON products.productid = productimages.productid AND productimages.isprimary = true
+            WHERE wishlistitems.userid = $1;
+        `;
+        const values = [userID];
         try {
-            
-            const query = `
-                SELECT wishlistitems.wishlistitemid,wishlistitems.productid,products.discount,productimages.imglink,productimages.imgalt,products.title
-                 FROM wishlistitems
-                 INNER JOIN products ON wishlistitems.productid = products.productid 
-                 INNER JOIN productimages ON products.productid = productimages.productid 
-                 WHERE productimages.isprimary = true AND wishlistitems.userid = $1;
-            `;
-            const values = [userID];
-    
             const result = await client.query(query, values);
-    
             if (result.rows.length === 0) {
                 return res.status(404).json({ error: 'No wishlist items found for this user' });
             }
@@ -186,13 +219,12 @@ router.post('/user/wishlist-items',async (req: Request, res: Response) => {
         } catch (error) {
             res.status(500).json({ error: 'Server error' });
         }
-    }else
-    {
+    } else {
         console.log(result);
         res.status(500).json({ message: 'Validation error' });
     }
-    
 });
+
 router.post('/user/coupons',userIDSchema, async (req: Request, res: Response) => {
     const result = validationResult(req);
     if(result.isEmpty()){
