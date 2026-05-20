@@ -16,8 +16,10 @@ import productCatalog from "./routes/productCatalog";
 import couponsRouter from './routes/coupons';
 import warehouseRoutes from "./routes/warehouse";
 import salesRoutes from "./routes/sales";
+import toyFilter from "./routes/toyFilter";
 
 const router = express.Router();
+
 router.use("/", authentication);
 router.use("/update", userUpdate);
 router.use("/", userOTP);
@@ -32,7 +34,9 @@ router.use("/", adminRoutes);
 router.use("/brands", brandsRouter);
 router.use("/collections", collectionsRouter);
 router.use("/", productCatalog);
+router.use("/", toyFilter);
 router.use("/coupons", couponsRouter);
 router.use("/warehouse", warehouseRoutes);
 router.use("/sales", salesRoutes);
+
 export default router;

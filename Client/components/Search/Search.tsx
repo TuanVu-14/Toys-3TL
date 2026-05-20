@@ -1,189 +1,138 @@
-'use client';
-// Client/components/Search/Search.tsx
-// ĐÃ SỬA: bỏ bộ lọc phụ "Bộ lọc đồ chơi" bị thừa.
-// Trang search chỉ còn dùng FilterSidebar chính.
+"use client"
 
-import React, { useLayoutEffect, useState, useRef } from 'react';
-import Link from 'next/link';
-import { HomeIcon, ChevronDoubleRightIcon } from '@heroicons/react/24/outline';
-import SearchProducts from './SearchProducts';
-import { useParams } from 'next/navigation';
-import FilterSidebar from '@/components/FilterSidebar';
-import SearchMSidebar from '../Mobile-Interface/SearchMSidebar';
-import searchProductHandler from '@/app/api/search';
-import { toyFilterSearchHandler } from '@/app/api/toyFilter';
+import React, { useLayoutEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { HomeIcon, ChevronDoubleRightIcon } from '@heroicons/react/24/outline'
+import { useParams } from 'next/navigation'
 
-interface Color {
-  colorid: number;
-  name: string;
-  colorname: string;
-  colorclass: string;
-}
+import SearchProducts from './SearchProducts'
+import FilterSidebar from '@/components/FilterSidebar'
+import SearchMSidebar from '../Mobile-Interface/SearchMSidebar'
+import searchProductHandler from '@/app/api/search'
+import { toyFilterSearchHandler } from '@/app/api/toyFilter'
 
-interface Size {
-  sizeid: number;
-  name: string;
-  sizename: string;
-  instock: boolean;
-}
-
-interface ProductImage {
-  imageid: number;
-  imglink: string;
-  imgalt: string;
-}
-
-interface Product {
-  productid: number;
-  title: string;
-  category: string;
-  price: string;
-  discount: string;
-  stars: number;
-  isnew: boolean;
-  issale: boolean;
-  isdiscount: boolean;
-  colors: Color[];
-  sizes: Size[];
-  reviewCount: number;
-  images: ProductImage;
-}
+const slugToText = (value: string) => decodeURIComponent(value || '').split('-').join(' ')
 
 const Search = () => {
-  const categoryCapture = useParams();
-  const specificCategory = String(categoryCapture.productName || '');
-  const currDirectory = ['Search', specificCategory];
+  const params = useParams<{ productName: string }>()
+  const specificCategory = String(params.productName || '')
+  const currDirectory = ['Search', specificCategory]
 
-  const [loading, setloading] = useState(true);
-  const productsData = useRef<Product[]>([]);
-  const dataChecked = useRef(false);
-  const [clear, setClear] = useState(false);
-  const [isMenu, setIsMenu] = useState(false);
+  const [loading, setLoading] = useState(true)
+  const [clear, setClear] = useState(false)
+  const [isMenu, setIsMenu] = useState(false)
+  const productsData = useRef<any[]>([])
+  const dataChecked = useRef(false)
 
   async function fetchData() {
-    productsData.current = [];
-    if (!loading) setloading(true);
+    productsData.current = []
+    dataChecked.current = false
+    setLoading(true)
 
     try {
-      const response = await searchProductHandler({ productName: specificCategory });
+      const response = await searchProductHandler({ productName: specificCategory })
 
-      if (response.status === 200 && response.data?.data?.length > 0) {
-        productsData.current = response.data.data;
+      if (response.status === 200 && response.data?.data) {
+        productsData.current = response.data.data
       }
     } finally {
-      dataChecked.current = true;
-      setloading(false);
+      dataChecked.current = true
+      setLoading(false)
     }
   }
 
   async function filterSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e.preventDefault()
 
-    const form = e.currentTarget;
-    const formData = new FormData(form);
+    const formData = new FormData(e.currentTarget)
 
-    const minPrice = String(formData.get('pricefrom') || '');
-    const maxPrice = String(formData.get('priceto') || '');
-    const rating = String(formData.get('rating') || '');
-
-    productsData.current = [];
-    dataChecked.current = false;
-    setloading(true);
+    productsData.current = []
+    dataChecked.current = false
+    setLoading(true)
 
     try {
       const response = await toyFilterSearchHandler({
         productName: specificCategory,
-        minPrice,
-        maxPrice,
-        minRating: rating,
-      });
+        minPrice: String(formData.get('pricefrom') || '0'),
+        maxPrice: String(formData.get('priceto') || '999999999'),
+        minRating: String(formData.get('rating') || '0'),
+        age_group: String(formData.get('age_group') || ''),
+        gender: String(formData.get('gender') || ''),
+        material: String(formData.get('material') || ''),
+        skill_type: String(formData.get('skill_type') || ''),
+        brand: String(formData.get('brand') || ''),
+        collection_id: String(formData.get('collection_id') || ''),
+      })
 
       if (response.status === 200 && response.data?.data) {
-        productsData.current = response.data.data;
+        productsData.current = response.data.data
       }
     } finally {
-      dataChecked.current = true;
-      setloading(false);
+      dataChecked.current = true
+      setLoading(false)
     }
   }
 
   function toggleClear() {
-    setClear((prev) => !prev);
+    setClear((prev) => !prev)
   }
 
   useLayoutEffect(() => {
-    fetchData();
+    fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clear, specificCategory]);
+  }, [clear, specificCategory])
 
-  const formatedName = specificCategory.split('-').join(' ');
+  const formatedName = slugToText(specificCategory)
 
   return (
     <>
-      <SearchMSidebar
-        isMenu={isMenu}
-        setIsMenu={setIsMenu}
-        dataChecked={dataChecked.current}
-        filterSubmit={filterSubmit}
-        toggleClear={toggleClear}
-      />
-
-      <section className="flex flex-col gap-6">
-        <div className="flex items-center gap-5">
-          <Link href="/" className="transition-all duration-300 hover:text-primary-600">
-            <HomeIcon width={35} />
-          </Link>
-
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
           {currDirectory.map((each, index) => {
-            const isLast = index === currDirectory.length - 1;
+            const isLast = index === currDirectory.length - 1
 
             return (
-              <div className="flex items-center gap-5" key={index}>
-                <ChevronDoubleRightIcon width={20} />
-
+              <React.Fragment key={`${each}-${index}`}>
+                {index === 0 && <HomeIcon className="h-4 w-4" />}
                 {isLast ? (
-                  <p className="font-medium capitalize">
-                    {each === specificCategory ? formatedName : each}
-                  </p>
+                  <span className="font-semibold text-gray-900">{each === specificCategory ? formatedName : each}</span>
                 ) : (
-                  <Link
-                    href="/search"
-                    className="font-medium capitalize transition-all duration-300 hover:text-primary-600"
-                  >
-                    {each}
-                  </Link>
+                  <Link href="/" className="hover:text-indigo-600">{each}</Link>
                 )}
-              </div>
-            );
+                {!isLast && <ChevronDoubleRightIcon className="h-4 w-4" />}
+              </React.Fragment>
+            )
           })}
         </div>
 
         <button
+          type="button"
           onClick={() => setIsMenu(true)}
-          className="rounded-full lg:hidden px-2 py-2 border-2 font-semibold text-md text-primary-600 whitespace-nowrap w-[200px] mx-auto text-center shadow-sm transition-all duration-500 hover:bg-indigo-500 hover:text-white"
+          className="mx-auto w-[200px] rounded-full border-2 px-2 py-2 text-center text-md font-semibold text-primary-600 shadow-sm transition-all duration-500 hover:bg-indigo-500 hover:text-white lg:hidden"
         >
           Filter Products
         </button>
 
-        <section className="flex gap-4">
-          <div className="relative ml-4 flex flex-col gap-4">
-            <FilterSidebar
-              dataChecked={dataChecked.current}
-              filterSubmit={filterSubmit}
-              toggleClear={toggleClear}
-              mobileMode={false}
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
+          <aside className="hidden lg:block">
+            <FilterSidebar dataChecked={dataChecked.current} filterSubmit={filterSubmit} toggleClear={toggleClear} mobileMode={false} />
+          </aside>
 
-          <SearchProducts
-            dataChecked={dataChecked.current}
-            products={productsData.current}
-            loading={loading}
-          />
-        </section>
-      </section>
+          <SearchProducts dataChecked={dataChecked.current} products={productsData.current} loading={loading} />
+        </div>
+      </div>
+
+      {isMenu && (
+        <SearchMSidebar
+          isMenu={isMenu}
+          setIsMenu={setIsMenu}
+          dataChecked={dataChecked.current}
+          filterSubmit={filterSubmit}
+          toggleClear={toggleClear}
+        />
+      )}
     </>
-  );
-};
+  )
+}
 
-export default Search;
+export default Search

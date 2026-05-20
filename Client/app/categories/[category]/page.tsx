@@ -1,12 +1,5 @@
-"use client"
-import Common from '@/components/CommonPage/Common'
-import React from 'react'
-import CategoryPage from '@/components/Categories/CategoryPage'
+import { redirect } from 'next/navigation'
 
-const page = () => {
-  return (
-    <Common Component={CategoryPage}/>
-  )
+export default function Page({ params }: { params: { category: string } }) {
+  redirect(`/categories/${params.category}`)
 }
-
-export default page
