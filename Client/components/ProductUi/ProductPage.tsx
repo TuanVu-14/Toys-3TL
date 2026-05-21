@@ -204,11 +204,12 @@ const ProductPage = () => {
 
       setFound(true)
 
-      const firstColor = product.colors?.[0] || {
-        colorid: 0,
-        colorname: 'Default',
-        colorclass: 'col_default',
-      }
+      const firstColor =
+        product.colors?.[0] || {
+          colorid: 0,
+          colorname: 'Default',
+          colorclass: 'col_default',
+        }
 
       const firstSize =
         product.sizes?.find((size) => size.instock) ||
@@ -247,7 +248,9 @@ const ProductPage = () => {
       setQuantity(quantity + 1)
     }
 
-    if (action === 'decrease' && quantity > 1) setQuantity(quantity - 1)
+    if (action === 'decrease' && quantity > 1) {
+      setQuantity(quantity - 1)
+    }
   }
 
   const changeImage = (action: 'prev' | 'next') => {
@@ -434,11 +437,7 @@ const ProductPage = () => {
                   <p className="mt-3 text-gray-500">By {data.seller}</p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => itemStateUpdate('wishlist')}
-                  className="rounded-full p-2 text-red-500 hover:bg-red-50"
-                >
+                <button type="button" onClick={() => itemStateUpdate('wishlist')} className="rounded-full p-2 text-red-500 hover:bg-red-50">
                   <HeartIcon className="h-9 w-9" />
                 </button>
               </div>
@@ -630,7 +629,7 @@ const ProductPage = () => {
           setdialogType={setDialogType}
           setloading={setLoading}
           productID={data.productid}
-          selectedReview={selectedReview}
+          selectedReview={selectedReview.reviewid > 0 ? selectedReview : null}
           selectedRating={selectedRating}
           setselectedRating={setSelectedRating}
         />
