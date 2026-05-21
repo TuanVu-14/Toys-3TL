@@ -18,7 +18,6 @@ import {
   formatPrice,
   getFinalPrice,
   getProductPrice,
-  getProductStock,
   WishlistItem,
   toNumber,
 } from '@/features/UIUpdates/CartWishlist'
@@ -171,7 +170,6 @@ export default function Favourite() {
                                 const wishlistItemID =
                                   getWishlistItemID(product)
                                 const productID = getProductID(product)
-                                const stock = getProductStock(product)
 
                                 const price = getFinalPrice(
                                   getProductPrice(product),
@@ -207,18 +205,6 @@ export default function Favourite() {
                                             {formatPrice(price)}
                                           </p>
                                         </div>
-
-                                        {stock !== null && stock <= 0 ? (
-                                          <p className="text-sm text-red-500">
-                                            Hết hàng
-                                          </p>
-                                        ) : (
-                                          <p className="text-sm text-green-600">
-                                            {stock === null
-                                              ? 'Còn hàng'
-                                              : `Còn ${stock} sản phẩm`}
-                                          </p>
-                                        )}
                                       </div>
 
                                       <div className="mt-4 flex flex-1 items-end justify-end text-sm">

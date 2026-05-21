@@ -1,64 +1,97 @@
-import Link from 'next/link';
-import React from 'react';
-import { formatPrice } from "@/features/UIUpdates/CartWishlist";
+import Link from 'next/link'
+import React from 'react'
+import { formatPrice, toNumber } from '@/features/UIUpdates/CartWishlist'
 
-interface DataPattern {
-  data: {
-    productid: number;
-    title: string;
-    price: number;
-    discount: number;
-    imglink: string;
-    imgalt: string;
-    category_name: string;
-    maincategory:string;
-  }[];
-  isSecondary:boolean;
+interface Product {
+  productid: number
+  title: string
+  price: number | string
+  discount: number | string
+  imglink: string
+  imgalt: string
+  category_name: string
+  maincategory: string
+  isnew?: boolean
+  issale?: boolean
+  isdiscount?: boolean
 }
 
-const TrendingPrimary = (props:DataPattern) => {
-  function categoryLink(maincategory:string,category:string){
-    const splitCat = category.split(' ').join('-');
+interface DataPattern {
+  data: Product[]
+  isSecondary: boolean
+}
+
+const TrendingPrimary = ({ data, isSecondary }: DataPattern) => {
+  function categoryLink(maincategory: string, category: string) {
+    const splitCat = category.split(' ').join('-')
     return `/sub-category/${maincategory}/${splitCat}`
   }
+
   return (
     <>
-      {props.data.map((each, index) => (
-        <div
-          key={index}
-          className={`flex mt-5 ${!props.isSecondary && 'mr-5'} static border-[1px] rounded-xl mb-2 min-w-[310px] max-w-[310px] h-[110px] items-center`}
-        >
-          <Link href={`/product/${each.productid}`}>
-            <img
-              className="ml-2 w-[75px] h-[60px] rounded-md"
-              src={each.imglink}
-              alt={each.title}
-            />
-          </Link>
-          <div className="ml-2 w-[200px]">
-            <Link href={`/product/${each.productid}`}>
-              <p className="text-[16px] text-eblack font-semibold tracking-normal overflow-hidden whitespace-nowrap text-ellipsis w-full">
-                {each.title}
-              </p>
+      {data.map((each) => {
+        const discountValue = toNumber(each.discount)
+        const hasDiscount = discountValue > 0
+        const badgeText = hasDiscount
+          ? `-${discountValue <= 100 ? discountValue : Math.round(discountValue)}%`
+          : each.issale
+            ? 'SALE'
+            : each.isnew
+              ? 'NEW'
+              : ''
+
+        return (
+          <div
+            key={each.productid}
+            className={`flex items-center rounded-xl border-[1px] border-gray-200 bg-white p-4 transition-shadow duration-300 hover:shadow-md ${
+              isSecondary ? 'min-h-[86px]' : 'min-h-[112px]'
+            }`}
+          >
+            <Link
+              href={`/product/${each.productid}`}
+              className="relative mr-4 h-[82px] w-[120px] flex-shrink-0 overflow-hidden rounded-md bg-gray-50"
+            >
+              {badgeText && (
+                <span className="absolute left-0 top-0 z-10 rounded-br-md bg-salmon px-2 py-[2px] text-[11px] font-semibold text-white">
+                  {badgeText}
+                </span>
+              )}
+              <img
+                src={each.imglink || '/no-image.png'}
+                alt={each.imgalt || each.title}
+                className="h-full w-full object-cover object-center"
+              />
             </Link>
-            <Link href={categoryLink(each.maincategory,each.category_name)}>
-              <p className="tracking-normal text-silver font-normal text-[14px] hover:text-salmon">
-                {each.category_name}
-              </p>
-            </Link>
-            <div className="flex items-center">
-              <p className="text-lg text-salmon font-bold">
-                {formatPrice(each.price, each.discount)}
-              </p>
-              <p className="text-sm line-through font-normal ml-4 text-silver">
-                {formatPrice(each.price)}
-              </p>
+
+            <div className="min-w-0 flex-1">
+              <Link href={`/product/${each.productid}`}>
+                <p className="line-clamp-1 text-[16px] font-semibold tracking-wide text-gray-900 hover:text-salmon">
+                  {each.title}
+                </p>
+              </Link>
+
+              <Link href={categoryLink(each.maincategory, each.category_name)}>
+                <p className="line-clamp-1 text-[13px] text-silver hover:text-salmon">
+                  {each.category_name}
+                </p>
+              </Link>
+
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <p className="text-[16px] font-bold text-salmon">
+                  {formatPrice(each.price, each.discount)}
+                </p>
+                {hasDiscount && (
+                  <p className="text-[13px] text-silver line-through">
+                    {formatPrice(each.price)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </>
-  );
-};
+  )
+}
 
-export default TrendingPrimary;
+export default TrendingPrimary

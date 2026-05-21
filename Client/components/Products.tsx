@@ -93,7 +93,7 @@ const ProductCard = ({ product }:{ product:Product }) => {
         </div>
       )}
       <div className={`relative transition-transform mb-1 duration-300 ${isHovered && 'scale-105'}`}>
-        <img className='min-w-[200px] min-h-[210px]' src={product.images.imglink} alt={product.title} />
+        <img className='h-[210px] w-full object-cover' src={product.images.imglink} alt={product.title} />
         {isHovered && (
           <button
             className='absolute bottom-2 left-1/2 rounded-xl transform -translate-x-1/2 w-[100px] h-[30px] flex items-center justify-center bg-black bg-opacity-50 text-white text-sm uppercase transition-opacity duration-300'
