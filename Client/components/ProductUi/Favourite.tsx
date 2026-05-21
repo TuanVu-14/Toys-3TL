@@ -1,4 +1,10 @@
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { Fragment, useState } from 'react'
 import Link from 'next/link'
@@ -12,27 +18,44 @@ import {
   formatPrice,
   getFinalPrice,
   getProductPrice,
+  getProductStock,
   WishlistItem,
   toNumber,
 } from '@/features/UIUpdates/CartWishlist'
 import Loading from '../Loading'
 
-const getAccountID = (account: unknown) => Number((account as { userID?: number; userid?: number })?.userID ?? (account as { userid?: number })?.userid ?? 0)
+const getAccountID = (account: unknown) =>
+  Number(
+    (account as { userID?: number; userid?: number })?.userID ??
+      (account as { userid?: number })?.userid ??
+      0,
+  )
 
 const getError = (res: unknown, fallback: string) => {
   const error = (res as { error?: string })?.error
   return error || fallback
 }
 
-const getWishlistItemID = (item: WishlistItem) => toNumber(item.wishlistItemID ?? item.wishlistitemid)
-const getProductID = (item: WishlistItem) => toNumber(item.productID ?? item.productid)
-const getProductName = (item: WishlistItem) => item.productName ?? item.title ?? 'Sản phẩm'
-const getProductImage = (item: WishlistItem) => item.productImg ?? item.imglink ?? '/no-image.png'
-const getProductAlt = (item: WishlistItem) => item.productAlt ?? item.imgalt ?? getProductName(item)
-const getProductStock = (item: WishlistItem) => toNumber(item.productStock ?? item.productstock ?? item.stock)
+const getWishlistItemID = (item: WishlistItem) =>
+  toNumber(item.wishlistItemID ?? item.wishlistitemid)
+
+const getProductID = (item: WishlistItem) =>
+  toNumber(item.productID ?? item.productid)
+
+const getProductName = (item: WishlistItem) =>
+  item.productName ?? item.title ?? 'Sản phẩm'
+
+const getProductImage = (item: WishlistItem) =>
+  item.productImg ?? item.imglink ?? '/no-image.png'
+
+const getProductAlt = (item: WishlistItem) =>
+  item.productAlt ?? item.imgalt ?? getProductName(item)
 
 export default function Favourite() {
-  const defaultAccount = useAppSelector((state) => state.userState.defaultAccount)
+  const defaultAccount = useAppSelector(
+    (state) => state.userState.defaultAccount,
+  )
+
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -51,7 +74,9 @@ export default function Favourite() {
     setMessage('')
 
     if (isLogged && (!userID || !wishlistItemID)) {
-      setMessage('Sản phẩm thiếu wishlistItemID hoặc userID. Hãy đăng nhập lại rồi thử xoá.')
+      setMessage(
+        'Sản phẩm thiếu wishlistItemID hoặc userID. Hãy đăng nhập lại rồi thử xoá.',
+      )
       return
     }
 
@@ -65,7 +90,9 @@ export default function Favourite() {
         })
 
         if (res.status !== 200) {
-          setMessage(getError(res, 'Không xoá được sản phẩm khỏi danh sách yêu thích.'))
+          setMessage(
+            getError(res, 'Không xoá được sản phẩm khỏi danh sách yêu thích.'),
+          )
           return
         }
       }
@@ -107,9 +134,15 @@ export default function Favourite() {
                   <div className="flex h-full flex-col overflow-y-scroll bg-white shadow-xl">
                     <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
                       <div className="flex items-start justify-between">
-                        <DialogTitle className="text-lg font-medium text-gray-900">Yêu thích</DialogTitle>
+                        <DialogTitle className="text-lg font-medium text-gray-900">
+                          Yêu thích
+                        </DialogTitle>
 
-                        <button type="button" className="relative -m-2 p-2 text-gray-400 hover:text-gray-500" onClick={toggleFav}>
+                        <button
+                          type="button"
+                          className="relative -m-2 p-2 text-gray-400 hover:text-gray-500"
+                          onClick={toggleFav}
+                        >
                           <span className="sr-only">Đóng</span>
                           <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                         </button>
@@ -117,22 +150,39 @@ export default function Favourite() {
 
                       {loading && <Loading />}
 
-                      {message && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{message}</p>}
+                      {message && (
+                        <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+                          {message}
+                        </p>
+                      )}
 
                       <div className="mt-8">
                         <div className="flow-root">
                           {wishlist.length === 0 ? (
-                            <p className="py-8 text-center text-sm text-gray-500">Danh sách yêu thích đang trống.</p>
+                            <p className="py-8 text-center text-sm text-gray-500">
+                              Danh sách yêu thích đang trống.
+                            </p>
                           ) : (
-                            <ul role="list" className="-my-6 divide-y divide-gray-200">
+                            <ul
+                              role="list"
+                              className="-my-6 divide-y divide-gray-200"
+                            >
                               {wishlist.map((product) => {
-                                const wishlistItemID = getWishlistItemID(product)
+                                const wishlistItemID =
+                                  getWishlistItemID(product)
                                 const productID = getProductID(product)
                                 const stock = getProductStock(product)
-                                const price = getFinalPrice(getProductPrice(product), product.discount)
+
+                                const price = getFinalPrice(
+                                  getProductPrice(product),
+                                  product.discount,
+                                )
 
                                 return (
-                                  <li key={`${wishlistItemID || productID}`} className="flex py-6">
+                                  <li
+                                    key={`${wishlistItemID || productID}`}
+                                    className="flex py-6"
+                                  >
                                     <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                       <img
                                         src={getProductImage(product)}
@@ -145,18 +195,29 @@ export default function Favourite() {
                                       <div>
                                         <div className="flex justify-between gap-3 text-base font-medium text-gray-900">
                                           <h3 className="line-clamp-2">
-                                            <Link href={`/product/${productID}`} onClick={toggleFav}>
+                                            <Link
+                                              href={`/product/${productID}`}
+                                              onClick={toggleFav}
+                                            >
                                               {getProductName(product)}
                                             </Link>
                                           </h3>
 
-                                          <p className="whitespace-nowrap">{formatPrice(price)}</p>
+                                          <p className="whitespace-nowrap">
+                                            {formatPrice(price)}
+                                          </p>
                                         </div>
 
-                                        {stock === 0 ? (
-                                          <p className="mt-1 text-sm text-red-500">Hết hàng</p>
+                                        {stock !== null && stock <= 0 ? (
+                                          <p className="text-sm text-red-500">
+                                            Hết hàng
+                                          </p>
                                         ) : (
-                                          <p className="mt-1 text-sm text-green-600">Còn hàng</p>
+                                          <p className="text-sm text-green-600">
+                                            {stock === null
+                                              ? 'Còn hàng'
+                                              : `Còn ${stock} sản phẩm`}
+                                          </p>
                                         )}
                                       </div>
 
@@ -182,7 +243,11 @@ export default function Favourite() {
 
                     <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
                       <div className="flex justify-center text-center text-sm text-gray-500">
-                        <button type="button" onClick={toggleFav} className="font-medium text-indigo-600 hover:text-indigo-500">
+                        <button
+                          type="button"
+                          onClick={toggleFav}
+                          className="font-medium text-indigo-600 hover:text-indigo-500"
+                        >
                           Tiếp tục mua hàng <span aria-hidden="true">→</span>
                         </button>
                       </div>

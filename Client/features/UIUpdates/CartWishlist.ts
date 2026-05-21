@@ -24,9 +24,9 @@ export interface CartItem {
   sizename?: string
   sizeID?: number
   sizeid?: number
-  productStock?: number | string
-  productstock?: number | string
-  stock?: number | string
+  productStock?: number | string | null
+  productstock?: number | string | null
+  stock?: number | string | null
   quantity: number
 }
 
@@ -46,9 +46,9 @@ export interface WishlistItem {
   price?: number | string
   discountedprice?: number | string
   discount?: number | string
-  productStock?: number | string
-  productstock?: number | string
-  stock?: number | string
+  productStock?: number | string | null
+  productstock?: number | string | null
+  stock?: number | string | null
 }
 
 interface CartWishlistState {
@@ -78,6 +78,23 @@ export const toNumber = (value: unknown): number => {
 export const getProductPrice = (item: Partial<CartItem | WishlistItem>) => {
   return toNumber(item.productPrice ?? item.productprice ?? item.discountedprice ?? item.price)
 }
+
+export const getProductStock = (item: Partial<CartItem | WishlistItem>): number | null => {
+  const rawStock = item.productStock ?? item.productstock ?? item.stock
+
+  if (rawStock === null || rawStock === undefined || rawStock === '') {
+    return null
+  }
+
+  return toNumber(rawStock)
+}
+
+const pickStockValue = (item?: Partial<CartItem | WishlistItem>) => {
+  if (!item) return undefined
+  return item.productStock ?? item.productstock ?? item.stock
+}
+
+const hasStockValue = (value: unknown) => value !== undefined && value !== null && value !== ''
 
 export const getFinalPrice = (price: unknown, discount?: unknown) => {
   const originalPrice = toNumber(price)
@@ -119,22 +136,65 @@ const cartWishlistSlice = createSlice({
   initialState,
   reducers: {
     setCart(state, action: PayloadAction<CartItem[]>) {
-      state.cart = action.payload || []
+      const incoming = action.payload || []
+
+      state.cart = incoming.map((newItem) => {
+        const oldItem = state.cart.find((item) => sameCartItem(item, newItem))
+        const newStock = pickStockValue(newItem)
+        const oldStock = pickStockValue(oldItem)
+        const stockToUse = hasStockValue(newStock) ? newStock : oldStock
+
+        return {
+          ...oldItem,
+          ...newItem,
+          productStock: hasStockValue(stockToUse) ? stockToUse : null,
+          quantity: Math.max(1, toNumber(newItem.quantity)),
+        }
+      })
     },
 
     setWishlist(state, action: PayloadAction<WishlistItem[]>) {
-      state.wishlist = action.payload || []
+      const incoming = action.payload || []
+
+      state.wishlist = incoming.map((newItem) => {
+        const newProductID = toNumber(newItem.productID ?? newItem.productid)
+        const oldItem = state.wishlist.find(
+          (item) => toNumber(item.productID ?? item.productid) === newProductID,
+        )
+        const newStock = pickStockValue(newItem)
+        const oldStock = pickStockValue(oldItem)
+        const stockToUse = hasStockValue(newStock) ? newStock : oldStock
+
+        return {
+          ...oldItem,
+          ...newItem,
+          productStock: hasStockValue(stockToUse) ? stockToUse : null,
+        }
+      })
     },
 
     addItemToCart(state, action: PayloadAction<CartItem>) {
       const existingItem = state.cart.find((item) => sameCartItem(item, action.payload))
+      const payloadStock = pickStockValue(action.payload)
 
       if (existingItem) {
-        const stock = toNumber(existingItem.productStock ?? existingItem.productstock ?? existingItem.stock)
+        const stock = hasStockValue(payloadStock) ? toNumber(payloadStock) : getProductStock(existingItem)
         const nextQuantity = toNumber(existingItem.quantity) + Math.max(1, toNumber(action.payload.quantity))
-        existingItem.quantity = stock > 0 ? Math.min(nextQuantity, stock) : nextQuantity
+
+        existingItem.quantity = stock !== null && stock > 0 ? Math.min(nextQuantity, stock) : nextQuantity
+
+        if (hasStockValue(payloadStock)) {
+          existingItem.productStock = payloadStock
+        }
       } else {
-        state.cart.push({ ...action.payload, quantity: Math.max(1, toNumber(action.payload.quantity)) })
+        const stock = getProductStock(action.payload)
+        const nextQuantity = Math.max(1, toNumber(action.payload.quantity))
+
+        state.cart.push({
+          ...action.payload,
+          productStock: hasStockValue(payloadStock) ? payloadStock : null,
+          quantity: stock !== null && stock > 0 ? Math.min(nextQuantity, stock) : nextQuantity,
+        })
       }
     },
 
@@ -176,14 +236,32 @@ const cartWishlistSlice = createSlice({
         return toNumber(item.productID ?? item.productid) === action.payload.productID
       })
 
-      if (item) item.quantity = Math.max(1, toNumber(action.payload.quantity))
+      if (item) {
+        const stock = getProductStock(item)
+        const nextQuantity = Math.max(1, toNumber(action.payload.quantity))
+
+        item.quantity = stock !== null && stock > 0 ? Math.min(nextQuantity, stock) : nextQuantity
+      }
     },
 
     addItemToWishlist(state, action: PayloadAction<WishlistItem>) {
       const productID = toNumber(action.payload.productID ?? action.payload.productid)
       const existingItem = state.wishlist.find((item) => toNumber(item.productID ?? item.productid) === productID)
+      const payloadStock = pickStockValue(action.payload)
 
-      if (!existingItem) state.wishlist.push(action.payload)
+      if (!existingItem) {
+        state.wishlist.push({
+          ...action.payload,
+          productStock: hasStockValue(payloadStock) ? payloadStock : null,
+        })
+        return
+      }
+
+      Object.assign(existingItem, action.payload)
+
+      if (hasStockValue(payloadStock)) {
+        existingItem.productStock = payloadStock
+      }
     },
 
     removeItemFromWishlist(

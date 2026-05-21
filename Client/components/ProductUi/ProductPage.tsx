@@ -3,7 +3,12 @@ import Stars from './Stars'
 import { HeartIcon } from '@heroicons/react/24/outline'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
-import { addItemToCart, addItemToWishlist, formatPrice, getFinalPrice } from '@/features/UIUpdates/CartWishlist'
+import {
+  addItemToCart,
+  addItemToWishlist,
+  formatPrice,
+  getFinalPrice,
+} from '@/features/UIUpdates/CartWishlist'
 import ReviewSection from './Product/ReviewSection'
 import ProductNotFound from './Product/ProductNotFound'
 import productDataHandler from '@/app/api/product'
@@ -72,17 +77,6 @@ interface Product {
   discount: number
 }
 
-const emptyReview: Review = {
-  reviewid: 0,
-  userid: 0,
-  rating: 1,
-  title: '',
-  comment: '',
-  username: '',
-  createdat: '',
-  productstars: 1,
-}
-
 const defaultData: Product = {
   productid: 0,
   title: '',
@@ -118,18 +112,21 @@ const normalizeSlug = (value: string) =>
     .replace(/^-+|-+$/g, '')
 
 const getAccountID = (account: unknown) =>
-  Number((account as { userID?: number; userid?: number })?.userID ?? (account as { userid?: number })?.userid ?? 0)
+  Number(
+    (account as { userID?: number; userid?: number })?.userID ??
+      (account as { userid?: number })?.userid ??
+      0,
+  )
 
 const ProductPage = () => {
   const { appState } = useApp()
   const router = useRouter()
   const params = useParams<{ productID: string }>()
   const dispatch = useAppDispatch()
-
   const defaultAccount = useAppSelector((state) => state.userState.defaultAccount)
+
   const userID = getAccountID(defaultAccount)
   const isLogged = appState.loggedIn
-
   const reviewRef = useRef<HTMLDivElement | null>(null)
 
   const [data, setData] = useState<Product>(defaultData)
@@ -139,23 +136,19 @@ const ProductPage = () => {
   const [btnLoading, setBtnLoading] = useState(false)
   const [stockMessage, setStockMessage] = useState('')
   const [toast, setToast] = useState('')
-
   const [dialogType, setDialogType] = useState<string | null>(null)
-  const [selectedReview, setSelectedReview] = useState<Review>(emptyReview)
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null)
   const [selectedRating, setSelectedRating] = useState(1)
-
   const [selectedColor, setSelectedColor] = useState<ProductColor>({
     colorid: 0,
     colorname: 'Default',
     colorclass: 'col_default',
   })
-
   const [selectedSize, setSelectedSize] = useState<ProductSize>({
     sizeid: 0,
     sizename: 'Default',
     instock: true,
   })
-
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
 
@@ -168,14 +161,16 @@ const ProductPage = () => {
       ...(data.imgcollection || []),
     ].filter((img) => Boolean(img.imglink))
 
-    return allImages.filter((img, index, arr) => arr.findIndex((x) => x.imglink === img.imglink) === index)
+    return allImages.filter(
+      (img, index, arr) => arr.findIndex((x) => x.imglink === img.imglink) === index,
+    )
   }, [data.imglink, data.imgalt, data.title, data.imgcollection])
 
   const selectedImage = images[selectedImageIndex] || images[0]
   const finalPrice = getFinalPrice(data.price || data.discountedprice, data.discount)
 
   useEffect(() => {
-    if (!toast) return
+    if (!toast) return undefined
 
     const timer = setTimeout(() => setToast(''), 2500)
     return () => clearTimeout(timer)
@@ -188,7 +183,6 @@ const ProductPage = () => {
 
     if (response.status === 200 && response.data?.data) {
       const product = response.data.data as Product
-
       const normalizedReviews: Review[] = (product.reviews || []).map((review) => ({
         ...review,
         productstars: review.productstars ?? review.rating ?? 0,
@@ -200,19 +194,18 @@ const ProductPage = () => {
         imgcollection: product.imgcollection || [],
         colors: product.colors || [],
         sizes: product.sizes || [],
+        stock: Number(product.stock || 0),
+        discount: Number(product.discount || 0),
       })
-
       setFound(true)
 
-      const firstColor =
-        product.colors?.[0] || {
-          colorid: 0,
-          colorname: 'Default',
-          colorclass: 'col_default',
-        }
+      const firstColor = product.colors?.[0] || {
+        colorid: 0,
+        colorname: 'Default',
+        colorclass: 'col_default',
+      }
 
-      const firstSize =
-        product.sizes?.find((size) => size.instock) ||
+      const firstSize = product.sizes?.find((size) => size.instock) ||
         product.sizes?.[0] || {
           sizeid: 0,
           sizename: 'Default',
@@ -265,6 +258,8 @@ const ProductPage = () => {
   const handleReviewClick = () => reviewRef.current?.scrollIntoView({ behavior: 'smooth' })
 
   async function itemStateUpdate(key: 'cart' | 'wishlist') {
+    setStockMessage('')
+
     if (outOfStock) {
       setStockMessage('Sản phẩm đã hết hàng hoặc size đang chọn không còn hàng.')
       return
@@ -277,31 +272,39 @@ const ProductPage = () => {
 
     setBtnLoading(true)
 
+    const commonProductData = {
+      productID: data.productid,
+      productid: data.productid,
+      productImg: selectedImage?.imglink || data.imglink,
+      imglink: selectedImage?.imglink || data.imglink,
+      productAlt: selectedImage?.imgalt || data.imgalt,
+      imgalt: selectedImage?.imgalt || data.imgalt,
+      productName: data.title,
+      title: data.title,
+      productPrice: Number(data.price || data.discountedprice || 0),
+      price: Number(data.price || data.discountedprice || 0),
+      discount: Number(data.discount || 0),
+      productStock: Number(data.stock || 0),
+      stock: Number(data.stock || 0),
+    }
+
     const cartItemData = {
       cartItemID: IDGenerator(),
-      productID: data.productid,
-      productImg: selectedImage?.imglink || data.imglink,
-      productAlt: selectedImage?.imgalt || data.imgalt,
-      productName: data.title,
-      productPrice: Number(data.price || data.discountedprice || 0),
-      discount: Number(data.discount || 0),
+      ...commonProductData,
       productColor: selectedColor.colorname,
+      colorname: selectedColor.colorname,
       colorID: selectedColor.colorid,
+      colorid: selectedColor.colorid,
       productSize: selectedSize.sizename,
+      sizename: selectedSize.sizename,
       sizeID: selectedSize.sizeid,
-      productStock: data.stock,
+      sizeid: selectedSize.sizeid,
       quantity,
     }
 
     const wishlistItem = {
       wishlistItemID: IDGenerator(),
-      productID: data.productid,
-      productImg: selectedImage?.imglink || data.imglink,
-      productAlt: selectedImage?.imgalt || data.imgalt,
-      productName: data.title,
-      productPrice: Number(data.price || data.discountedprice || 0),
-      discount: Number(data.discount || 0),
-      productStock: data.stock,
+      ...commonProductData,
     }
 
     switch (key) {
@@ -359,36 +362,36 @@ const ProductPage = () => {
       {loading && <Loading />}
 
       {toast && (
-        <div className="fixed right-6 top-24 z-50 rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-lg">
+        <div className="fixed right-5 top-5 z-50 rounded-md bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-lg">
           {toast}
         </div>
       )}
 
       {!dataChecked && <Loading />}
-
       {dataChecked && !found && <ProductNotFound />}
 
       {dataChecked && data && found && (
-        <section className="mx-auto w-full max-w-7xl px-4 py-8">
-          <div className="mb-8 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+        <div className="mx-auto w-[90%] max-w-7xl py-8">
+          <div className="mb-6 text-sm text-gray-500">
             <Link href="/" className="hover:text-indigo-600">
               Trang chủ
-            </Link>
-            <span>›</span>
-            <span>{data.categories.maincategory}</span>
-            <span>›</span>
-            <Link href={categoryLink(data.categories.maincategory, data.categories.subcategory)} className="hover:text-indigo-600">
-              {data.categories.subcategory}
+            </Link>{' '}
+            ›{' '}
+            <Link
+              href={categoryLink(data.categories.maincategory, data.categories.subcategory)}
+              className="hover:text-indigo-600"
+            >
+              {data.categories.maincategory} › {data.categories.subcategory}
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+          <div className="grid gap-10 lg:grid-cols-2">
             <div>
-              <div className="relative flex min-h-[430px] items-center justify-center rounded-2xl border bg-white p-4">
+              <div className="relative overflow-hidden rounded-2xl border bg-white">
                 <img
                   src={selectedImage?.imglink || data.imglink || '/no-image.png'}
                   alt={selectedImage?.imgalt || data.imgalt || data.title}
-                  className="max-h-[430px] w-full object-contain"
+                  className="h-[520px] w-full object-contain"
                 />
 
                 {images.length > 1 && (
@@ -420,97 +423,98 @@ const ProductPage = () => {
                       key={`${each.imageid}-${each.imglink}`}
                       onClick={() => setSelectedImageIndex(index)}
                       className={`h-20 w-24 flex-shrink-0 overflow-hidden rounded-lg border bg-white p-1 transition ${
-                        selectedImageIndex === index ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-200 hover:border-indigo-300'
+                        selectedImageIndex === index
+                          ? 'border-indigo-600 ring-2 ring-indigo-200'
+                          : 'border-gray-200 hover:border-indigo-300'
                       }`}
                     >
-                      <img src={each.imglink} alt={each.imgalt || data.title} className="h-full w-full object-contain" />
+                      <img
+                        src={each.imglink}
+                        alt={each.imgalt || data.title}
+                        className="h-full w-full object-cover"
+                      />
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="rounded-2xl border bg-white p-8">
+            <div>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{data.title}</h1>
-                  <p className="mt-3 text-gray-500">By {data.seller}</p>
+                  <p className="text-sm text-gray-500"># {data.productid}</p>
+                  <h1 className="mt-2 text-4xl font-bold text-gray-900">{data.title}</h1>
+                  <p className="mt-2 text-sm text-gray-500">By {data.seller}</p>
                 </div>
 
-                <button type="button" onClick={() => itemStateUpdate('wishlist')} className="rounded-full p-2 text-red-500 hover:bg-red-50">
-                  <HeartIcon className="h-9 w-9" />
+                <button
+                  type="button"
+                  onClick={() => itemStateUpdate('wishlist')}
+                  className="rounded-full p-2 text-red-500 hover:bg-red-50"
+                >
+                  <HeartIcon className="h-8 w-8" />
                 </button>
               </div>
 
-              <button type="button" onClick={handleReviewClick} className="mt-5 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleReviewClick}
+                className="mt-4 flex items-center gap-3 text-sm text-gray-600 hover:text-indigo-600"
+              >
+                <Stars stars={Number(data.stars || 0)} />
                 {data.reviewcount > 0 ? (
-                  <>
-                    <Stars stars={Number(data.stars || 0)} />
-                    <span className="text-sm text-gray-500">
-                      {Number(data.stars || 0).toFixed(1)} · {data.reviewcount} đánh giá
-                    </span>
-                  </>
+                  <span>
+                    {Number(data.stars || 0).toFixed(1)} · {data.reviewcount} đánh giá
+                  </span>
                 ) : (
-                  <span className="text-gray-500">Chưa có đánh giá</span>
+                  <span>Chưa có đánh giá</span>
                 )}
               </button>
 
-              <div className="mt-7 border-t pt-6">
-                <div className="flex flex-wrap items-center gap-4">
-                  <span className="text-2xl font-bold text-red-600">{formatPrice(data.price || data.discountedprice, data.discount)}</span>
-
-                  {Number(data.discount || 0) > 0 && (
-                    <>
-                      <span className="text-lg text-gray-400 line-through">{formatPrice(data.price)}</span>
-                      <span className="text-orange-500">{Number(data.discount)}% off</span>
-                    </>
-                  )}
-                </div>
-
-                <p className={`mt-5 text-lg ${outOfStock ? 'text-red-500' : 'text-gray-900'}`}>
-                  {outOfStock ? 'Hết hàng' : `Còn ${data.stock} sản phẩm trong kho, giao trong 5 ngày làm việc`}
+              <div className="mt-6 flex items-end gap-4">
+                <p className="text-3xl font-bold text-red-500">
+                  {formatPrice(data.price || data.discountedprice, data.discount)}
                 </p>
+
+                {Number(data.discount || 0) > 0 && (
+                  <>
+                    <p className="text-lg text-gray-400 line-through">{formatPrice(data.price)}</p>
+                    <p className="text-sm text-red-400">{Number(data.discount)}% off</p>
+                  </>
+                )}
               </div>
 
-              <div className="mt-6 rounded-xl border p-5 text-gray-700">
-                {data.brand_name && (
-                  <p>
-                    <strong>Thương hiệu:</strong> {data.brand_name}
-                  </p>
-                )}
-                {data.manufacturer_info && (
-                  <p className="mt-2">
-                    <strong>Nhà sản xuất:</strong> {data.manufacturer_info}
-                  </p>
-                )}
-                {data.certification_details && (
-                  <p className="mt-2">
-                    <strong>Chứng chỉ an toàn:</strong> {data.certification_details}
-                  </p>
-                )}
-                {data.collection_names && (
-                  <p className="mt-2">
-                    <strong>Bộ sưu tập:</strong> {data.collection_names}
-                  </p>
-                )}
+              <p className={`mt-4 text-sm ${outOfStock ? 'text-red-500' : 'text-gray-500'}`}>
+                {outOfStock
+                  ? 'Hết hàng'
+                  : `Còn ${data.stock} sản phẩm trong kho, giao trong 5 ngày làm việc`}
+              </p>
+
+              <div className="mt-6 space-y-2 text-sm text-gray-600">
+                {data.brand_name && <p><strong>Thương hiệu:</strong> {data.brand_name}</p>}
+                {data.manufacturer_info && <p><strong>Nhà sản xuất:</strong> {data.manufacturer_info}</p>}
+                {data.certification_details && <p><strong>Chứng chỉ an toàn:</strong> {data.certification_details}</p>}
+                {data.collection_names && <p><strong>Bộ sưu tập:</strong> {data.collection_names}</p>}
               </div>
 
               <div className="mt-8">
-                <p className="mb-3 text-lg font-semibold">Quantity</p>
-
-                <div className="inline-flex items-center rounded-lg bg-gray-100">
-                  <button type="button" onClick={() => changeValue('decrease')} className="w-12 rounded-l-lg bg-gray-100 text-3xl">
+                <p className="mb-2 font-semibold text-gray-900">Quantity</p>
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => changeValue('decrease')}
+                    className="w-12 rounded-l-lg bg-gray-100 text-3xl"
+                  >
                     -
                   </button>
 
                   <input
                     type="number"
                     min={1}
-                    max={maxQuantity || 1}
+                    max={maxQuantity}
                     value={quantity}
                     onChange={(e) => {
                       const value = Number(e.target.value)
-
                       if (!value || value < 1) return setQuantity(1)
 
                       if (value > maxQuantity) {
@@ -524,18 +528,21 @@ const ProductPage = () => {
                     className="w-16 bg-gray-100 py-2 text-center outline-none"
                   />
 
-                  <button type="button" onClick={() => changeValue('increase')} className="w-12 rounded-r-lg bg-gray-100 text-3xl">
+                  <button
+                    type="button"
+                    onClick={() => changeValue('increase')}
+                    className="w-12 rounded-r-lg bg-gray-100 text-3xl"
+                  >
                     +
                   </button>
                 </div>
 
-                {stockMessage && <p className="mt-3 text-sm text-red-500">{stockMessage}</p>}
+                {stockMessage && <p className="mt-2 text-sm text-red-500">{stockMessage}</p>}
               </div>
 
               {data.colors.length > 0 && (
                 <div className="mt-8">
-                  <p className="mb-3 text-lg font-semibold">Color</p>
-
+                  <p className="mb-3 font-semibold text-gray-900">Color</p>
                   <div className="flex flex-wrap gap-3">
                     {data.colors.map((color) => (
                       <button
@@ -544,7 +551,9 @@ const ProductPage = () => {
                         onClick={() => setSelectedColor(color)}
                         title={color.colorname}
                         className={`h-11 w-11 rounded-full border-2 ${
-                          selectedColor.colorid === color.colorid ? 'border-indigo-600 ring-2 ring-indigo-200' : 'border-gray-200'
+                          selectedColor.colorid === color.colorid
+                            ? 'border-indigo-600 ring-2 ring-indigo-200'
+                            : 'border-gray-200'
                         }`}
                       >
                         <span className={`block h-full w-full rounded-full ${color.colorclass}`} />
@@ -556,8 +565,7 @@ const ProductPage = () => {
 
               {data.sizes.length > 0 && (
                 <div className="mt-8">
-                  <p className="mb-3 text-lg font-semibold">Size</p>
-
+                  <p className="mb-3 font-semibold text-gray-900">Size</p>
                   <div className="flex flex-wrap gap-3">
                     {data.sizes.map((size) => (
                       <button
@@ -566,7 +574,9 @@ const ProductPage = () => {
                         disabled={!size.instock}
                         onClick={() => setSelectedSize(size)}
                         className={`min-w-28 rounded-lg border px-5 py-3 font-semibold ${
-                          selectedSize.sizeid === size.sizeid ? 'border-indigo-600 text-indigo-600' : 'border-gray-200'
+                          selectedSize.sizeid === size.sizeid
+                            ? 'border-indigo-600 text-indigo-600'
+                            : 'border-gray-200'
                         } disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400`}
                       >
                         {size.sizename}
@@ -576,7 +586,7 @@ const ProductPage = () => {
                 </div>
               )}
 
-              <div className="mt-10 flex flex-wrap gap-4">
+              <div className="mt-8 flex flex-wrap gap-4">
                 <button
                   type="button"
                   disabled={btnLoading || outOfStock}
@@ -588,39 +598,46 @@ const ProductPage = () => {
 
                 <button
                   type="button"
-                  disabled={outOfStock || quantity > maxQuantity}
-                  onClick={() => router.push(`/checkout/${data.productid}/${selectedSize.sizeid}/${selectedColor.colorid}?qty=${quantity}`)}
+                  disabled={btnLoading || outOfStock || quantity > maxQuantity}
+                  onClick={() =>
+                    router.push(`/checkout/${data.productid}/${selectedSize.sizeid}/${selectedColor.colorid}?qty=${quantity}`)
+                  }
                   className="h-12 w-48 rounded-lg border-2 border-yellow-400 font-semibold transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300"
                 >
                   BUY NOW
                 </button>
               </div>
 
-              <button type="button" onClick={() => itemStateUpdate('wishlist')} className="mt-6 flex items-center gap-2 text-gray-600 hover:text-yellow-500">
-                <HeartIcon className="h-6 w-6" />
-                Add to wishlist
+              <button
+                type="button"
+                onClick={() => itemStateUpdate('wishlist')}
+                className="mt-6 flex items-center gap-2 text-gray-600 hover:text-yellow-500"
+              >
+                <HeartIcon className="h-5 w-5" /> Add to wishlist
               </button>
             </div>
           </div>
 
-          <div className="mt-12 rounded-2xl border bg-white p-8">
-            <h2 className="text-2xl font-bold">Description:</h2>
-            <p className="mt-4 leading-8 text-gray-700">{data.description}</p>
-          </div>
+          <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_420px]">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Description:</h2>
+              <p className="mt-4 leading-8 text-gray-600">{data.description}</p>
+            </div>
 
-          <div ref={reviewRef} className="mt-12">
-            <ReviewSection
-              data={data.reviews}
-              reviewCount={data.reviewcount}
-              setdialogType={setDialogType}
-              setloading={setLoading}
-              setselectedReview={setSelectedReview}
-              setselectedRating={setSelectedRating}
-              allReview={false}
-              productID={data.productid}
-            />
+            <div ref={reviewRef}>
+              <ReviewSection
+                productID={data.productid}
+                data={data.reviews}
+                reviewCount={data.reviewcount}
+                setdialogType={setDialogType}
+                setloading={setLoading}
+                setselectedReview={setSelectedReview}
+                setselectedRating={setSelectedRating}
+                allReview={false}
+              />
+            </div>
           </div>
-        </section>
+        </div>
       )}
 
       {dialogType && (
@@ -629,7 +646,7 @@ const ProductPage = () => {
           setdialogType={setDialogType}
           setloading={setLoading}
           productID={data.productid}
-          selectedReview={selectedReview.reviewid > 0 ? selectedReview : null}
+          selectedReview={selectedReview}
           selectedRating={selectedRating}
           setselectedRating={setSelectedRating}
         />

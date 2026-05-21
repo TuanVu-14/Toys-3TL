@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import CategoryPage from '@/components/Categories/CategoryPage'
 
-export default function Page({ params }: { params: { category: string } }) {
-  redirect(`/categories/${params.category}`)
+export default function Page() {
+  return <CategoryPage />
 }

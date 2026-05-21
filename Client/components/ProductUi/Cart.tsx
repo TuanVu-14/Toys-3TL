@@ -1,4 +1,10 @@
-import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
+import {
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { Fragment, useState } from 'react'
 import Link from 'next/link'
@@ -13,27 +19,45 @@ import {
   removeItemFromCart,
   CartItem,
   toNumber,
+  getProductStock,
 } from '@/features/UIUpdates/CartWishlist'
 import { cartDeleteHandler } from '@/app/api/itemLists'
 import { useApp } from '@/Helpers/AccountDialog'
 import Loading from '../Loading'
 import { cartQuantityHandler } from '@/app/api/userUpdate'
 
-const getAccountID = (account: unknown) => Number((account as { userID?: number; userid?: number })?.userID ?? (account as { userid?: number })?.userid ?? 0)
+const getAccountID = (account: unknown) =>
+  Number(
+    (account as { userID?: number; userid?: number })?.userID ??
+      (account as { userid?: number })?.userid ??
+      0,
+  )
 
 const getError = (res: unknown, fallback: string) => {
   const error = (res as { error?: string })?.error
   return error || fallback
 }
 
-const getCartItemID = (item: CartItem) => toNumber(item.cartItemID ?? item.cartitemid)
-const getProductID = (item: CartItem) => toNumber(item.productID ?? item.productid)
-const getProductName = (item: CartItem) => item.productName ?? item.title ?? 'Sản phẩm'
-const getProductImage = (item: CartItem) => item.productImg ?? item.imglink ?? '/no-image.png'
-const getProductAlt = (item: CartItem) => item.productAlt ?? item.imgalt ?? getProductName(item)
-const getProductColor = (item: CartItem) => item.productColor ?? item.colorname ?? ''
-const getProductSize = (item: CartItem) => item.productSize ?? item.sizename ?? ''
-const getProductStock = (item: CartItem) => toNumber(item.productStock ?? item.productstock ?? item.stock)
+const getCartItemID = (item: CartItem) =>
+  toNumber(item.cartItemID ?? item.cartitemid)
+
+const getProductID = (item: CartItem) =>
+  toNumber(item.productID ?? item.productid)
+
+const getProductName = (item: CartItem) =>
+  item.productName ?? item.title ?? 'Sản phẩm'
+
+const getProductImage = (item: CartItem) =>
+  item.productImg ?? item.imglink ?? '/no-image.png'
+
+const getProductAlt = (item: CartItem) =>
+  item.productAlt ?? item.imgalt ?? getProductName(item)
+
+const getProductColor = (item: CartItem) =>
+  item.productColor ?? item.colorname ?? ''
+
+const getProductSize = (item: CartItem) =>
+  item.productSize ?? item.sizename ?? ''
 
 export default function Cart() {
   const { appState } = useApp()
@@ -42,14 +66,20 @@ export default function Cart() {
 
   const isLogged = appState.loggedIn
   const cartlist = useAppSelector((state) => state.cartWishlist.cart)
-  const defaultAccount = useAppSelector((state) => state.userState.defaultAccount)
+  const defaultAccount = useAppSelector(
+    (state) => state.userState.defaultAccount,
+  )
   const dispatch = useAppDispatch()
   const { menu, toggleCart } = useMenu()
 
   const userID = getAccountID(defaultAccount)
 
   const total = cartlist.reduce((sum, item) => {
-    return sum + getFinalPrice(getProductPrice(item), item.discount) * toNumber(item.quantity)
+    return (
+      sum +
+      getFinalPrice(getProductPrice(item), item.discount) *
+        Math.max(1, toNumber(item.quantity))
+    )
   }, 0)
 
   async function removeItem(product: CartItem) {
@@ -59,7 +89,9 @@ export default function Cart() {
     setMessage('')
 
     if (isLogged && (!userID || !cartItemID)) {
-      setMessage('Sản phẩm thiếu cartItemID hoặc userID. Hãy đăng nhập lại rồi thử xoá.')
+      setMessage(
+        'Sản phẩm thiếu cartItemID hoặc userID. Hãy đăng nhập lại rồi thử xoá.',
+      )
       return
     }
 
@@ -96,23 +128,23 @@ export default function Cart() {
     cartItemID: number,
     selectedQuantity: number,
     productID: number,
-    stock?: number,
+    stock: number | null,
   ) => {
     setMessage('')
 
     if (action === 'decrease' && selectedQuantity <= 1) return
 
-    if (action === 'increase') {
-      const maxStock = Number(stock || 0)
-
-      if (maxStock > 0 && selectedQuantity >= maxStock) {
-        setMessage(`Sản phẩm chỉ còn ${maxStock} sản phẩm trong kho.`)
+    if (action === 'increase' && stock !== null && stock > 0) {
+      if (selectedQuantity >= stock) {
+        setMessage(`Sản phẩm chỉ còn ${stock} sản phẩm trong kho.`)
         return
       }
     }
 
     if (isLogged && (!userID || !cartItemID)) {
-      setMessage('Sản phẩm thiếu cartItemID hoặc userID. Hãy đăng nhập lại rồi thử cập nhật.')
+      setMessage(
+        'Sản phẩm thiếu cartItemID hoặc userID. Hãy đăng nhập lại rồi thử cập nhật.',
+      )
       return
     }
 
@@ -120,20 +152,36 @@ export default function Cart() {
 
     try {
       const res = isLogged
-        ? await cartQuantityHandler(cartItemID, productID, userID, action === 'increase' ? 'increment' : 'decrement')
+        ? await cartQuantityHandler(
+            cartItemID,
+            productID,
+            userID,
+            action === 'increase' ? 'increment' : 'decrement',
+          )
         : { status: 200 }
 
       if (res.status === 200) {
         dispatch(
           setCart(
-            cartlist.map((each) =>
-              getCartItemID(each) === cartItemID
-                ? {
-                    ...each,
-                    quantity: action === 'increase' ? toNumber(each.quantity) + 1 : toNumber(each.quantity) - 1,
-                  }
-                : each,
-            ),
+            cartlist.map((each) => {
+              if (getCartItemID(each) !== cartItemID) return each
+
+              const currentQuantity = Math.max(1, toNumber(each.quantity))
+              const nextQuantity =
+                action === 'increase'
+                  ? currentQuantity + 1
+                  : currentQuantity - 1
+
+              const safeQuantity =
+                stock !== null && stock > 0
+                  ? Math.min(Math.max(1, nextQuantity), stock)
+                  : Math.max(1, nextQuantity)
+
+              return {
+                ...each,
+                quantity: safeQuantity,
+              }
+            }),
           ),
         )
       } else {
@@ -175,9 +223,15 @@ export default function Cart() {
                   <div className="flex h-full flex-col overflow-y-scroll bg-white shadow-xl">
                     <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
                       <div className="flex items-start justify-between">
-                        <DialogTitle className="text-lg font-medium text-gray-900">Giỏ hàng</DialogTitle>
+                        <DialogTitle className="text-lg font-medium text-gray-900">
+                          Giỏ hàng
+                        </DialogTitle>
 
-                        <button type="button" className="relative -m-2 p-2 text-gray-400 hover:text-gray-500" onClick={toggleCart}>
+                        <button
+                          type="button"
+                          className="relative -m-2 p-2 text-gray-400 hover:text-gray-500"
+                          onClick={toggleCart}
+                        >
                           <span className="sr-only">Đóng</span>
                           <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                         </button>
@@ -185,23 +239,41 @@ export default function Cart() {
 
                       {loading && <Loading />}
 
-                      {message && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{message}</p>}
+                      {message && (
+                        <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+                          {message}
+                        </p>
+                      )}
 
                       <div className="mt-8">
                         <div className="flow-root">
                           {cartlist.length === 0 ? (
-                            <p className="py-8 text-center text-sm text-gray-500">Giỏ hàng đang trống.</p>
+                            <p className="py-8 text-center text-sm text-gray-500">
+                              Giỏ hàng đang trống.
+                            </p>
                           ) : (
-                            <ul role="list" className="-my-6 divide-y divide-gray-200">
+                            <ul
+                              role="list"
+                              className="-my-6 divide-y divide-gray-200"
+                            >
                               {cartlist.map((product) => {
                                 const cartItemID = getCartItemID(product)
                                 const productID = getProductID(product)
-                                const quantity = Math.max(1, toNumber(product.quantity))
+                                const quantity = Math.max(
+                                  1,
+                                  toNumber(product.quantity),
+                                )
                                 const stock = getProductStock(product)
-                                const price = getFinalPrice(getProductPrice(product), product.discount)
+                                const price = getFinalPrice(
+                                  getProductPrice(product),
+                                  product.discount,
+                                )
 
                                 return (
-                                  <li key={`${cartItemID || productID}-${getProductColor(product)}-${getProductSize(product)}`} className="flex py-6">
+                                  <li
+                                    key={`${cartItemID || productID}-${getProductColor(product)}-${getProductSize(product)}`}
+                                    className="flex py-6"
+                                  >
                                     <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                       <img
                                         src={getProductImage(product)}
@@ -214,37 +286,92 @@ export default function Cart() {
                                       <div>
                                         <div className="flex justify-between gap-3 text-base font-medium text-gray-900">
                                           <h3 className="line-clamp-2">
-                                            <Link href={`/product/${productID}`} onClick={toggleCart}>
+                                            <Link
+                                              href={`/product/${productID}`}
+                                              onClick={toggleCart}
+                                            >
                                               {getProductName(product)}
                                             </Link>
                                           </h3>
-                                          <p className="whitespace-nowrap">{formatPrice(price)}</p>
+
+                                          <p className="whitespace-nowrap">
+                                            {formatPrice(price)}
+                                          </p>
                                         </div>
 
-                                        {getProductColor(product) && <p className="mt-1 text-sm text-gray-500">Màu: {getProductColor(product)}</p>}
-                                        {getProductSize(product) && <p className="mt-1 text-sm text-gray-500">Size: {getProductSize(product)}</p>}
-                                        <p className="mt-1 text-sm font-medium text-gray-700">Thành tiền: {formatPrice(price * quantity)}</p>
+                                        {getProductColor(product) && (
+                                          <p className="mt-1 text-sm text-gray-500">
+                                            Màu: {getProductColor(product)}
+                                          </p>
+                                        )}
+
+                                        {getProductSize(product) && (
+                                          <p className="mt-1 text-sm text-gray-500">
+                                            Size: {getProductSize(product)}
+                                          </p>
+                                        )}
+
+                                        {stock !== null && stock <= 0 ? (
+                                          <p className="mt-1 text-sm text-red-500">
+                                            Hết hàng
+                                          </p>
+                                        ) : (
+                                          <p className="mt-1 text-sm text-green-600">
+                                            {stock === null
+                                              ? 'Còn hàng'
+                                              : `Còn ${stock} sản phẩm`}
+                                          </p>
+                                        )}
+
+                                        <p className="mt-1 text-sm font-medium text-gray-700">
+                                          Thành tiền:{' '}
+                                          {formatPrice(price * quantity)}
+                                        </p>
                                       </div>
 
                                       <div className="mt-4 flex flex-1 items-end justify-between text-sm">
                                         <div className="flex items-center gap-2 text-gray-500">
                                           <span>SL</span>
+
                                           <div className="flex items-center rounded-md bg-gray-100">
                                             <button
                                               type="button"
                                               disabled={loading || quantity <= 1}
-                                              onClick={() => changeValue('decrease', cartItemID, quantity, productID, stock)}
+                                              onClick={() =>
+                                                changeValue(
+                                                  'decrease',
+                                                  cartItemID,
+                                                  quantity,
+                                                  productID,
+                                                  stock,
+                                                )
+                                              }
                                               className="w-10 text-2xl leading-9 disabled:cursor-not-allowed disabled:text-gray-300"
                                             >
                                               -
                                             </button>
 
-                                            <span className="w-8 text-center text-gray-900">{quantity}</span>
+                                            <span className="w-8 text-center text-gray-900">
+                                              {quantity}
+                                            </span>
 
                                             <button
                                               type="button"
-                                              disabled={loading}
-                                              onClick={() => changeValue('increase', cartItemID, quantity, productID, stock)}
+                                              disabled={
+                                                loading ||
+                                                (stock !== null &&
+                                                  stock > 0 &&
+                                                  quantity >= stock)
+                                              }
+                                              onClick={() =>
+                                                changeValue(
+                                                  'increase',
+                                                  cartItemID,
+                                                  quantity,
+                                                  productID,
+                                                  stock,
+                                                )
+                                              }
                                               className="w-10 text-2xl leading-9 disabled:cursor-not-allowed disabled:text-gray-300"
                                             >
                                               +
@@ -277,7 +404,9 @@ export default function Cart() {
                         <p>{formatPrice(total)}</p>
                       </div>
 
-                      <p className="mt-0.5 text-sm text-gray-500">Phí vận chuyển được tính ở bước thanh toán.</p>
+                      <p className="mt-0.5 text-sm text-gray-500">
+                        Phí vận chuyển được tính ở bước thanh toán.
+                      </p>
 
                       <div className="mt-6">
                         {isLogged ? (
@@ -300,7 +429,11 @@ export default function Cart() {
                       </div>
 
                       <div className="mt-6 flex justify-center text-center text-sm text-gray-500">
-                        <button type="button" onClick={toggleCart} className="font-medium text-indigo-600 hover:text-indigo-500">
+                        <button
+                          type="button"
+                          onClick={toggleCart}
+                          className="font-medium text-indigo-600 hover:text-indigo-500"
+                        >
                           Tiếp tục mua hàng <span aria-hidden="true">→</span>
                         </button>
                       </div>
