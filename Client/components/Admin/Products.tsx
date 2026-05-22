@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   createAdminProduct,
   deleteAdminProduct,
@@ -111,6 +111,9 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
   const [search, setSearch] = useState("");
   const [formData, setFormData] = useState<ProductFormData>(emptyForm);
+  // preview ảnh được chọn từ file
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -143,6 +146,7 @@ export default function ProductsPage() {
   const handleOpenForm = (product?: AdminProduct) => {
     if (product) {
       setEditingProduct(product);
+      const imageUrl = product.image_url || product.imgid || "";
       setFormData({
         title: product.title || "",
         description: product.description || "",
@@ -152,7 +156,7 @@ export default function ProductsPage() {
         stock: Number(product.stock || 0),
         tags: product.tags || "",
         imgid: product.imgid || "",
-        image_url: product.image_url || product.imgid || "",
+        image_url: imageUrl,
         age_group: product.age_group || "3-5",
         gender: product.gender || "unisex",
         material: product.material || "abs_plastic",
@@ -167,11 +171,42 @@ export default function ProductsPage() {
         stars: Number(product.stars || 0),
         is_active: product.is_active !== false,
       });
+      setImagePreview(imageUrl);
     } else {
       setEditingProduct(null);
       setFormData({ ...emptyForm, categoryid: categories[0]?.categoryid || 0 });
+      setImagePreview("");
     }
     setShowForm(true);
+  };
+
+  // Xử lý chọn file ảnh → tạo data URL preview + gán vào formData
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Vui lòng chọn file ảnh (JPG, PNG, WEBP, ...).");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setImagePreview(dataUrl);
+      // Lưu data URL vào image_url để gửi lên server
+      // (Server cần hỗ trợ nhận base64 hoặc bạn cần tích hợp upload riêng)
+      setFormData((prev) => ({ ...prev, image_url: dataUrl, imgid: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Xóa ảnh đã chọn
+  const handleRemoveImage = () => {
+    setImagePreview("");
+    setFormData((prev) => ({ ...prev, image_url: "", imgid: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -256,7 +291,7 @@ export default function ProductsPage() {
                     <img src={productImage(product)} alt={product.image_alt || product.title} className="h-16 w-16 rounded-xl border border-slate-100 object-cover" />
                     <div className="min-w-0">
                       <div className="font-semibold text-slate-900">{product.title}</div>
-                  <div className="mt-1 max-w-xs truncate text-xs text-slate-500">{product.description || "Chưa có mô tả"}</div>
+                      <div className="mt-1 max-w-xs truncate text-xs text-slate-500">{product.description || "Chưa có mô tả"}</div>
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
@@ -300,26 +335,85 @@ export default function ProductsPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="text-sm font-semibold text-slate-700">Tên sản phẩm<input required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Danh mục<select required value={formData.categoryid} onChange={(e) => setFormData({ ...formData, categoryid: Number(e.target.value) })} className={inputClass}><option value={0}>Chọn danh mục</option>{categories.map((cat) => <option key={cat.categoryid} value={cat.categoryid}>{cat.name}</option>)}</select></label>
+              <label className="text-sm font-semibold text-slate-700">Danh mục
+                <select required value={formData.categoryid} onChange={(e) => setFormData({ ...formData, categoryid: Number(e.target.value) })} className={inputClass}>
+                  <option value={0}>Chọn danh mục</option>
+                  {categories.map((cat) => <option key={cat.categoryid} value={cat.categoryid}>{cat.name}</option>)}
+                </select>
+              </label>
               <label className="text-sm font-semibold text-slate-700 md:col-span-2">Mô tả<textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={inputClass} rows={3} /></label>
               <label className="text-sm font-semibold text-slate-700">Giá<input type="number" min={0} required value={formData.price} onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })} className={inputClass} /></label>
               <label className="text-sm font-semibold text-slate-700">Giảm giá %<input type="number" min={0} max={100} value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })} className={inputClass} /></label>
               <label className="text-sm font-semibold text-slate-700">Tồn kho<input type="number" min={0} required value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })} className={inputClass} /></label>
               <label className="text-sm font-semibold text-slate-700">Ngưỡng cảnh báo tồn thấp<input type="number" min={0} value={formData.low_stock_threshold} onChange={(e) => setFormData({ ...formData, low_stock_threshold: Number(e.target.value) })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Độ tuổi<select value={formData.age_group} onChange={(e) => setFormData({ ...formData, age_group: e.target.value })} className={inputClass}><option value="0-2">0-2</option><option value="3-5">3-5</option><option value="6-8">6-8</option><option value="9-12">9-12</option><option value="12+">12+</option><option value="All">All</option></select></label>
-              <label className="text-sm font-semibold text-slate-700">Giới tính<select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className={inputClass}><option value="unisex">Unisex</option><option value="boy">Boy</option><option value="girl">Girl</option></select></label>
+              <label className="text-sm font-semibold text-slate-700">Độ tuổi
+                <select value={formData.age_group} onChange={(e) => setFormData({ ...formData, age_group: e.target.value })} className={inputClass}>
+                  <option value="0-2">0-2</option><option value="3-5">3-5</option><option value="6-8">6-8</option><option value="9-12">9-12</option><option value="12+">12+</option><option value="All">All</option>
+                </select>
+              </label>
+              <label className="text-sm font-semibold text-slate-700">Giới tính
+                <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className={inputClass}>
+                  <option value="unisex">Unisex</option><option value="boy">Boy</option><option value="girl">Girl</option>
+                </select>
+              </label>
               <label className="text-sm font-semibold text-slate-700">Chất liệu<input value={formData.material} onChange={(e) => setFormData({ ...formData, material: e.target.value })} className={inputClass} placeholder="abs_plastic, wood, fabric..." /></label>
               <label className="text-sm font-semibold text-slate-700">Kỹ năng phát triển<input value={formData.skill_type} onChange={(e) => setFormData({ ...formData, skill_type: e.target.value })} className={inputClass} placeholder="STEM, tư duy, vận động..." /></label>
               <label className="text-sm font-semibold text-slate-700">Thương hiệu<input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className={inputClass} /></label>
               <label className="text-sm font-semibold text-slate-700">Mã nhà cung cấp<input value={formData.supplier_id} onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })} className={inputClass} /></label>
               <label className="text-sm font-semibold text-slate-700 md:col-span-2">Chứng nhận an toàn<textarea value={formData.safety_certificates} onChange={(e) => setFormData({ ...formData, safety_certificates: e.target.value })} className={inputClass} rows={2} placeholder="CE, EN71, ASTM..." /></label>
-              <label className="text-sm font-semibold text-slate-700">Tags<input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">URL ảnh chính<input value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value, imgid: e.target.value })} className={inputClass} placeholder="/images/lego1.jpg" /></label>
-              {formData.image_url ? (
-                <div className="md:col-span-2">
-                  <img src={formData.image_url} alt={formData.title || "Product preview"} className="h-40 w-40 rounded-2xl border border-slate-100 object-cover" />
+              <label className="text-sm font-semibold text-slate-700 md:col-span-2">Tags<input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className={inputClass} /></label>
+
+              {/* ─── Upload ảnh chính ─────────────────────────────────────── */}
+              <div className="md:col-span-2">
+                <p className="text-sm font-semibold text-slate-700">Ảnh chính sản phẩm</p>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start">
+                  {/* Preview */}
+                  {imagePreview ? (
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={imagePreview}
+                        alt="Preview ảnh sản phẩm"
+                        className="h-40 w-40 rounded-2xl border-2 border-rose-100 object-cover shadow"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-xs font-bold text-white shadow hover:bg-rose-600"
+                        title="Xóa ảnh"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex h-40 w-40 flex-shrink-0 items-center justify-center rounded-2xl border-2 border-dashed border-rose-200 bg-rose-50 text-xs text-slate-400">
+                      Chưa có ảnh
+                    </div>
+                  )}
+
+                  {/* Upload area */}
+                  <div className="flex flex-1 flex-col gap-2">
+                    <label
+                      htmlFor="product-image-upload"
+                      className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-rose-200 bg-rose-50 px-4 py-6 text-center transition hover:border-rose-400 hover:bg-rose-100"
+                    >
+                      <span className="text-2xl">📷</span>
+                      <span className="mt-1 text-sm font-semibold text-rose-500">Chọn ảnh từ máy tính</span>
+                      <span className="mt-1 text-xs text-slate-400">JPG, PNG, WEBP — tối đa 5MB</span>
+                    </label>
+                    <input
+                      id="product-image-upload"
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageFileChange}
+                    />
+                    {imagePreview && (
+                      <p className="text-xs text-emerald-600">✓ Ảnh đã được chọn</p>
+                    )}
+                  </div>
                 </div>
-              ) : null}
+              </div>
             </div>
 
             <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-4">

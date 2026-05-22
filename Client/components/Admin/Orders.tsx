@@ -70,18 +70,16 @@ type AdminOrder = {
   gift_wrapping_type?: string;
 };
 
-const statuses = [
-  "Pending",
-  "Confirmed",
-  "Prepared",
-  "Packed",
-  "Shipped",
-  "Delivered",
-  "Completed",
-  "Cancelled",
-  "Returned",
-  "Refunded",
-  "Payment Failed",
+// 8 trạng thái chuẩn theo nghiệp vụ
+const ORDER_STATUSES = [
+  { value: "Pending",    label: "Chờ xác nhận" },
+  { value: "Confirmed",  label: "Đã xác nhận" },
+  { value: "Preparing",  label: "Đang chuẩn bị hàng" },
+  { value: "Shipping",   label: "Đang giao hàng" },
+  { value: "Completed",  label: "Giao thành công / Hoàn thành" },
+  { value: "Cancelled",  label: "Đã hủy" },
+  { value: "Returned",   label: "Hoàn trả / Hoàn hàng" },
+  { value: "Failed",     label: "Giao thất bại" },
 ];
 
 const displayDate = (value?: string) => {
@@ -90,19 +88,19 @@ const displayDate = (value?: string) => {
 };
 
 const joinAddress = (order: AdminOrder) => {
-  return [
-    order.addressline1,
-    order.addressline2,
-    order.city,
-    order.state,
-    order.country,
-    order.postalcode,
-  ]
-    .filter(Boolean)
-    .join(", ") || "Chưa có địa chỉ";
+  return (
+    [order.addressline1, order.addressline2, order.city, order.state, order.country, order.postalcode]
+      .filter(Boolean)
+      .join(", ") || "Chưa có địa chỉ"
+  );
 };
 
 const getStatus = (order: AdminOrder) => order.orderstatus || order.order_status || "Pending";
+
+const statusLabel = (value?: string) => {
+  const found = ORDER_STATUSES.find((s) => s.value === value);
+  return found ? found.label : value || "—";
+};
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -133,7 +131,6 @@ export default function OrdersPage() {
   const filteredOrders = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     if (!keyword) return orders;
-
     return orders.filter((order) =>
       [
         order.orderid,
@@ -153,7 +150,6 @@ export default function OrdersPage() {
     setSelectedOrder(order);
     setDetailLoading(true);
     setError(null);
-
     try {
       const response = await getAdminOrderDetail(order.orderid);
       setSelectedOrder(response.data?.data || order);
@@ -167,10 +163,8 @@ export default function OrdersPage() {
   const handleStatusChange = async (orderID: number, status: string) => {
     setSavingOrderId(orderID);
     setError(null);
-
     try {
       await updateOrderStatus(orderID, status);
-
       setOrders((prev) =>
         prev.map((order) =>
           order.orderid === orderID
@@ -178,12 +172,11 @@ export default function OrdersPage() {
                 ...order,
                 orderstatus: status,
                 order_status: status,
-                delivery_status: ["Completed", "Delivered"].includes(status) ? "Delivered" : order.delivery_status,
+                delivery_status: ["Completed"].includes(status) ? "Delivered" : order.delivery_status,
               }
             : order,
         ),
       );
-
       if (selectedOrder?.orderid === orderID) {
         setSelectedOrder((prev) =>
           prev
@@ -191,12 +184,11 @@ export default function OrdersPage() {
                 ...prev,
                 orderstatus: status,
                 order_status: status,
-                delivery_status: ["Completed", "Delivered"].includes(status) ? "Delivered" : prev.delivery_status,
+                delivery_status: ["Completed"].includes(status) ? "Delivered" : prev.delivery_status,
               }
             : prev,
         );
       }
-
       await fetchOrders();
     } catch (err: any) {
       setError(err?.response?.data?.error || "Không cập nhật được trạng thái đơn hàng.");
@@ -207,9 +199,9 @@ export default function OrdersPage() {
 
   const badgeClass = (status?: string) => {
     const value = String(status || "").toLowerCase();
-    if (["completed", "delivered"].includes(value)) return "bg-emerald-100 text-emerald-700";
-    if (["cancelled", "returned", "refunded", "payment failed"].includes(value)) return "bg-rose-100 text-rose-700";
-    if (["shipped", "packed", "prepared"].includes(value)) return "bg-blue-100 text-blue-700";
+    if (["completed"].includes(value)) return "bg-emerald-100 text-emerald-700";
+    if (["cancelled", "returned", "failed"].includes(value)) return "bg-rose-100 text-rose-700";
+    if (["shipping", "preparing"].includes(value)) return "bg-blue-100 text-blue-700";
     return "bg-amber-100 text-amber-700";
   };
 
@@ -221,7 +213,6 @@ export default function OrdersPage() {
           <h2 className="text-2xl font-bold text-slate-900">Quản lý đơn hàng</h2>
           <p className="mt-1 text-sm text-slate-500">Bấm vào một đơn để xem chi tiết ngắn gọn cho admin.</p>
         </div>
-
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             value={search}
@@ -267,7 +258,6 @@ export default function OrdersPage() {
 
             {filteredOrders.map((order) => {
               const status = getStatus(order);
-
               return (
                 <tr
                   key={order.orderid}
@@ -285,8 +275,9 @@ export default function OrdersPage() {
                   <td className="px-5 py-4 font-semibold text-slate-900">{formatPrice(Number(order.totalamount || 0))}</td>
                   <td className="px-5 py-4 text-slate-600">{order.item_count || 0}</td>
                   <td className="px-5 py-4">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(status)}`}>{status}</span>
-                    <div className="mt-1 text-xs text-slate-400">Giao hàng: {order.delivery_status || "—"}</div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(status)}`}>
+                      {statusLabel(status)}
+                    </span>
                   </td>
                   <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
                     <select
@@ -295,7 +286,9 @@ export default function OrdersPage() {
                       onChange={(e) => handleStatusChange(order.orderid, e.target.value)}
                       className="rounded-2xl border border-rose-200 bg-white px-3 py-2 text-sm outline-none focus:border-rose-500 disabled:opacity-50"
                     >
-                      {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
+                      {ORDER_STATUSES.map((item) => (
+                        <option key={item.value} value={item.value}>{item.label}</option>
+                      ))}
                     </select>
                   </td>
                 </tr>
@@ -350,7 +343,7 @@ function OrderDetailModal({
         ) : (
           <div className="mt-5 space-y-5">
             <div className="grid gap-4 md:grid-cols-4">
-              <InfoCard label="Trạng thái" value={status} badgeClass={badgeClass(status)} sub={`Giao hàng: ${order.delivery_status || "—"}`} />
+              <InfoCard label="Trạng thái" value={statusLabel(status)} badgeClass={badgeClass(status)} />
               <InfoCard label="Tổng tiền" value={formatPrice(total)} sub="Tổng thanh toán" />
               <InfoCard label="Thanh toán" value={order.paymentmethod || "—"} sub={order.paymentstatus || "—"} />
               <InfoCard label="Mã vận đơn" value={order.trackingnumber || order.tracking_number || "—"} sub={order.shippingmethod || "—"} />
@@ -365,7 +358,6 @@ function OrderDetailModal({
                   <p><b>SĐT:</b> {order.customer_phone || "—"}</p>
                 </div>
               </section>
-
               <section className="rounded-2xl border border-slate-100 p-4">
                 <h4 className="font-bold text-slate-900">Địa chỉ nhận hàng</h4>
                 <div className="mt-3 space-y-1 text-sm text-slate-600">
@@ -397,9 +389,9 @@ function OrderDetailModal({
                           <img src={item.image_url || "/images/no-image.png"} alt={item.image_alt || item.title || `Product #${item.productid}`} className="h-14 w-14 rounded-xl border border-slate-100 object-cover" />
                           <div className="min-w-0">
                             <div className="font-semibold text-slate-900">{item.title || `Sản phẩm #${item.productid}`}</div>
-                        <div className="text-xs text-slate-400">
-                          {[item.brand, item.age_group, item.skill_type].filter(Boolean).join(" • ") || `Mã SP: #${item.productid}`}
-                        </div>
+                            <div className="text-xs text-slate-400">
+                              {[item.brand, item.age_group, item.skill_type].filter(Boolean).join(" • ") || `Mã SP: #${item.productid}`}
+                            </div>
                           </div>
                         </div>
                         {item.gift_wrapping ? <div className="mt-1 text-xs text-rose-500">Có gói quà{item.gift_message ? `: ${item.gift_message}` : ""}</div> : null}
@@ -431,7 +423,6 @@ function OrderDetailModal({
                   <p><b>Ngày gửi:</b> {displayDate(order.shippedat)}</p>
                 </div>
               </section>
-
               <section className="rounded-2xl border border-slate-100 p-4">
                 <h4 className="font-bold text-slate-900">Tổng kết tiền</h4>
                 <div className="mt-3 space-y-2 text-sm">
@@ -459,7 +450,7 @@ function InfoCard({ label, value, sub, badgeClass }: { label: string; value: str
       ) : (
         <p className="mt-2 text-lg font-black text-slate-900">{value}</p>
       )}
-      <p className="mt-1 text-xs text-slate-500">{sub || "—"}</p>
+      {sub ? <p className="mt-1 text-xs text-slate-500">{sub}</p> : null}
     </div>
   );
 }

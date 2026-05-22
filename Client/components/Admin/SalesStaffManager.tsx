@@ -25,7 +25,16 @@ type Summary = { products: number; pendingOrders: number; promotions: number; wi
 
 const inputClass = "w-full rounded-xl border border-rose-100 bg-white px-4 py-3 text-sm outline-none focus:border-rose-300";
 const buttonClass = "rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-500";
-const orderStatuses = ["Pending", "Confirmed", "Prepared", "Packed", "Shipped", "Delivered", "Completed", "Cancelled", "Returned", "Refunded", "Payment Failed"];
+
+// Sales staff chỉ cần 6 trạng thái chính (không cần Returned/Failed - đó là nghiệp vụ admin/kho)
+const SALES_ORDER_STATUSES = [
+  { value: "Pending",    label: "Chờ xác nhận" },
+  { value: "Confirmed",  label: "Đã xác nhận" },
+  { value: "Preparing",  label: "Đang chuẩn bị hàng" },
+  { value: "Shipping",   label: "Đang giao hàng" },
+  { value: "Completed",  label: "Giao thành công / Hoàn thành" },
+  { value: "Cancelled",  label: "Đã hủy" },
+];
 
 function formatVND(value: number | string | undefined | null) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value || 0));
@@ -71,27 +80,18 @@ export default function SalesStaffManager() {
     const read = (index: number) => results[index].status === "fulfilled" ? (results[index] as PromiseFulfilledResult<any>).value : null;
     const firstError = results.find((item) => item.status === "rejected") as PromiseRejectedResult | undefined;
 
-    const summaryRes = read(0);
-    const productRes = read(1);
-    const orderRes = read(2);
-    const promoRes = read(3);
-    const couponRes = read(4);
-    const wishlistRes = read(5);
-    const birthdayRes = read(6);
-
-    setSummary(summaryRes?.data || { products: 0, pendingOrders: 0, promotions: 0, wishlistItems: 0 });
-    setProducts(productRes?.data?.data || []);
-    setOrders(orderRes?.data?.data || []);
-    setPromotions(promoRes?.data?.data || []);
-    setCoupons(couponRes?.data?.data || []);
-    setWishlists(wishlistRes?.data?.data || []);
-    setBirthdays(birthdayRes?.data?.data || []);
+    setSummary(read(0)?.data || { products: 0, pendingOrders: 0, promotions: 0, wishlistItems: 0 });
+    setProducts(read(1)?.data?.data || []);
+    setOrders(read(2)?.data?.data || []);
+    setPromotions(read(3)?.data?.data || []);
+    setCoupons(read(4)?.data?.data || []);
+    setWishlists(read(5)?.data?.data || []);
+    setBirthdays(read(6)?.data?.data || []);
 
     if (firstError) {
       const reason: any = firstError.reason;
       setError(reason?.response?.data?.error || "Một phần dữ liệu Sales Management chưa tải được. Kiểm tra terminal server để xem API lỗi.");
     }
-
     setLoading(false);
   };
 
@@ -155,8 +155,8 @@ export default function SalesStaffManager() {
     setError("");
     try {
       await updateSalesOrderStatus(orderID, status);
-      setOrders((prev) => prev.map((order) => order.orderid === orderID ? { ...order, status, delivery_status: status === "Completed" ? "Delivered" : status } : order));
-      setMessage(`Đã cập nhật đơn #${orderID} sang ${status}.`);
+      setOrders((prev) => prev.map((order) => order.orderid === orderID ? { ...order, status } : order));
+      setMessage(`Đã cập nhật đơn #${orderID} sang "${SALES_ORDER_STATUSES.find((s) => s.value === status)?.label || status}".`);
       loadData();
     } catch (err: any) {
       setError(err?.response?.data?.error || "Không cập nhật được trạng thái đơn hàng.");
@@ -201,37 +201,39 @@ export default function SalesStaffManager() {
 
       {tab === "orders" ? (
         <section className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-950">Hỗ trợ xác nhận/cập nhật đơn hàng</h2>
-          <DataTable headers={["Đơn", "Khách", "Email", "Tổng tiền", "SP", "Trạng thái", "Cập nhật"]} rows={orders.map((o) => [
-            `#${o.orderid}`,
-            o.username || "-",
-            o.email || "-",
-            formatVND(o.totalamount),
-            o.item_count,
-            o.status,
-            <div key={o.orderid} className="flex flex-wrap gap-2">
-              <button disabled={savingOrderId === o.orderid} onClick={() => confirmOrder(o.orderid)} className="rounded-lg bg-rose-100 px-3 py-2 text-xs font-bold text-rose-600 disabled:opacity-50">Confirm</button>
-              <select disabled={savingOrderId === o.orderid} value={o.status || "Pending"} onChange={(e) => changeOrderStatus(o.orderid, e.target.value)} className="rounded-lg border border-rose-100 bg-white px-3 py-2 text-xs font-semibold outline-none disabled:opacity-50">
-                {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
-              </select>
-            </div>,
-          ])} />
-        </section>
-      ) : null}
-
-      {tab === "promotions" ? (
-        <section className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-slate-950">Tạo chương trình giảm giá theo dịp</h2>
-          <form onSubmit={submitPromotion} className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-5">
-            <input className={inputClass} placeholder="Mã: NOEL2026" value={promotionForm.code} onChange={(e) => setPromotionForm({ ...promotionForm, code: e.target.value })} />
-            <select className={inputClass} value={promotionForm.eventName} onChange={(e) => setPromotionForm({ ...promotionForm, eventName: e.target.value })}>
-              <option value="">Chọn dịp</option><option>Quốc tế Thiếu nhi</option><option>Trung Thu</option><option>Noel</option><option>Sinh nhật</option>
-            </select>
-            <input className={inputClass} type="number" placeholder="Giảm (%)" value={promotionForm.discount} onChange={(e) => setPromotionForm({ ...promotionForm, discount: e.target.value })} />
-            <input className={inputClass} type="date" value={promotionForm.expirationDate} onChange={(e) => setPromotionForm({ ...promotionForm, expirationDate: e.target.value })} />
-            <button className={buttonClass}>Tạo promotion</button>
-          </form>
-          <DataTable headers={["Code", "Dịp", "Loại", "Giảm", "Mùa", "Trạng thái"]} rows={promotions.map((p) => [p.code, p.event_name || "-", p.type, `${p.discount}%`, p.season || "-", p.is_active ? "Active" : "Off"])} />
+          <h2 className="text-xl font-bold text-slate-950">Hỗ trợ xác nhận / cập nhật đơn hàng</h2>
+          <DataTable
+            headers={["Đơn", "Khách", "Email", "Tổng tiền", "SP", "Trạng thái", "Cập nhật"]}
+            rows={orders.map((o) => [
+              `#${o.orderid}`,
+              o.username || "-",
+              o.email || "-",
+              formatVND(o.totalamount),
+              o.item_count,
+              <span key={`status-${o.orderid}`} className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700">
+                {SALES_ORDER_STATUSES.find((s) => s.value === o.status)?.label || o.status}
+              </span>,
+              <div key={o.orderid} className="flex flex-wrap gap-2">
+                <button
+                  disabled={savingOrderId === o.orderid}
+                  onClick={() => confirmOrder(o.orderid)}
+                  className="rounded-lg bg-rose-100 px-3 py-2 text-xs font-bold text-rose-600 disabled:opacity-50"
+                >
+                  Xác nhận
+                </button>
+                <select
+                  disabled={savingOrderId === o.orderid}
+                  value={o.status || "Pending"}
+                  onChange={(e) => changeOrderStatus(o.orderid, e.target.value)}
+                  className="rounded-lg border border-rose-100 bg-white px-3 py-2 text-xs font-semibold outline-none disabled:opacity-50"
+                >
+                  {SALES_ORDER_STATUSES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>,
+            ])}
+          />
         </section>
       ) : null}
 
