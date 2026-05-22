@@ -1,4 +1,12 @@
-const navBtns = [
+type NavOption = { title: string; link: string };
+type NavButton = {
+  name: string;
+  isExtendable: boolean;
+  extendables: NavOption[];
+  catLink: string;
+};
+
+const navBtns: NavButton[] = [
   { name: 'Home', isExtendable: false, extendables: [], catLink: '/' },
   { name: 'Categories', isExtendable: false, extendables: [], catLink: '/categories/lego-building' },
   { name: 'Lego', isExtendable: false, extendables: [], catLink: '/categories/lego-building' },
@@ -10,7 +18,7 @@ const navBtns = [
 const categoryDropDown = [
   {
     title: 'LEGO & Building',
-    catLink: '/lego-building',
+    catLink: '/categories/lego-building',
     imgLink: '/images/sale.jpg',
     imgAlt: 'LEGO & Building',
     imgRedirectLink: '/categories/lego-building',
@@ -24,7 +32,7 @@ const categoryDropDown = [
   },
   {
     title: 'STEM & Science',
-    catLink: '/stem-science',
+    catLink: '/categories/stem-science',
     imgLink: '/images/sale2.jpg',
     imgAlt: 'STEM & Science',
     imgRedirectLink: '/categories/stem-science',
@@ -38,7 +46,7 @@ const categoryDropDown = [
   },
   {
     title: 'Remote Control',
-    catLink: '/remote-control',
+    catLink: '/categories/remote-control',
     imgLink: '/images/sale3.jpg',
     imgAlt: 'Remote Control',
     imgRedirectLink: '/categories/remote-control',
@@ -52,7 +60,7 @@ const categoryDropDown = [
   },
   {
     title: 'Dolls & Figures',
-    catLink: '/dolls-figures',
+    catLink: '/categories/dolls-figures',
     imgLink: '/images/sale4.png',
     imgAlt: 'Dolls & Figures',
     imgRedirectLink: '/categories/dolls-figures',
@@ -66,7 +74,7 @@ const categoryDropDown = [
   },
   {
     title: 'Board Games',
-    catLink: '/board-games',
+    catLink: '/categories/board-games',
     imgLink: '',
     imgAlt: 'Board Games',
     imgRedirectLink: '/categories/board-games',
@@ -80,7 +88,7 @@ const categoryDropDown = [
   },
   {
     title: 'Outdoor & Baby',
-    catLink: '/outdoor-toys',
+    catLink: '/categories/outdoor-toys',
     imgLink: '',
     imgAlt: 'Outdoor & Baby',
     imgRedirectLink: '/categories/outdoor-toys',
@@ -94,7 +102,7 @@ const categoryDropDown = [
   },
   {
     title: 'Creative & Puzzle',
-    catLink: '/arts-crafts',
+    catLink: '/categories/arts-crafts',
     imgLink: '',
     imgAlt: 'Creative & Puzzle',
     imgRedirectLink: '/categories/arts-crafts',
@@ -108,7 +116,7 @@ const categoryDropDown = [
   },
   {
     title: 'Musical Toys',
-    catLink: '/musical-toys',
+    catLink: '/categories/musical-toys',
     imgLink: '',
     imgAlt: 'Musical Toys',
     imgRedirectLink: '/categories/musical-toys',
@@ -189,8 +197,26 @@ const testimonial = {
   description: 'Đồ chơi an toàn, phù hợp độ tuổi và phát triển kỹ năng cho trẻ.',
 };
 
-const paymentSecure = [];
-const aboutUS = { section1: [], section2: { title: '', imgLink: '', imgAlt: '', listPoints: [] }, section3: { title: '', description: [] } };
+type InfoFeature = {
+  title: string;
+  description: string;
+  imgLink: string;
+  imgAlt: string;
+};
+
+const paymentSecure: InfoFeature[] = [];
+type AboutSection = InfoFeature;
+type AboutPoint = { title: string; description: string };
+
+const aboutUS: {
+  section1: AboutSection[];
+  section2: InfoFeature & { listPoints: AboutPoint[] };
+  section3: { title: string; description: string[] };
+} = {
+  section1: [],
+  section2: { title: '', description: '', imgLink: '', imgAlt: '', listPoints: [] },
+  section3: { title: '', description: [] },
+};
 export type LoginFeature = {
   title: string;
   description: string;
@@ -219,7 +245,9 @@ const loginFeatures: LoginFeature[] = [
     iconType: "lock",
   },
 ];
-const serviceFeatures = [];
+const serviceFeatures: InfoFeature[] = [];
+const currentEvent = {};
+const footerCategories = footerSections;
 const allCategories = [
   { name: 'LEGO & Building', link: '/categories/lego-building' },
   { name: 'STEM & Science', link: '/categories/stem-science' },
@@ -245,4 +273,6 @@ export {
   footerSections,
   featuresSec,
   testimonial,
+  currentEvent,
+  footerCategories,
 };

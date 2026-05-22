@@ -134,8 +134,8 @@ router.post('/toy-filter/search', async (req: Request, res: Response) => {
 
   const where: string[] = [
     `products.is_active = true`,
-    `products.price >= $2`,
-    `products.price <= $3`,
+    `ROUND(products.price * (100 - COALESCE(products.discount, 0)) / 100) >= $2`,
+    `ROUND(products.price * (100 - COALESCE(products.discount, 0)) / 100) <= $3`,
     `COALESCE(productparams.stars, 0) >= $4`,
     `(products.title ILIKE $1 OR products.description ILIKE $1 OR products.tags ILIKE $1 OR products.brand ILIKE $1)`,
   ]
@@ -170,8 +170,8 @@ router.post('/toy-filter/category', async (req: Request, res: Response) => {
 
   const where: string[] = [
     `products.is_active = true`,
-    `products.price >= $1`,
-    `products.price <= $2`,
+    `ROUND(products.price * (100 - COALESCE(products.discount, 0)) / 100) >= $1`,
+    `ROUND(products.price * (100 - COALESCE(products.discount, 0)) / 100) <= $2`,
     `COALESCE(productparams.stars, 0) >= $3`,
   ]
 

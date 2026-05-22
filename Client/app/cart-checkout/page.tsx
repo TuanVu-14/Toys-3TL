@@ -1,6 +1,6 @@
 'use client'
 import { MenuProvider } from '@/Helpers/MenuContext'
-import React from 'react'
+import React, { Suspense } from 'react'
 import { AppProvider } from '@/Helpers/AccountDialog'
 import { Provider } from 'react-redux'
 import { store } from '@/app/store'
@@ -10,7 +10,9 @@ const page = () => {
         <Provider store={store}>
                 <MenuProvider>
                     <AppProvider>
-                        <CartCheckout/>
+                        <Suspense fallback={null}>
+                            <CartCheckout/>
+                        </Suspense>
                     </AppProvider>
                 </MenuProvider>
         </Provider>

@@ -55,7 +55,14 @@ const Banner = () => {
     const res = await bannerDataHandler()
 
     if (res.status === 200) {
-      data.current = res.banners?.data || res.data?.data || res.data || []
+      const responseData = res as {
+        banners?: { data?: Banner[] } | Banner[]
+        data?: { data?: Banner[] } | Banner[]
+      }
+      data.current =
+        (Array.isArray(responseData.banners) ? responseData.banners : responseData.banners?.data) ||
+        (Array.isArray(responseData.data) ? responseData.data : responseData.data?.data) ||
+        []
     }
 
     setLoading(false)

@@ -49,7 +49,10 @@ function CategoriesContent() {
         });
         setEditingId(null);
       } else {
-        await createAdminCategory(name, parent || undefined);
+        await createAdminCategory({
+          name: name.trim(),
+          parentcategoryid: parent || undefined,
+        });
       }
       setName("");
       setParent(null);

@@ -37,7 +37,9 @@ export default function WarehouseManager() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [tab, setTab] = useState("inventory");
-  const [stockForm, setStockForm] = useState({ productID: "", quantity: "", batchNumber: "", manufactureDate: "", expiryDate: "", note: "" });
+  const emptyStockForm = { productID: "", quantity: "", batchNumber: "", manufactureDate: "", expiryDate: "", note: "" };
+  const [stockInForm, setStockInForm] = useState(emptyStockForm);
+  const [stockOutForm, setStockOutForm] = useState(emptyStockForm);
 
   const loadData = async () => {
     setLoading(true);
@@ -72,6 +74,7 @@ export default function WarehouseManager() {
     event.preventDefault();
     setMessage("");
     setError("");
+    const stockForm = type === "in" ? stockInForm : stockOutForm;
     const payload = {
       productID: Number(stockForm.productID),
       quantity: Number(stockForm.quantity),
@@ -84,7 +87,8 @@ export default function WarehouseManager() {
       if (type === "in") await stockIn(payload);
       else await stockOut(payload);
       setMessage(type === "in" ? "Đã nhập kho thành công." : "Đã xuất kho thành công.");
-      setStockForm({ productID: "", quantity: "", batchNumber: "", manufactureDate: "", expiryDate: "", note: "" });
+      if (type === "in") setStockInForm(emptyStockForm);
+      else setStockOutForm(emptyStockForm);
       await loadData();
     } catch (err: any) {
       setError(err?.response?.data?.error || "Thao tác thất bại.");
@@ -145,12 +149,12 @@ export default function WarehouseManager() {
         <div className="grid gap-5 lg:grid-cols-2">
           <form onSubmit={(event) => handleStock("in", event)} className={cardClass}>
             <h3 className="mb-4 text-xl font-black">Quản lý nhập kho</h3>
-            <StockFormFields products={products} stockForm={stockForm} setStockForm={setStockForm} />
+            <StockFormFields products={products} stockForm={stockInForm} setStockForm={setStockInForm} />
             <button className={`${buttonClass} mt-4`} type="submit">Nhập kho</button>
           </form>
           <form onSubmit={(event) => handleStock("out", event)} className={cardClass}>
             <h3 className="mb-4 text-xl font-black">Quản lý xuất kho</h3>
-            <StockFormFields products={products} stockForm={stockForm} setStockForm={setStockForm} hideDates />
+            <StockFormFields products={products} stockForm={stockOutForm} setStockForm={setStockOutForm} hideDates />
             <button className={`${buttonClass} mt-4`} type="submit">Xuất kho</button>
           </form>
         </div>

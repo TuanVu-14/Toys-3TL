@@ -215,7 +215,10 @@ router.get('/filter/category/:minPrice/:maxPrice/:categoryID/:minRating/:categor
 
   try {
     const params: any[] = [minPrice, maxPrice, minRating];
-    let where = `WHERE products.is_active = true AND products.price >= $1 AND products.price <= $2 AND productparams.stars >= $3`;
+    let where = `WHERE products.is_active = true
+      AND ROUND(products.price * (100 - COALESCE(products.discount, 0)) / 100) >= $1
+      AND ROUND(products.price * (100 - COALESCE(products.discount, 0)) / 100) <= $2
+      AND productparams.stars >= $3`;
 
     if (Number(categoryID) !== 0) {
       params.push(Number(categoryID));

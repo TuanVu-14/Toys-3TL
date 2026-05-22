@@ -44,7 +44,7 @@ interface Product {
     colors: Color[]; // assuming colors is an array of strings
     sizes: Size[];  // assuming sizes is an array of strings
     reviewCount: number;
-    images: ProductImage;
+    images: ProductImage | ProductImage[];
 }
 interface ProductCardProps {
   product: Product;
@@ -55,6 +55,15 @@ const IDGenerator = ()=>{
   const ID = Math.round(Math.random() * 1000 * 1000 * 100);
   return ID;
 }
+
+const getProductImage = (images: Product['images']) => {
+  if (Array.isArray(images)) {
+    return images.find((image) => image?.imglink) || { imageid: 0, imglink: '/no-image.png', imgalt: 'Product image' }
+  }
+
+  return images || { imageid: 0, imglink: '/no-image.png', imgalt: 'Product image' }
+}
+
 export default function Quickview({ product, open, setOpen }: ProductCardProps) {
   // const [open, setOpen] = useState(false)
   const colRef = useRef<string>('Default');
@@ -66,13 +75,15 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
   const dispatch = useAppDispatch();
   const defaultAccount = useAppSelector((state) => state.userState.defaultAccount)
   const listID = {cartItemID:IDGenerator()};
+  const productImage = getProductImage(product.images)
   let cartItemData = {
     cartItemID:listID.cartItemID,
     productID:product.productid,
-    productImg:product.images.imglink,
-    productAlt:product.images.imgalt,
+    productImg:productImage.imglink,
+    productAlt:productImage.imgalt,
     productName:product.title,
-    productPrice:parseInt(product.discount),
+    productPrice:Number(product.price || 0),
+    discount:Number(product.discount || 0),
     productColor:colRef.current,
     productSize:sizeRef.current,
     quantity: 1,
@@ -126,7 +137,7 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
 
                   <div className="grid w-full grid-cols-1 items-start gap-x-6 gap-y-8 sm:grid-cols-12 lg:gap-x-8">
                     <div className="aspect-h-3 aspect-w-2 overflow-hidden rounded-lg bg-gray-100 sm:col-span-4 lg:col-span-5">
-                      <img src={product.images.imglink} alt={product.images.imgalt} className="object-cover object-center" />
+                      <img src={productImage.imglink} alt={productImage.imgalt} className="object-cover object-center" />
                     </div>
                     <div className="sm:col-span-8 lg:col-span-7">
                       <h2 className="text-2xl font-bold text-gray-900 sm:pr-12">{product.title}</h2>

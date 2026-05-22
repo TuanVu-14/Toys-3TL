@@ -20,8 +20,9 @@ interface Account{
     userID:number;
     userName:string;
     email:string;
-    mobile_number:number;
+    mobile_number:string;
     dob:string;
+    role:string;
 }
 const SettingDialogs = ({addresses,dialogType,setdialogType,menuType,userID,setLoading,selectedAddress,setselectedAddress,defaultAccount}:{addresses:Address[],dialogType:string | null,setdialogType:React.Dispatch<React.SetStateAction<string | null>>,menuType:string,userID:number,setLoading:React.Dispatch<React.SetStateAction<boolean>>,selectedAddress: Address,setselectedAddress:React.Dispatch<React.SetStateAction<Address>>,defaultAccount:Account}) => {
     const dispatch = useAppDispatch();

@@ -28,6 +28,7 @@ async function fetchProductData(productid: string, colorid: string, sizeid: stri
            p.price,
            COALESCE(p.discount, 0) AS discount,
            ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100) AS discountedprice,
+           p.stock,
            ps.sizename,
            pc.colorname,
            pi.imglink,
@@ -43,6 +44,32 @@ async function fetchProductData(productid: string, colorid: string, sizeid: stri
   return { ...productResult.rows[0], shippingcost: SHIPPING_CHARGE, quantity };
 }
 
+function parseSelectedCartItemIDs(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value.map(Number).filter((id) => Number.isInteger(id) && id > 0);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((id) => Number(id.trim()))
+      .filter((id) => Number.isInteger(id) && id > 0);
+  }
+
+  return [];
+}
+
+function cartItemFilterClause(selectedIDs: number[]) {
+  if (selectedIDs.length === 0) {
+    return { clause: "", params: [] as unknown[] };
+  }
+
+  return {
+    clause: ` AND cartitemid = ANY($2::int[])`,
+    params: [selectedIDs],
+  };
+}
+
 async function getDefaultAddress(userid: number | string) {
   const result = await client.query(`SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true`, [userid]);
   return result.rows[0]?.addressid;
@@ -54,7 +81,12 @@ router.get("/checkout-cart/product-details/:userID", userIDSchema, async (req: R
   const { userID } = matchedData(req);
 
   try {
-    const cartItems = await client.query(`SELECT productid, sizeid, colorid, quantity FROM cartitems WHERE userid = $1`, [userID]);
+    const selectedIDs = parseSelectedCartItemIDs(req.query.items);
+    const filter = cartItemFilterClause(selectedIDs);
+    const cartItems = await client.query(
+      `SELECT cartitemid, productid, sizeid, colorid, quantity FROM cartitems WHERE userid = $1${filter.clause}`,
+      [userID, ...filter.params]
+    );
     if (cartItems.rows.length === 0) return res.status(404).json({ error: "cart items not found" });
 
     const products = await Promise.all(
@@ -78,6 +110,7 @@ async function createCartOrder({
   gift_wrapping,
   gift_wrap_style,
   gift_message,
+  cartItemIDs = [],
 }: {
   userID: string | number;
   paymentMethod: string;
@@ -86,10 +119,16 @@ async function createCartOrder({
   gift_wrapping: boolean;
   gift_wrap_style: string | null;
   gift_message: string | null;
+  cartItemIDs?: number[];
 }) {
   await client.query("BEGIN");
   try {
-    const cartItems = await client.query(`SELECT productid, sizeid, colorid, quantity FROM cartitems WHERE userid = $1`, [userID]);
+    const selectedIDs = cartItemIDs.filter((id) => Number.isInteger(Number(id)) && Number(id) > 0).map(Number);
+    const filter = cartItemFilterClause(selectedIDs);
+    const cartItems = await client.query(
+      `SELECT cartitemid, productid, sizeid, colorid, quantity FROM cartitems WHERE userid = $1${filter.clause}`,
+      [userID, ...filter.params]
+    );
     if (cartItems.rows.length === 0) {
       await client.query("ROLLBACK");
       return { status: 404, error: "cart items not found" };
@@ -108,6 +147,10 @@ async function createCartOrder({
     for (const item of cartItems.rows) {
       const product = await fetchProductData(item.productid, item.colorid, item.sizeid, item.quantity);
       if (!product) continue;
+      if (Number(product.stock || 0) < Number(item.quantity)) {
+        await client.query("ROLLBACK");
+        return { status: 409, error: "Not enough stock" };
+      }
       const lineAmount = Number(product.discountedprice) * Number(item.quantity);
       itemsAmount += lineAmount;
       totalShipping += SHIPPING_CHARGE * Number(item.quantity);
@@ -179,7 +222,11 @@ async function createCartOrder({
       await client.query(`UPDATE products SET stock = GREATEST(stock - $2, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`, [item.productid, item.quantity]);
     }
 
-    await client.query(`DELETE FROM cartitems WHERE userid = $1`, [userID]);
+    if (selectedIDs.length > 0) {
+      await client.query(`DELETE FROM cartitems WHERE userid = $1 AND cartitemid = ANY($2::int[])`, [userID, selectedIDs]);
+    } else {
+      await client.query(`DELETE FROM cartitems WHERE userid = $1`, [userID]);
+    }
     await client.query("COMMIT");
     return { status: 200, orderid };
   } catch (error) {
@@ -193,6 +240,7 @@ router.post("/cart-payment-on-delivery/create-order", userIDSchema, async (req: 
   const result = validationResult(req);
   if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
   const { userID } = matchedData(req);
+  const cartItemIDs = parseSelectedCartItemIDs(req.body.cartItemIDs);
   const gift = getGiftOptions(req);
 
   const created = await createCartOrder({
@@ -200,6 +248,7 @@ router.post("/cart-payment-on-delivery/create-order", userIDSchema, async (req: 
     paymentMethod: "Thanh toán khi nhận hàng",
     paymentStatus: "Pending",
     paymentFee: COD_FEE,
+    cartItemIDs,
     ...gift,
   });
 
@@ -211,6 +260,7 @@ router.post("/cart-online/create-order", paymentCreationSchema, async (req: Requ
   const result = validationResult(req);
   if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
   const { userID } = matchedData(req);
+  const cartItemIDs = parseSelectedCartItemIDs(req.body.cartItemIDs);
   const gift = getGiftOptions(req);
   const paymentMethod = String(req.body.paymentMethod || "Thanh toán online");
 
@@ -219,6 +269,7 @@ router.post("/cart-online/create-order", paymentCreationSchema, async (req: Requ
     paymentMethod,
     paymentStatus: "Paid",
     paymentFee: 0,
+    cartItemIDs,
     ...gift,
   });
 

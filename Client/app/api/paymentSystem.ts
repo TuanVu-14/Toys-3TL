@@ -106,6 +106,7 @@ export async function paymentOnDeliveryHandler({
   productid,
   colorid,
   sizeid,
+  quantity = 1,
   gift_wrapping = false,
   gift_wrap_style = "",
   gift_message = "",
@@ -114,6 +115,7 @@ export async function paymentOnDeliveryHandler({
   productid: string | string[];
   colorid: string | string[];
   sizeid: string | string[];
+  quantity?: number;
 } & GiftOptions) {
   try {
     const response = await axios.post(
@@ -123,6 +125,7 @@ export async function paymentOnDeliveryHandler({
         productid,
         colorid,
         sizeid,
+        quantity,
         gift_wrapping,
         gift_wrap_style,
         gift_message,
@@ -141,6 +144,7 @@ export async function onlineCheckoutHandler({
   productid,
   colorid,
   sizeid,
+  quantity = 1,
   paymentMethod,
   gift_wrapping = false,
   gift_wrap_style = "",
@@ -150,7 +154,11 @@ export async function onlineCheckoutHandler({
   productid: string | string[];
   colorid: string | string[];
   sizeid: string | string[];
-  paymentMethod: string;
+  quantity?: number;
+  paymentid?: string;
+  paymentStatus?: string;
+  paymentstatus?: string;
+  paymentMethod?: string;
 } & GiftOptions) {
   try {
     const response = await axios.post(
@@ -160,6 +168,7 @@ export async function onlineCheckoutHandler({
         productid,
         colorid,
         sizeid,
+        quantity,
         paymentMethod,
         gift_wrapping,
         gift_wrap_style,
@@ -174,11 +183,16 @@ export async function onlineCheckoutHandler({
   }
 }
 
-export async function checkoutCartProductDataHandler(userID: number) {
+export async function checkoutCartProductDataHandler(userID: number, cartItemIDs: number[] = []) {
   try {
+    const params =
+      cartItemIDs.length > 0
+        ? { items: cartItemIDs.join(",") }
+        : undefined;
+
     const response = await axios.get(
       `${url}/api/checkout-cart/product-details/${userID}`,
-      { headers: await authHeaders() }
+      { headers: await authHeaders(), params }
     );
 
     return { status: response.status, data: response.data };
@@ -189,16 +203,18 @@ export async function checkoutCartProductDataHandler(userID: number) {
 
 export async function cartCashCheckoutHandler({
   userID,
+  cartItemIDs = [],
   gift_wrapping = false,
   gift_wrap_style = "",
   gift_message = "",
 }: {
   userID: number;
+  cartItemIDs?: number[];
 } & GiftOptions) {
   try {
     const response = await axios.post(
       `${url}/api/cart-payment-on-delivery/create-order`,
-      { userID, gift_wrapping, gift_wrap_style, gift_message },
+      { userID, cartItemIDs, gift_wrapping, gift_wrap_style, gift_message },
       { headers: await authHeaders() }
     );
 
@@ -210,18 +226,20 @@ export async function cartCashCheckoutHandler({
 
 export async function cartOnlineCheckoutHandler({
   userID,
+  cartItemIDs = [],
   paymentMethod,
   gift_wrapping = false,
   gift_wrap_style = "",
   gift_message = "",
 }: {
   userID: number;
+  cartItemIDs?: number[];
   paymentMethod: string;
 } & GiftOptions) {
   try {
     const response = await axios.post(
       `${url}/api/cart-online/create-order`,
-      { userID, paymentMethod, gift_wrapping, gift_wrap_style, gift_message },
+      { userID, cartItemIDs, paymentMethod, gift_wrapping, gift_wrap_style, gift_message },
       { headers: await authHeaders() }
     );
 

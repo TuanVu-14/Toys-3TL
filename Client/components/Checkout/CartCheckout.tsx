@@ -3,7 +3,7 @@ import userData from "@/controllers/userData";
 import useAuth from "@/controllers/Authentication";
 import { useApp } from "@/Helpers/AccountDialog";
 import Loading from "../Loading";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   cartCashCheckoutHandler,
   cartOnlineCheckoutHandler,
@@ -63,6 +63,7 @@ const CartCheckout = () => {
   const { appState } = useApp();
   const loggedIn = appState.loggedIn;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { checkSession } = useAuth();
   const { grabUserData } = userData();
 
@@ -113,6 +114,10 @@ const CartCheckout = () => {
   const paymentFee = Number(selectedPayment?.config?.fee || 0);
   const totalAmount = subTotal + shipping + paymentFee;
   const paymentContent = buildPaymentQrContent(selectedPayment, totalAmount, paymentCodeRef.current);
+  const selectedCartItemIDs = String(searchParams.get("items") || "")
+    .split(",")
+    .map((value) => Number(value))
+    .filter((value) => Number.isInteger(value) && value > 0);
 
   async function loadPaymentMethods() {
     const response = await paymentMethodsHandler();
@@ -124,7 +129,7 @@ const CartCheckout = () => {
   }
 
   async function dataRequest(userID: number) {
-    const response = await checkoutCartProductDataHandler(userID);
+    const response = await checkoutCartProductDataHandler(userID, selectedCartItemIDs);
     if (response.status === 200) {
       dataVar.current = response.data.products;
       found.current = true;
@@ -183,6 +188,7 @@ const CartCheckout = () => {
 
     const payload = {
       userID: genUserData.current.userID,
+      cartItemIDs: selectedCartItemIDs,
       gift_wrapping: giftOptions.gift_wrapping,
       gift_wrap_style: giftOptions.gift_wrap_style,
       gift_message: finalGiftMessage,

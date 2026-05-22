@@ -5,6 +5,7 @@ import { client } from "../data/DB";
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_ENCRYPTION_KEY as string;
+const IDGenerator = () => Math.round(Math.random() * 1000 * 1000 * 100);
 
 const VALID_ROLES = ["customer", "sales_staff", "warehouse_manager", "admin"] as const;
 type UserRole = (typeof VALID_ROLES)[number];
@@ -76,6 +77,29 @@ function normalizeRole(role: unknown): UserRole {
 function normalizeOrderStatus(status?: string) {
   const found = ORDER_STATUSES.find((item) => item.toLowerCase() === String(status || "").toLowerCase());
   return found || null;
+}
+
+async function upsertPrimaryProductImage(productID: number | string, imageUrl?: string, imageAlt?: string) {
+  const safeUrl = String(imageUrl || "").trim();
+  if (!safeUrl) return;
+
+  const existing = await client.query(
+    "SELECT imageid FROM productimages WHERE productid = $1 AND COALESCE(isprimary, false) = true LIMIT 1",
+    [productID],
+  );
+
+  if (existing.rows.length) {
+    await client.query(
+      "UPDATE productimages SET imglink = $1, imgalt = COALESCE($2, imgalt), isprimary = true WHERE imageid = $3",
+      [safeUrl, imageAlt || null, existing.rows[0].imageid],
+    );
+    return;
+  }
+
+  await client.query(
+    "INSERT INTO productimages (imageid, productid, imglink, imgalt, isprimary) VALUES ($1, $2, $3, $4, true)",
+    [IDGenerator(), productID, safeUrl, imageAlt || null],
+  );
 }
 
 async function userExists(email: string, mobileNumber: string, exceptUserID?: string | number) {
@@ -321,6 +345,7 @@ router.get("/admin/products", adminAuth, async (_req: Request, res: Response) =>
     const response = await client.query(`
       SELECT p.productid, p.title, p.description, p.categoryid, c.name AS category,
              p.price, p.discount, p.stock, p.tags, p.imgid,
+             pi.imglink AS image_url, pi.imgalt AS image_alt,
              p.age_group, p.gender, p.material, p.skill_type, p.brand,
              p.safety_certificates, p.low_stock_threshold, p.supplier_id,
              COALESCE(p.is_active, true) AS is_active,
@@ -328,6 +353,7 @@ router.get("/admin/products", adminAuth, async (_req: Request, res: Response) =>
       FROM products p
       LEFT JOIN categories c ON p.categoryid = c.categoryid
       LEFT JOIN productparams pp ON p.productid = pp.productid
+      LEFT JOIN productimages pi ON pi.productid = p.productid AND COALESCE(pi.isprimary, false) = true
       ORDER BY p.productid DESC
     `);
     res.status(200).json({ data: response.rows });
@@ -347,6 +373,10 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
     stock,
     tags,
     imgid,
+    image_url,
+    imglink,
+    image_alt,
+    imgalt,
     age_group,
     gender,
     material,
@@ -402,6 +432,8 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
       [product.rows[0].productid, !!isnew, !!issale, !!isdiscount, Number(stars || 0)],
     );
 
+    await upsertPrimaryProductImage(product.rows[0].productid, image_url || imglink || imgid, image_alt || imgalt || title);
+
     await client.query("COMMIT");
     res.status(201).json({ data: product.rows[0] });
   } catch (error) {
@@ -422,6 +454,10 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
     stock,
     tags,
     imgid,
+    image_url,
+    imglink,
+    image_alt,
+    imgalt,
     age_group,
     gender,
     material,
@@ -431,12 +467,18 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
     low_stock_threshold,
     supplier_id,
     is_active,
+    isnew,
+    issale,
+    isdiscount,
+    stars,
   } = req.body;
 
   try {
     if (!title || !categoryid || price === undefined || Number(price) < 0) {
       return res.status(400).json({ error: "Missing or invalid title/category/price" });
     }
+
+    await client.query("BEGIN");
 
     await client.query(
       `UPDATE products
@@ -467,8 +509,24 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
       ],
     );
 
+    await client.query(
+      `INSERT INTO productparams (productid, isnew, issale, isdiscount, stars)
+       VALUES ($1,$2,$3,$4,$5)
+       ON CONFLICT (productid) DO UPDATE SET
+         isnew = EXCLUDED.isnew,
+         issale = EXCLUDED.issale,
+         isdiscount = EXCLUDED.isdiscount,
+         stars = EXCLUDED.stars`,
+      [productID, !!isnew, !!issale, !!isdiscount, Number(stars || 0)],
+    );
+
+    await upsertPrimaryProductImage(productID, image_url || imglink || imgid, image_alt || imgalt || title);
+
+    await client.query("COMMIT");
+
     res.status(200).json({ message: "Product updated" });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error(error);
     res.status(500).json({ error: "Server Error" });
   }
@@ -678,6 +736,8 @@ router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Respon
         pr.brand,
         pr.age_group,
         pr.skill_type,
+        pi.imglink AS image_url,
+        pi.imgalt AS image_alt,
 
         pc.colorname,
         ps.sizename,
@@ -687,6 +747,7 @@ router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Respon
         ROUND((pr.price * oi.quantity) * (1 - COALESCE(pr.discount, 0) / 100.0), 2) AS line_total
       FROM orderitems oi
       LEFT JOIN products pr ON pr.productid = oi.productid
+      LEFT JOIN productimages pi ON pi.productid = oi.productid AND COALESCE(pi.isprimary, false) = true
       LEFT JOIN productcolors pc ON pc.colorid = oi.colorid
       LEFT JOIN productsizes ps ON ps.sizeid = oi.sizeid
       WHERE oi.orderid = $1

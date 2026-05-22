@@ -24,6 +24,12 @@ const orderCreationSchema = checkSchema({
   productid: { ...idBody, errorMessage: "The productid must be provided correctly" },
   colorid: { ...idBody, errorMessage: "The colorid must be provided correctly" },
   sizeid: { ...idBody, errorMessage: "The sizeid must be provided correctly" },
+  quantity: {
+    in: ["body"] as Location[],
+    optional: true,
+    isInt: { options: { min: 1, max: 999 } },
+    toInt: true,
+  },
 });
 
 const orderCreationSchema2 = checkSchema({
@@ -31,6 +37,12 @@ const orderCreationSchema2 = checkSchema({
   productid: { ...idBody, errorMessage: "The productid must be provided correctly" },
   colorid: { ...idBody, errorMessage: "The colorid must be provided correctly" },
   sizeid: { ...idBody, errorMessage: "The sizeid must be provided correctly" },
+  quantity: {
+    in: ["body"] as Location[],
+    optional: true,
+    isInt: { options: { min: 1, max: 999 } },
+    toInt: true,
+  },
   paymentMethod: {
     in: ["body"] as Location[],
     optional: true,

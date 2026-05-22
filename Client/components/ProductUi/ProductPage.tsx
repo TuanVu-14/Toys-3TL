@@ -440,20 +440,12 @@ const ProductPage = () => {
             </div>
 
             <div>
-              <div className="flex items-start justify-between gap-4">
+              <div>
                 <div>
                   <p className="text-sm text-gray-500"># {data.productid}</p>
                   <h1 className="mt-2 text-4xl font-bold text-gray-900">{data.title}</h1>
                   <p className="mt-2 text-sm text-gray-500">By {data.seller}</p>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => itemStateUpdate('wishlist')}
-                  className="rounded-full p-2 text-red-500 hover:bg-red-50"
-                >
-                  <HeartIcon className="h-8 w-8" />
-                </button>
               </div>
 
               <button

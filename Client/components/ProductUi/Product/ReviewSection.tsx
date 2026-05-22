@@ -63,8 +63,8 @@ const ReviewSection = ({
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
         <h2 className="mb-8 text-center text-2xl font-bold leading-10 text-black">Customer reviews & rating</h2>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(280px,420px)_1fr]">
-          <div className="w-full rounded-3xl border border-gray-200 p-5 sm:p-6">
+        <div className="grid gap-6 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)_220px]">
+          <div className="w-full rounded-2xl border border-gray-200 p-5 sm:p-6">
             {[5, 4, 3, 2, 1].map((star) => {
               const count = stats.counts[star] || 0
               const percent = reviewTotal > 0 ? Math.round((count * 100) / reviewTotal) : 0
@@ -82,15 +82,15 @@ const ReviewSection = ({
             })}
           </div>
 
-          <div className="grid gap-6 rounded-3xl bg-gray-100 p-5 sm:p-8 md:grid-cols-[1fr_auto]">
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl bg-white/60 p-4 sm:border-r sm:border-gray-200 sm:bg-transparent">
+          <div className="grid gap-4 rounded-2xl bg-gray-100 p-5 sm:p-6 sm:grid-cols-2 xl:col-span-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_220px]">
+            <div className="contents">
+              <div className="flex min-w-0 flex-col items-center justify-center rounded-xl bg-white p-4">
                 <h2 className="mb-4 text-center text-4xl font-bold text-black">{stats.average.toFixed(1)}</h2>
                 <Stars size={32} stars={stats.average} />
                 <p className="mt-4 text-center font-normal leading-8 text-gray-500">{reviewTotal} Ratings</p>
               </div>
 
-              <div className="flex min-w-0 flex-col items-center justify-center rounded-2xl bg-white/60 p-4 sm:bg-transparent">
+              <div className="flex min-w-0 flex-col items-center justify-center rounded-xl bg-white p-4">
                 <h2 className="mb-4 text-center text-4xl font-bold text-black">
                   {stats.lastReview ? Number(stats.lastReview.rating || stats.lastReview.productstars || 0).toFixed(1) : '0.0'}
                 </h2>
@@ -99,7 +99,7 @@ const ReviewSection = ({
               </div>
             </div>
 
-            <div className="flex w-full flex-col items-stretch justify-center gap-4 md:w-44">
+            <div className="flex w-full flex-col items-stretch justify-center gap-4 sm:col-span-2 xl:col-span-1">
               <button
                 type="button"
                 onClick={() => setdialogType('create')}

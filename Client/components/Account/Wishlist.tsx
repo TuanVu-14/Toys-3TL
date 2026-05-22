@@ -1,17 +1,17 @@
 import { wishlistDeleteHandler } from '@/app/api/itemLists';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { removeItemFromWishlist } from '@/features/UIUpdates/CartWishlist';
+import { formatPrice, removeItemFromWishlist, WishlistItem } from '@/features/UIUpdates/CartWishlist';
 import { useApp } from '@/Helpers/AccountDialog';
 import React from 'react'
-interface Wishlist{
-  wishlistItemID:number;
-  productID:number;
-  productImg:string;
-  productAlt:string;
-  productName:string;
-  productPrice:number;
-}
-const Wishlist = ({Component,loading,setLoading}:{Component:Wishlist[],loading:boolean,setLoading:React.Dispatch<React.SetStateAction<boolean>>}) => {
+
+const getWishlistItemID = (item: WishlistItem) => Number(item.wishlistItemID ?? item.wishlistitemid ?? 0)
+const getProductID = (item: WishlistItem) => Number(item.productID ?? item.productid ?? 0)
+const getProductImage = (item: WishlistItem) => item.productImg ?? item.imglink ?? '/no-image.png'
+const getProductAlt = (item: WishlistItem) => item.productAlt ?? item.imgalt ?? item.productName ?? item.title ?? 'Product'
+const getProductName = (item: WishlistItem) => item.productName ?? item.title ?? 'Sản phẩm'
+const getProductPrice = (item: WishlistItem) => item.productPrice ?? item.productprice ?? item.discountedprice ?? item.price ?? 0
+
+const Wishlist = ({Component,loading,setLoading}:{Component:WishlistItem[],loading:boolean,setLoading:React.Dispatch<React.SetStateAction<boolean>>}) => {
   const defaultAccount = useAppSelector((state) => state.userState.defaultAccount)
   const dispatch = useAppDispatch();
   const { appState } = useApp();
@@ -19,7 +19,7 @@ const Wishlist = ({Component,loading,setLoading}:{Component:Wishlist[],loading:b
   async function removeItem(wishlistItemID:number,productID:number){
     setLoading(true);
     isLogged && await wishlistDeleteHandler({wishlistItemID, userID:defaultAccount.userID})
-    dispatch(removeItemFromWishlist(productID));
+    dispatch(removeItemFromWishlist({ wishlistItemID, productID }));
     setLoading(false);
     
   }
@@ -34,12 +34,15 @@ const Wishlist = ({Component,loading,setLoading}:{Component:Wishlist[],loading:b
          <div className="mt-8">
                 <div className="flow-root">
                     <ul role="list" className="-my-6 divide-y divide-gray-200">
-                    {Component.map((product) => (
-                        <li key={product.productID} className="flex py-6">
+                    {Component.map((product) => {
+                      const wishlistItemID = getWishlistItemID(product)
+                      const productID = getProductID(product)
+                      return (
+                        <li key={`${wishlistItemID}-${productID}`} className="flex py-6">
                         <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                             <img
-                            src={product.productImg}
-                            alt={product.productAlt}
+                            src={getProductImage(product)}
+                            alt={getProductAlt(product)}
                             className="h-full w-full object-cover object-center"
                             />
                         </div>
@@ -48,9 +51,9 @@ const Wishlist = ({Component,loading,setLoading}:{Component:Wishlist[],loading:b
                             <div>
                             <div className="flex justify-between text-base font-medium text-gray-900">
                                 <h3>
-                                <a href={`./product/${product.productID}`}>{product.productName}</a>
+                                <a href={`./product/${productID}`}>{getProductName(product)}</a>
                                 </h3>
-                                <p className="ml-4">{product.productPrice}</p>
+                                <p className="ml-4">{formatPrice(getProductPrice(product), product.discount)}</p>
                             </div>
                             </div>
                             <div className="flex flex-1 items-end justify-between text-sm">
@@ -58,7 +61,7 @@ const Wishlist = ({Component,loading,setLoading}:{Component:Wishlist[],loading:b
 
                             <div className="flex">
                                 <button
-                                onClick={()=>removeItem(product.wishlistItemID,product.productID)}
+                                onClick={()=>removeItem(wishlistItemID, productID)}
                                 type="button"
                                 className="font-medium text-indigo-600 hover:text-indigo-500"
                                 >
@@ -68,7 +71,7 @@ const Wishlist = ({Component,loading,setLoading}:{Component:Wishlist[],loading:b
                             </div>
                         </div>
                         </li>
-                    ))}
+                    )})}
                     </ul>
                 </div>
             </div>

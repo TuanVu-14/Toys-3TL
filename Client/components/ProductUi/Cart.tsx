@@ -6,7 +6,7 @@ import {
   TransitionChild,
 } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import Link from 'next/link'
 
 import { useMenu } from '@/Helpers/MenuContext'
@@ -71,16 +71,57 @@ export default function Cart() {
   )
   const dispatch = useAppDispatch()
   const { menu, toggleCart } = useMenu()
+  const [selectedCartItemIDs, setSelectedCartItemIDs] = useState<number[]>([])
 
   const userID = getAccountID(defaultAccount)
 
-  const total = cartlist.reduce((sum, item) => {
+  const selectedItems = cartlist.filter((item) =>
+    selectedCartItemIDs.includes(getCartItemID(item)),
+  )
+
+  const total = selectedItems.reduce((sum, item) => {
     return (
       sum +
       getFinalPrice(getProductPrice(item), item.discount) *
         Math.max(1, toNumber(item.quantity))
     )
   }, 0)
+
+  const selectableCartItemIDs = cartlist
+    .map((item) => getCartItemID(item))
+    .filter((id) => id > 0)
+
+  const selectedCheckoutIDs = selectedCartItemIDs.filter((id) =>
+    selectableCartItemIDs.includes(id),
+  )
+
+  const allSelected =
+    cartlist.length > 0 &&
+    selectableCartItemIDs.length > 0 &&
+    selectedCheckoutIDs.length === selectableCartItemIDs.length
+
+  useEffect(() => {
+    setSelectedCartItemIDs((current) => {
+      const validCurrent = current.filter((id) => selectableCartItemIDs.includes(id))
+      if (validCurrent.length > 0) return validCurrent
+      return selectableCartItemIDs
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartlist])
+
+  const toggleSelectedItem = (cartItemID: number) => {
+    if (!cartItemID) return
+
+    setSelectedCartItemIDs((current) => {
+      return current.includes(cartItemID)
+        ? current.filter((id) => id !== cartItemID)
+        : [...current, cartItemID]
+    })
+  }
+
+  const toggleSelectAll = () => {
+    setSelectedCartItemIDs(allSelected ? [] : selectableCartItemIDs)
+  }
 
   async function removeItem(product: CartItem) {
     const cartItemID = getCartItemID(product)
@@ -246,6 +287,18 @@ export default function Cart() {
                       )}
 
                       <div className="mt-8">
+                        {cartlist.length > 0 && (
+                          <label className="mb-4 flex items-center gap-3 text-sm font-medium text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={allSelected}
+                              onChange={toggleSelectAll}
+                              className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                            />
+                            Chọn tất cả sản phẩm
+                          </label>
+                        )}
+
                         <div className="flow-root">
                           {cartlist.length === 0 ? (
                             <p className="py-8 text-center text-sm text-gray-500">
@@ -272,8 +325,18 @@ export default function Cart() {
                                 return (
                                   <li
                                     key={`${cartItemID || productID}-${getProductColor(product)}-${getProductSize(product)}`}
-                                    className="flex py-6"
+                                    className="flex gap-3 py-6"
                                   >
+                                    <div className="pt-9">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedCheckoutIDs.includes(cartItemID)}
+                                        onChange={() => toggleSelectedItem(cartItemID)}
+                                        className="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                        aria-label={`Chọn ${getProductName(product)}`}
+                                      />
+                                    </div>
+
                                     <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                       <img
                                         src={getProductImage(product)}
@@ -404,6 +467,12 @@ export default function Cart() {
                         <p>{formatPrice(total)}</p>
                       </div>
 
+                      {cartlist.length > 0 && selectedCheckoutIDs.length === 0 && (
+                        <p className="mt-2 text-sm text-red-600">
+                          Vui lòng chọn ít nhất một sản phẩm để thanh toán.
+                        </p>
+                      )}
+
                       <p className="mt-0.5 text-sm text-gray-500">
                         Phí vận chuyển được tính ở bước thanh toán.
                       </p>
@@ -411,9 +480,13 @@ export default function Cart() {
                       <div className="mt-6">
                         {isLogged ? (
                           <Link
-                            href="/cart-checkout"
+                            href={`/cart-checkout?items=${selectedCheckoutIDs.join(',')}`}
                             onClick={toggleCart}
-                            className="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700"
+                            className={`flex items-center justify-center rounded-md border border-transparent px-6 py-3 text-base font-medium text-white shadow-sm ${
+                              selectedCheckoutIDs.length === 0
+                                ? 'pointer-events-none bg-gray-300'
+                                : 'bg-indigo-600 hover:bg-indigo-700'
+                            }`}
                           >
                             Thanh toán
                           </Link>

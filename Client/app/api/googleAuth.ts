@@ -13,8 +13,9 @@ const authKey =
   process.env.JWT_KEY ||
   process.env.JWT_ENCRYPTION_KEY;
 if (!authKey) throw new Error("Missing authentication key in environment");
+const safeAuthKey = authKey as string;
 export default async function authDataHandler(code: string) {
-  const sendingKey = await encrypt(authKey);
+  const sendingKey = await encrypt(safeAuthKey);
   try {
     const response = await axios.post(
       `${url}/api/auth/google`,

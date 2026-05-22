@@ -10,11 +10,21 @@ router.get("/", async (req: Request, res: Response) => {
   try {
     const query = `
       SELECT 
-        collectionid, name, slug, description, banner_url, icon_url,
-        sort_order, is_active, created_at, updated_at,
-        (SELECT COUNT(*) FROM productcollections WHERE collectionid = collections.collectionid) AS product_count
+        collection_id,
+        collection_id AS collectionid,
+        name,
+        slug,
+        description,
+        imglink,
+        imglink AS banner_url,
+        NULL::varchar AS icon_url,
+        display_order AS sort_order,
+        is_active,
+        created_at,
+        created_at AS updated_at,
+        (SELECT COUNT(*) FROM collection_products WHERE collection_id = collections.collection_id) AS product_count
       FROM collections
-      ORDER BY sort_order ASC, name ASC
+      ORDER BY display_order ASC, name ASC
     `;
     const result = await client.query(query);
     return res.status(200).json({ data: result.rows });
@@ -39,10 +49,20 @@ router.get("/:collectionId", async (req: Request, res: Response) => {
 
     const query = `
       SELECT 
-        collectionid, name, slug, description, banner_url, icon_url,
-        sort_order, is_active, created_at, updated_at
+        collection_id,
+        collection_id AS collectionid,
+        name,
+        slug,
+        description,
+        imglink,
+        imglink AS banner_url,
+        NULL::varchar AS icon_url,
+        display_order AS sort_order,
+        is_active,
+        created_at,
+        created_at AS updated_at
       FROM collections
-      WHERE collectionid = $1
+      WHERE collection_id = $1
     `;
     const result = await client.query(query, [collectionId]);
 
@@ -53,11 +73,11 @@ router.get("/:collectionId", async (req: Request, res: Response) => {
     // Lấy các sản phẩm trong bộ sưu tập
     const productsQuery = `
       SELECT 
-        p.productid, p.title, p.price, p.discount, pc.sort_order
-      FROM productcollections pc
+        p.productid, p.title, p.price, p.discount
+      FROM collection_products pc
       JOIN products p ON pc.productid = p.productid
-      WHERE pc.collectionid = $1
-      ORDER BY pc.sort_order ASC
+      WHERE pc.collection_id = $1
+      ORDER BY p.productid DESC
       LIMIT 20
     `;
     const productsResult = await client.query(productsQuery, [collectionId]);
@@ -97,9 +117,9 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     const query = `
-      INSERT INTO collections (name, slug, description, banner_url, icon_url, sort_order, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING collectionid, name, slug, description, banner_url, icon_url, sort_order, is_active, created_at
+      INSERT INTO collections (name, slug, description, imglink, display_order, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING collection_id, collection_id AS collectionid, name, slug, description, imglink, display_order AS sort_order, is_active, created_at
     `;
 
     const result = await client.query(query, [
@@ -107,7 +127,6 @@ router.post("/", async (req: Request, res: Response) => {
       slug.trim(),
       description || null,
       banner_url || null,
-      icon_url || null,
       sort_order || 0,
       is_active !== false,
     ]);
@@ -149,7 +168,7 @@ router.put("/:collectionId", async (req: Request, res: Response) => {
 
     // Kiểm tra bộ sưu tập tồn tại
     const checkQuery =
-      "SELECT collectionid FROM collections WHERE collectionid = $1";
+      "SELECT collection_id FROM collections WHERE collection_id = $1";
     const checkResult = await client.query(checkQuery, [collectionId]);
 
     if (checkResult.rows.length === 0) {
@@ -162,13 +181,11 @@ router.put("/:collectionId", async (req: Request, res: Response) => {
         name = COALESCE($2, name),
         slug = COALESCE($3, slug),
         description = COALESCE($4, description),
-        banner_url = COALESCE($5, banner_url),
-        icon_url = COALESCE($6, icon_url),
-        sort_order = COALESCE($7, sort_order),
-        is_active = COALESCE($8, is_active),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE collectionid = $1
-      RETURNING collectionid, name, slug, description, banner_url, icon_url, sort_order, is_active, updated_at
+        imglink = COALESCE($5, imglink),
+        display_order = COALESCE($6, display_order),
+        is_active = COALESCE($7, is_active)
+      WHERE collection_id = $1
+      RETURNING collection_id, collection_id AS collectionid, name, slug, description, imglink, display_order AS sort_order, is_active, created_at AS updated_at
     `;
 
     const result = await client.query(updateQuery, [
@@ -177,7 +194,6 @@ router.put("/:collectionId", async (req: Request, res: Response) => {
       slug?.trim() || null,
       description || null,
       banner_url || null,
-      icon_url || null,
       sort_order !== undefined ? sort_order : null,
       is_active !== undefined ? is_active : null,
     ]);
@@ -212,7 +228,7 @@ router.delete("/:collectionId", async (req: Request, res: Response) => {
 
     // Kiểm tra bộ sưu tập tồn tại
     const checkQuery =
-      "SELECT collectionid FROM collections WHERE collectionid = $1";
+      "SELECT collection_id FROM collections WHERE collection_id = $1";
     const checkResult = await client.query(checkQuery, [collectionId]);
 
     if (checkResult.rows.length === 0) {
@@ -221,12 +237,12 @@ router.delete("/:collectionId", async (req: Request, res: Response) => {
 
     // Xóa bộ sưu tập (cascade sẽ xóa liên kết trong productcollections)
     const deleteQuery =
-      "DELETE FROM collections WHERE collectionid = $1 RETURNING collectionid";
+      "DELETE FROM collections WHERE collection_id = $1 RETURNING collection_id";
     const result = await client.query(deleteQuery, [collectionId]);
 
     return res.status(200).json({
       message: "Xóa bộ sưu tập thành công",
-      data: { collectionid: result.rows[0].collectionid },
+        data: { collectionid: result.rows[0].collection_id },
     });
   } catch (error) {
     console.error("DELETE /collections/:collectionId error:", error);
@@ -254,15 +270,14 @@ router.post(
       }
 
       const query = `
-      INSERT INTO productcollections (productid, collectionid, sort_order)
-      VALUES ($1, $2, $3)
-      RETURNING id, productid, collectionid, sort_order, created_at
+      INSERT INTO collection_products (productid, collection_id)
+      VALUES ($1, $2)
+      RETURNING productid, collection_id AS collectionid, added_at AS created_at
     `;
 
       const result = await client.query(query, [
         productId,
         collectionId,
-        sort_order || 0,
       ]);
 
       return res.status(201).json({
@@ -311,9 +326,9 @@ router.delete(
       }
 
       const query = `
-      DELETE FROM productcollections 
-      WHERE collectionid = $1 AND productid = $2
-      RETURNING id
+      DELETE FROM collection_products 
+      WHERE collection_id = $1 AND productid = $2
+      RETURNING productid
     `;
 
       const result = await client.query(query, [collectionId, productId]);
@@ -346,8 +361,18 @@ router.get("/by-slug/:slug", async (req: Request, res: Response) => {
 
     const query = `
       SELECT 
-        collectionid, name, slug, description, banner_url, icon_url,
-        sort_order, is_active, created_at, updated_at
+        collection_id,
+        collection_id AS collectionid,
+        name,
+        slug,
+        description,
+        imglink,
+        imglink AS banner_url,
+        NULL::varchar AS icon_url,
+        display_order AS sort_order,
+        is_active,
+        created_at,
+        created_at AS updated_at
       FROM collections
       WHERE slug = $1 AND is_active = true
     `;
@@ -362,14 +387,14 @@ router.get("/by-slug/:slug", async (req: Request, res: Response) => {
       SELECT 
         p.productid, p.title, p.price, p.discount,
         pp.stars, pp.isnew, pp.issale, pp.isdiscount
-      FROM productcollections pc
+      FROM collection_products pc
       JOIN products p ON pc.productid = p.productid
       LEFT JOIN productparams pp ON p.productid = pp.productid
-      WHERE pc.collectionid = $1
-      ORDER BY pc.sort_order ASC
+      WHERE pc.collection_id = $1
+      ORDER BY p.productid DESC
     `;
     const productsResult = await client.query(productsQuery, [
-      result.rows[0].collectionid,
+      result.rows[0].collection_id,
     ]);
 
     return res.status(200).json({

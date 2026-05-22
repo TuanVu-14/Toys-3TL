@@ -43,6 +43,7 @@ async function getProductCheckoutData(productid: number | string, colorid: numbe
            p.price,
            COALESCE(p.discount, 0) AS discount,
            ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100) AS discountedprice,
+           p.stock,
            ps.sizename,
            pc.colorname,
            pi.imglink,
@@ -62,6 +63,7 @@ async function createSingleProductOrder({
   productid,
   colorid,
   sizeid,
+  quantity = 1,
   paymentMethod,
   paymentStatus,
   paymentFee,
@@ -74,6 +76,7 @@ async function createSingleProductOrder({
   productid: number | string;
   colorid: number | string;
   sizeid: number | string;
+  quantity?: number;
   paymentMethod: string;
   paymentStatus: string;
   paymentFee: number;
@@ -96,7 +99,14 @@ async function createSingleProductOrder({
       return { status: 404, error: "Address not found" };
     }
 
-    const amount = Number(product.discountedprice);
+    const orderQuantity = Math.max(1, Number(quantity || 1));
+
+    if (Number(product.stock || 0) < orderQuantity) {
+      await client.query("ROLLBACK");
+      return { status: 409, error: "Not enough stock" };
+    }
+
+    const amount = Number(product.discountedprice) * orderQuantity;
     const totalAmount = amount + SHIPPING_CHARGE + paymentFee;
     const shippingid = IDGenerator();
     const paymentid = IDGenerator();
@@ -157,11 +167,11 @@ async function createSingleProductOrder({
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       `,
-      [orderitemid, orderid, productid, 1, shippingid, paymentid, colorid, sizeid, gift_wrapping, gift_wrap_style, gift_message]
+      [orderitemid, orderid, productid, orderQuantity, shippingid, paymentid, colorid, sizeid, gift_wrapping, gift_wrap_style, gift_message]
     );
 
-    await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + 1 WHERE productid = $1`, [productid]);
-    await client.query(`UPDATE products SET stock = GREATEST(stock - 1, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`, [productid]);
+    await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2 WHERE productid = $1`, [productid, orderQuantity]);
+    await client.query(`UPDATE products SET stock = GREATEST(stock - $2, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`, [productid, orderQuantity]);
 
     await client.query("COMMIT");
     return { status: 200, orderid };
@@ -188,13 +198,14 @@ router.post("/payment-on-delivery/create-order", orderCreationSchema, async (req
   const result = validationResult(req);
   if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
 
-  const { userid, productid, colorid, sizeid } = matchedData(req);
+  const { userid, productid, colorid, sizeid, quantity } = matchedData(req);
   const gift = getGiftOptions(req);
   const created = await createSingleProductOrder({
     userid,
     productid,
     colorid,
     sizeid,
+    quantity,
     paymentMethod: "Thanh toán khi nhận hàng",
     paymentStatus: "Pending",
     paymentFee: COD_FEE,
@@ -209,7 +220,7 @@ router.post("/online/create-order", orderCreationSchema2, async (req: Request, r
   const result = validationResult(req);
   if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
 
-  const { userid, productid, colorid, sizeid } = matchedData(req);
+  const { userid, productid, colorid, sizeid, quantity } = matchedData(req);
   const paymentMethod = String(req.body.paymentMethod || "Thanh toán online");
   const gift = getGiftOptions(req);
   const created = await createSingleProductOrder({
@@ -217,6 +228,7 @@ router.post("/online/create-order", orderCreationSchema2, async (req: Request, r
     productid,
     colorid,
     sizeid,
+    quantity,
     paymentMethod,
     paymentStatus: "Paid",
     paymentFee: 0,

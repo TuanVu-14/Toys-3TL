@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import userData from "@/controllers/userData";
 import useAuth from "@/controllers/Authentication";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/Helpers/AccountDialog";
 import Loading from "../Loading";
 import {
@@ -95,6 +95,7 @@ const Checkout = () => {
   const loggedIn = appState.loggedIn;
   const params = useParams<{ productID: string; colorID: string; sizeID: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { checkSession } = useAuth();
   const { grabUserData } = userData();
 
@@ -130,15 +131,18 @@ const Checkout = () => {
     is_default: true,
   });
 
+  const quantity = Math.max(1, Number(searchParams.get("qty") || 1));
   const originalPrice = Number(data.price || 0);
   const discountedPrice = Number(
     data.discountedprice || originalPrice - (originalPrice * Number(data.discount || 0)) / 100
   );
   const shipping = Number(data.shippingcost || 30000);
-  const discountAmount = Math.max(originalPrice - discountedPrice, 0);
+  const lineOriginalPrice = originalPrice * quantity;
+  const lineDiscountedPrice = discountedPrice * quantity;
+  const discountAmount = Math.max(lineOriginalPrice - lineDiscountedPrice, 0);
   const selectedPayment = paymentMethods.find((m) => m.id === selectedPaymentId);
   const paymentFee = Number(selectedPayment?.config?.fee || 0);
-  const totalAmount = Math.max(discountedPrice + shipping + paymentFee, 0);
+  const totalAmount = Math.max(lineDiscountedPrice + shipping + paymentFee, 0);
   const finalGiftMessage =
     giftOptions.gift_message.trim() !== "" ? giftOptions.gift_message : giftOptions.gift_message_template;
   const paymentContent = buildPaymentQrContent(selectedPayment, totalAmount, paymentCodeRef.current);
@@ -211,6 +215,7 @@ const Checkout = () => {
       productid: params.productID,
       colorid: params.colorID,
       sizeid: params.sizeID,
+      quantity,
       gift_wrapping: giftOptions.gift_wrapping,
       gift_wrap_style: giftOptions.gift_wrap_style,
       gift_message: finalGiftMessage,
@@ -381,11 +386,11 @@ const Checkout = () => {
                 <h4 className="text-lg font-semibold text-gray-900">{data.title}</h4>
                 <p className="text-sm text-gray-600">Size: {data.sizename}</p>
                 <p className="text-sm text-gray-600">Color: {data.colorname}</p>
-                <p className="text-sm text-gray-600">Quantity: 1</p>
+                <p className="text-sm text-gray-600">Quantity: {quantity}</p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-bold text-gray-900">{formatPrice(discountedPrice)}</p>
-                {discountAmount > 0 && <p className="text-sm text-gray-500 line-through">{formatPrice(originalPrice)}</p>}
+                <p className="text-xl font-bold text-gray-900">{formatPrice(lineDiscountedPrice)}</p>
+                {discountAmount > 0 && <p className="text-sm text-gray-500 line-through">{formatPrice(lineOriginalPrice)}</p>}
               </div>
             </div>
 
@@ -438,7 +443,7 @@ const Checkout = () => {
               <div className="divide-y divide-gray-200">
                 <div className="flex justify-between py-3 text-gray-600">
                   <span>Subtotal</span>
-                  <span className="font-medium text-gray-900">{formatPrice(discountedPrice)}</span>
+                  <span className="font-medium text-gray-900">{formatPrice(lineDiscountedPrice)}</span>
                 </div>
                 <div className="flex justify-between py-3 text-gray-600">
                   <span>Shipping Charge</span>

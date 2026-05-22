@@ -21,6 +21,8 @@ type AdminProduct = {
   stock: number;
   tags?: string | null;
   imgid?: string | null;
+  image_url?: string | null;
+  image_alt?: string | null;
   age_group?: string | null;
   gender?: string | null;
   material?: string | null;
@@ -47,6 +49,7 @@ type ProductFormData = {
   stock: number;
   tags: string;
   imgid: string;
+  image_url: string;
   age_group: string;
   gender: string;
   material: string;
@@ -71,6 +74,7 @@ const emptyForm: ProductFormData = {
   stock: 0,
   tags: "",
   imgid: "",
+  image_url: "",
   age_group: "3-5",
   gender: "unisex",
   material: "abs_plastic",
@@ -92,6 +96,10 @@ function finalPrice(product: AdminProduct) {
   const price = Number(product.price || 0);
   const discount = Math.min(Math.max(Number(product.discount || 0), 0), 100);
   return price * (1 - discount / 100);
+}
+
+function productImage(product: Pick<AdminProduct, "image_url" | "imgid">) {
+  return product.image_url || product.imgid || "/images/no-image.png";
 }
 
 export default function ProductsPage() {
@@ -144,6 +152,7 @@ export default function ProductsPage() {
         stock: Number(product.stock || 0),
         tags: product.tags || "",
         imgid: product.imgid || "",
+        image_url: product.image_url || product.imgid || "",
         age_group: product.age_group || "3-5",
         gender: product.gender || "unisex",
         material: product.material || "abs_plastic",
@@ -175,6 +184,8 @@ export default function ProductsPage() {
       stock: Number(formData.stock),
       low_stock_threshold: Number(formData.low_stock_threshold || 10),
       supplier_id: formData.supplier_id ? Number(formData.supplier_id) : null,
+      image_url: formData.image_url || formData.imgid || "",
+      image_alt: formData.title,
     };
 
     try {
@@ -241,8 +252,13 @@ export default function ProductsPage() {
             ) : filteredProducts.map((product) => (
               <tr key={product.productid} className={product.is_active === false ? "bg-slate-50 opacity-60" : ""}>
                 <td className="px-5 py-4">
-                  <div className="font-semibold text-slate-900">{product.title}</div>
+                  <div className="flex items-center gap-3">
+                    <img src={productImage(product)} alt={product.image_alt || product.title} className="h-16 w-16 rounded-xl border border-slate-100 object-cover" />
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-900">{product.title}</div>
                   <div className="mt-1 max-w-xs truncate text-xs text-slate-500">{product.description || "Chưa có mô tả"}</div>
+                    </div>
+                  </div>
                   <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
                     {product.isnew ? <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-600">New</span> : null}
                     {product.issale ? <span className="rounded-full bg-rose-50 px-2 py-1 text-rose-600">Sale</span> : null}
@@ -298,7 +314,12 @@ export default function ProductsPage() {
               <label className="text-sm font-semibold text-slate-700">Mã nhà cung cấp<input value={formData.supplier_id} onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })} className={inputClass} /></label>
               <label className="text-sm font-semibold text-slate-700 md:col-span-2">Chứng nhận an toàn<textarea value={formData.safety_certificates} onChange={(e) => setFormData({ ...formData, safety_certificates: e.target.value })} className={inputClass} rows={2} placeholder="CE, EN71, ASTM..." /></label>
               <label className="text-sm font-semibold text-slate-700">Tags<input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">ID ảnh<input value={formData.imgid} onChange={(e) => setFormData({ ...formData, imgid: e.target.value })} className={inputClass} /></label>
+              <label className="text-sm font-semibold text-slate-700">URL ảnh chính<input value={formData.image_url} onChange={(e) => setFormData({ ...formData, image_url: e.target.value, imgid: e.target.value })} className={inputClass} placeholder="/images/lego1.jpg" /></label>
+              {formData.image_url ? (
+                <div className="md:col-span-2">
+                  <img src={formData.image_url} alt={formData.title || "Product preview"} className="h-40 w-40 rounded-2xl border border-slate-100 object-cover" />
+                </div>
+              ) : null}
             </div>
 
             <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-4">

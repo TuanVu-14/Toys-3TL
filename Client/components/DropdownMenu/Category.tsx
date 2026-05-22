@@ -14,7 +14,7 @@ const Category = () => {
 
   return (
     <div
-      className={`fixed left-1/2 top-[205px] z-[9999] w-[min(1280px,calc(100vw-48px))] -translate-x-1/2 rounded-xl bg-white p-8 shadow-2xl ring-1 ring-black/5 transition-all duration-200 ${
+      className={`fixed left-1/2 top-[200px] z-[9999] w-[min(1280px,calc(100vw-48px))] -translate-x-1/2 rounded-xl bg-white p-8 shadow-2xl ring-1 ring-black/5 transition-all duration-200 ${
         ready ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
       }`}
       onClick={(e) => e.stopPropagation()}

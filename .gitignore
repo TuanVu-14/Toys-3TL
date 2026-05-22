@@ -32,6 +32,8 @@ Client/.next
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+Client/next-dev.log
+Client/next-dev.err.log
 
 # local env files
 .env*.local

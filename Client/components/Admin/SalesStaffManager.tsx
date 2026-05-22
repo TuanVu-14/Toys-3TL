@@ -51,7 +51,6 @@ export default function SalesStaffManager() {
   const tabs = useMemo(() => [
     ["consulting", "Tư vấn sản phẩm"],
     ["orders", "Tạo/Xác nhận đơn"],
-    ["promotions", "Khuyến mãi"],
     ["coupons", "Coupon"],
     ["care", "Chăm sóc KH"],
   ], []);
@@ -173,7 +172,7 @@ export default function SalesStaffManager() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Stat label="Sản phẩm tư vấn" value={summary?.products || 0} />
         <Stat label="Đơn chờ xác nhận" value={summary?.pendingOrders || 0} />
-        <Stat label="Promotion" value={summary?.promotions || 0} />
+        <Stat label="Coupon" value={coupons.length || 0} />
         <Stat label="Wishlist" value={summary?.wishlistItems || 0} />
       </div>
 

@@ -52,6 +52,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const roleFromStore = useAppSelector((state) => state.userState.defaultAccount.role);
   const [role, setRole] = useState(roleFromStore || "");
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const verifyBackOffice = async () => {
@@ -72,8 +77,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setLoading(false);
     };
 
-    verifyBackOffice();
-  }, [checkSession, roleFromStore, router]);
+    if (mounted) verifyBackOffice();
+  }, [checkSession, mounted, roleFromStore, router]);
 
   const menu = useMemo(() => sidebarItems.filter((item) => item.roles.includes(role)), [role]);
 
@@ -83,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (currentItem && !currentItem.roles.includes(role)) router.replace(fallbackByRole[role] || "/admin");
   }, [loading, pathname, role, router]);
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
         <div className="rounded-3xl bg-white p-8 text-center shadow-sm">

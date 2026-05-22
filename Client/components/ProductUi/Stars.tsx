@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactStars from 'react-stars';
 
 interface StarsProps {
   stars: number;
@@ -7,14 +6,23 @@ interface StarsProps {
 }
 
 const Stars: React.FC<StarsProps> = ({ stars, size = 20 }) => {
+  const rating = Math.max(0, Math.min(5, Number(stars || 0)));
+
   return (
-    <ReactStars
-      count={5}
-      size={size}
-      value={stars}
-      color2={'#ffa500'}
-      edit={false}
-    />
+    <span
+      className="inline-flex items-center leading-none"
+      aria-label={`${rating.toFixed(1)} out of 5 stars`}
+    >
+      {[1, 2, 3, 4, 5].map((index) => (
+        <span
+          key={index}
+          style={{ fontSize: size, lineHeight: 1 }}
+          className={index <= Math.round(rating) ? 'text-orange-400' : 'text-gray-300'}
+        >
+          ★
+        </span>
+      ))}
+    </span>
   );
 }
 

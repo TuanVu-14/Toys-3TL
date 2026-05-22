@@ -4,8 +4,9 @@ interface Account{
     userID:number;
     userName:string;
     email:string;
-    mobile_number:number;
+    mobile_number:string;
     dob:string;
+    role:string;
   }
 const ProfileInfo = ({Component,setdialogType}:{Component:Account,setdialogType:React.Dispatch<React.SetStateAction<string | null>>}) => {
     return (

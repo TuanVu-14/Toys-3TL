@@ -22,6 +22,8 @@ type OrderItem = {
   brand?: string;
   age_group?: string;
   skill_type?: string;
+  image_url?: string;
+  image_alt?: string;
   gift_wrapping?: boolean;
   gift_wrap_style?: string;
   gift_message?: string;
@@ -391,9 +393,14 @@ function OrderDetailModal({
                   {(order.items || []).length ? order.items?.map((item) => (
                     <tr key={item.orderitemid}>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-slate-900">{item.title || `Sản phẩm #${item.productid}`}</div>
+                        <div className="flex items-center gap-3">
+                          <img src={item.image_url || "/images/no-image.png"} alt={item.image_alt || item.title || `Product #${item.productid}`} className="h-14 w-14 rounded-xl border border-slate-100 object-cover" />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-900">{item.title || `Sản phẩm #${item.productid}`}</div>
                         <div className="text-xs text-slate-400">
                           {[item.brand, item.age_group, item.skill_type].filter(Boolean).join(" • ") || `Mã SP: #${item.productid}`}
+                        </div>
+                          </div>
                         </div>
                         {item.gift_wrapping ? <div className="mt-1 text-xs text-rose-500">Có gói quà{item.gift_message ? `: ${item.gift_message}` : ""}</div> : null}
                       </td>
