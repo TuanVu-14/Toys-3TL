@@ -1,3 +1,5 @@
+"use client";
+
 import AdminLayout from "@/components/Admin/AdminLayout";
 import OrdersPage from "@/components/Admin/Orders";
 

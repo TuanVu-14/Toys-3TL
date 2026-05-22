@@ -11,7 +11,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'H-Commerce',
+  title: '3TL-Shop',
   description: 'Shop At Discount',
 }
 

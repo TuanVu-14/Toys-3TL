@@ -8,13 +8,17 @@ const JWT_SECRET = process.env.JWT_ENCRYPTION_KEY as string;
 const ORDER_STATUSES = [
   "Pending",
   "Confirmed",
+  "Preparing",
+  "Shipping",
+  "Completed",
+  "Cancelled",
+  "Returned",
+  "Failed",
+  // Legacy values kept for backward compatibility
   "Prepared",
   "Packed",
   "Shipped",
   "Delivered",
-  "Completed",
-  "Cancelled",
-  "Returned",
   "Refunded",
   "Payment Failed",
 ];
@@ -174,11 +178,13 @@ router.put("/orders/:orderID/status", async (req: Request, res: Response) => {
   try {
     const result = await client.query(
       `UPDATE orders
-       SET orderstatus = $1,
-           order_status = $1,
-           delivery_status = CASE WHEN $1 = 'Completed' THEN 'Delivered' ELSE $1 END,
-           shipped_at = CASE WHEN $1 = 'Shipped' AND shipped_at IS NULL THEN NOW() ELSE shipped_at END,
-           delivered_at = CASE WHEN $1 IN ('Delivered','Completed') AND delivered_at IS NULL THEN NOW() ELSE delivered_at END,
+       SET orderstatus = $1::text,
+           order_status = $1::text,
+           delivery_status = CASE WHEN $1::text IN ('Completed', 'Delivered') THEN 'Delivered'
+                                  WHEN $1::text = 'Failed' THEN 'Failed'
+                                  ELSE $1::text END,
+           shipped_at = CASE WHEN $1::text IN ('Shipped', 'Shipping') AND shipped_at IS NULL THEN NOW() ELSE shipped_at END,
+           delivered_at = CASE WHEN $1::text IN ('Delivered','Completed') AND delivered_at IS NULL THEN NOW() ELSE delivered_at END,
            updatedat = NOW()
        WHERE orderid = $2
        RETURNING orderid, orderstatus, order_status, delivery_status`,

@@ -43,139 +43,121 @@ const ReviewSection = ({
 
   const stats = useMemo(() => {
     const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-
     data.forEach((review) => {
       const key = Math.max(1, Math.min(5, Math.round(Number(review.rating || review.productstars || 0))))
       counts[key] += 1
     })
-
     const total = data.length
-    const average = total > 0 ? data.reduce((sum, review) => sum + Number(review.rating || review.productstars || 0), 0) / total : 0
+    const average = total > 0 ? data.reduce((sum, r) => sum + Number(r.rating || r.productstars || 0), 0) / total : 0
     const lastReview = data.length > 0 ? data[0] : null
-
     return { counts, total, average, lastReview }
   }, [data])
 
   const reviewTotal = reviewCount || stats.total
 
   return (
-    <section className="relative py-10 lg:py-16">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-        <h2 className="mb-8 text-center text-2xl font-bold leading-10 text-black">Customer reviews & rating</h2>
+    <section className="py-6">
+      <h2 className="mb-6 text-xl font-bold text-black">Customer reviews & rating</h2>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)_220px]">
-          <div className="w-full rounded-2xl border border-gray-200 p-5 sm:p-6">
-            {[5, 4, 3, 2, 1].map((star) => {
-              const count = stats.counts[star] || 0
-              const percent = reviewTotal > 0 ? Math.round((count * 100) / reviewTotal) : 0
-
-              return (
-                <div className="mb-4 flex w-full items-center last:mb-0" key={star}>
-                  <p className="mr-1 w-4 text-lg font-medium text-black">{star}</p>
-                  <span className="text-xl text-yellow-400">★</span>
-                  <div className="mx-4 h-2 flex-1 rounded-full bg-gray-200">
-                    <span className="block h-full rounded-full bg-indigo-600" style={{ width: `${percent}%` }} />
-                  </div>
-                  <p className="w-8 text-right text-lg font-medium text-black">{count}</p>
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="grid gap-4 rounded-2xl bg-gray-100 p-5 sm:p-6 sm:grid-cols-2 xl:col-span-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_220px]">
-            <div className="contents">
-              <div className="flex min-w-0 flex-col items-center justify-center rounded-xl bg-white p-4">
-                <h2 className="mb-4 text-center text-4xl font-bold text-black">{stats.average.toFixed(1)}</h2>
-                <Stars size={32} stars={stats.average} />
-                <p className="mt-4 text-center font-normal leading-8 text-gray-500">{reviewTotal} Ratings</p>
+      {/* Star breakdown */}
+      <div className="rounded-2xl border border-gray-200 p-4 mb-4">
+        {[5, 4, 3, 2, 1].map((star) => {
+          const count = stats.counts[star] || 0
+          const percent = reviewTotal > 0 ? Math.round((count * 100) / reviewTotal) : 0
+          return (
+            <div className="mb-3 flex items-center gap-2 last:mb-0" key={star}>
+              <span className="w-3 text-sm font-medium text-black">{star}</span>
+              <span className="text-base text-yellow-400">★</span>
+              <div className="h-2 flex-1 rounded-full bg-gray-200">
+                <span className="block h-full rounded-full bg-indigo-600 transition-all" style={{ width: `${percent}%` }} />
               </div>
-
-              <div className="flex min-w-0 flex-col items-center justify-center rounded-xl bg-white p-4">
-                <h2 className="mb-4 text-center text-4xl font-bold text-black">
-                  {stats.lastReview ? Number(stats.lastReview.rating || stats.lastReview.productstars || 0).toFixed(1) : '0.0'}
-                </h2>
-                <Stars size={32} stars={stats.lastReview ? Number(stats.lastReview.rating || stats.lastReview.productstars || 0) : 0} />
-                <p className="mt-4 text-center font-normal leading-8 text-gray-500">Last Review</p>
-              </div>
+              <span className="w-5 text-right text-sm font-medium text-black">{count}</span>
             </div>
+          )
+        })}
+      </div>
 
-            <div className="flex w-full flex-col items-stretch justify-center gap-4 sm:col-span-2 xl:col-span-1">
-              <button
-                type="button"
-                onClick={() => setdialogType('create')}
-                className="w-full rounded-full bg-indigo-600 px-4 py-4 text-center text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:bg-indigo-700"
-              >
-                Write A Review
-              </button>
+      {/* Average + Last review */}
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-3xl font-bold text-black">{stats.average.toFixed(1)}</p>
+          <Stars size={24} stars={stats.average} />
+          <p className="mt-2 text-center text-xs text-gray-500">{reviewTotal} Đánh giá</p>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-3xl font-bold text-black">
+            {stats.lastReview ? Number(stats.lastReview.rating || stats.lastReview.productstars || 0).toFixed(1) : '—'}
+          </p>
+          <Stars size={24} stars={stats.lastReview ? Number(stats.lastReview.rating || stats.lastReview.productstars || 0) : 0} />
+          <p className="mt-2 text-center text-xs text-gray-500">Đánh giá gần nhất</p>
+        </div>
+      </div>
 
-              {!allReview && (
-                <Link href={`/all-reviews/${productID}`} className="w-full">
-                  <button
-                    type="button"
-                    className="w-full rounded-full bg-white px-4 py-4 text-center text-sm font-semibold text-indigo-600 shadow-sm transition-all duration-300 hover:bg-indigo-100"
-                  >
-                    See All Reviews
-                  </button>
-                </Link>
-              )}
-            </div>
+      {/* Action buttons */}
+      <div className="mb-6 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setdialogType('create')}
+          className="w-full rounded-full bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+        >
+          Viết đánh giá
+        </button>
+        {!allReview && (
+          <Link href={`/all-reviews/${productID}`} className="w-full">
+            <button
+              type="button"
+              className="w-full rounded-full border border-indigo-200 bg-white px-4 py-3 text-center text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50"
+            >
+              Xem tất cả đánh giá
+            </button>
+          </Link>
+        )}
+      </div>
+
+      {/* Recent reviews */}
+      <div className="border-t border-gray-200 pt-6">
+        <h4 className="mb-4 text-lg font-semibold text-black">Đánh giá gần đây</h4>
+        {data.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
+            Chưa có đánh giá nào. Hãy là người đầu tiên!
           </div>
-        </div>
-
-        <div className="mt-10 border-b border-gray-200 pb-8">
-          <h4 className="mb-6 text-2xl font-semibold leading-10 text-black">Recent Reviews</h4>
-
-          {data.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-gray-500">
-              Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá sản phẩm.
-            </div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              {data.map((each) => (
-                <div className="rounded-xl border px-4 py-4" key={each.reviewid}>
-                  <div className="mb-4 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                    <div className="flex min-w-0 flex-col gap-3">
-                      <Stars stars={Number(each.rating || each.productstars || 0)} size={32} />
-                      <p className="break-words text-xl font-medium">{each.title}</p>
-                    </div>
-
-                    <div className="flex flex-col gap-3 sm:items-end">
-                      <p className="text-base font-medium leading-7 text-gray-400">{formatDate(each.createdat)}</p>
-                      <h6 className="text-lg font-semibold leading-8 text-black">@{each.username}</h6>
-
-                      {userID === each.userid && (
-                        <div className="flex flex-wrap gap-3 sm:justify-end">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setselectedRating(each.rating)
-                              setselectedReview(each)
-                              setdialogType('edit')
-                            }}
-                            className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 hover:bg-indigo-700"
-                          >
-                            Edit Review
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setselectedReview(each)
-                              setdialogType('delete')
-                            }}
-                            className="rounded-full border px-4 py-2 text-sm font-semibold text-black transition-all duration-300 hover:bg-red-400 hover:text-white"
-                          >
-                            Delete Review
-                          </button>
-                        </div>
-                      )}
-                    </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {data.map((each) => (
+              <div className="rounded-xl border px-4 py-4" key={each.reviewid}>
+                <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <Stars stars={Number(each.rating || each.productstars || 0)} size={20} />
+                    <p className="mt-1 font-medium text-gray-900">{each.title}</p>
                   </div>
-                  <p className="break-words text-lg font-normal leading-8 text-gray-500">{each.comment}</p>
+                  <div className="text-sm text-gray-400 sm:text-right">
+                    <p>{formatDate(each.createdat)}</p>
+                    <p className="font-semibold text-gray-700">@{each.username}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <p className="text-sm leading-6 text-gray-600">{each.comment}</p>
+                {userID === each.userid && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setselectedRating(each.rating); setselectedReview(each); setdialogType('edit') }}
+                      className="rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setselectedReview(each); setdialogType('delete') }}
+                      className="rounded-full border px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-red-50 hover:text-red-600"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

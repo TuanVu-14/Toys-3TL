@@ -102,7 +102,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-rose-100 bg-white p-5 shadow-sm lg:block">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-rose-100 bg-white shadow-sm lg:flex">
+        <div className="flex-1 overflow-y-auto p-5 pb-2">
         <Link href="/admin" className="flex items-center gap-3 rounded-3xl bg-rose-50 p-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 font-black text-white">3TL</div>
           <div>
@@ -125,8 +126,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {role !== "admin" ? <div className="mt-5 rounded-2xl bg-amber-50 p-4 text-xs text-amber-700">Bạn chỉ thấy các chức năng được cấp quyền.</div> : null}
+        </div>
 
-        <div className="absolute bottom-5 left-5 right-5 space-y-2">
+        <div className="border-t border-slate-100 p-5 space-y-2 shrink-0">
           <button onClick={logout} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">↪ Đăng xuất</button>
           <Link href="/" className="block w-full rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800">⌂ Về trang chính</Link>
         </div>

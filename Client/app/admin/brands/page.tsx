@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/Admin/AdminLayout";
 import { createAdminBrand, deleteAdminBrand, getAdminBrands, updateAdminBrand } from "@/app/api/admin";
 
@@ -32,6 +32,7 @@ function BrandsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({ name: "", slug: "", manufacturer: "", country: "", description: "", safety_certificates: "", website: "", logo_url: "" });
 
   const fetchBrands = async () => {
@@ -91,12 +92,21 @@ function BrandsContent() {
     }
   };
 
+  const filteredBrands = useMemo(() => {
+    const kw = search.trim().toLowerCase();
+    if (!kw) return brands;
+    return brands.filter((b) => [b.name, b.manufacturer, b.country, b.description].some((v) => String(v || "").toLowerCase().includes(kw)));
+  }, [brands, search]);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
           <div><h2 className="text-2xl font-bold text-slate-900">🏭 Quản lý thương hiệu</h2><p className="mt-1 text-sm text-slate-500">Quản lý nhà sản xuất, chứng chỉ an toàn và logo thương hiệu.</p></div>
-          <button onClick={fetchBrands} className="rounded-2xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white">Tải lại</button>
+<div className="flex gap-2">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên, quốc gia, nhà sản xuất..." className="rounded-2xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-rose-400 min-w-[220px]" />
+            <button onClick={fetchBrands} className="rounded-2xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white">Tải lại</button>
+          </div>
         </div>
         {error ? <div className="rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
         <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -104,7 +114,7 @@ function BrandsContent() {
           <div className="mt-4 space-y-3">
             {loading ? <p className="text-sm text-slate-500">Đang tải...</p> : null}
             {!loading && brands.length === 0 ? <p className="py-8 text-center text-slate-500">Không có thương hiệu nào.</p> : null}
-            {brands.map((brand) => (
+            {filteredBrands.map((brand) => (
               <div key={brand.brandid} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4">
                 <div className="flex items-center gap-3">
                   {brand.logo_url ? <img src={brand.logo_url} alt={brand.name} className="h-10 w-10 rounded-xl object-cover" /> : <div className="h-10 w-10 rounded-xl bg-rose-50" />}

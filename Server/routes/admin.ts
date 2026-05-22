@@ -12,6 +12,8 @@ type UserRole = (typeof VALID_ROLES)[number];
 const ORDER_STATUSES = [
   "Pending",
   "Confirmed",
+  "Preparing",
+  "Shipping",
   "Prepared",
   "Packed",
   "Shipped",
@@ -19,6 +21,7 @@ const ORDER_STATUSES = [
   "Completed",
   "Cancelled",
   "Returned",
+  "Failed",
   "Refunded",
   "Payment Failed",
 ];
@@ -588,6 +591,9 @@ router.get("/admin/orders", adminAuth, async (_req: Request, res: Response) => {
 
 function buildOrderDeliveryStatus(status: string) {
   if (status === "Completed") return "Delivered";
+  if (status === "Failed") return "Failed";
+  if (status === "Shipping") return "Shipping";
+  if (status === "Preparing") return "Preparing";
   if (["Confirmed", "Prepared", "Packed", "Shipped", "Delivered", "Cancelled", "Returned"].includes(status)) return status;
   return null;
 }
@@ -611,7 +617,7 @@ async function updateOrderStatusHandler(req: Request, res: Response) {
            delivery_status = COALESCE($3::varchar, delivery_status),
            tracking_number = COALESCE(NULLIF($4::varchar, ''), tracking_number),
            shipped_at = CASE
-             WHEN $1::varchar = 'Shipped' AND shipped_at IS NULL THEN NOW()
+             WHEN $1::varchar IN ('Shipped', 'Shipping') AND shipped_at IS NULL THEN NOW()
              ELSE shipped_at
            END,
            delivered_at = CASE

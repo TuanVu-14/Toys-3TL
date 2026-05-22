@@ -5,7 +5,7 @@ import { client } from "../data/DB";
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_ENCRYPTION_KEY as string;
 
-const FULFILLMENT_STATUSES = ["Prepared", "Packed", "Shipped", "Delivered"];
+const FULFILLMENT_STATUSES = ["Preparing", "Shipping", "Completed", "Failed", "Prepared", "Packed", "Shipped", "Delivered"];
 
 function parseCookie(cookieHeader: string | undefined) {
   return (cookieHeader || "").split(";").reduce<Record<string, string>>((acc, part) => {
@@ -271,7 +271,7 @@ router.get("/returns", async (_req: Request, res: Response) => {
 
 router.put("/returns/:returnID/status", async (req: Request, res: Response) => {
   const { status, restock, note } = req.body;
-  const allowed = ["pending", "approved", "received", "completed", "rejected"];
+  const allowed = ["processing", "pending", "approved", "received", "completed", "rejected"];
 
   if (!allowed.includes(status)) return res.status(400).json({ error: "Invalid return status" });
 
@@ -316,7 +316,7 @@ router.get("/orders", async (_req: Request, res: Response) => {
       FROM orders o
       LEFT JOIN users u ON u.userid = o.userid
       LEFT JOIN orderitems oi ON oi.orderid = o.orderid
-      WHERE COALESCE(o.order_status, o.orderstatus) IN ('Confirmed','Prepared','Packed','Shipped','Delivered')
+      WHERE COALESCE(o.order_status, o.orderstatus) IN ('Confirmed','Preparing','Shipping','Prepared','Packed','Shipped','Delivered','Failed')
       GROUP BY o.orderid, u.username, u.email
       ORDER BY o.createdat DESC
       LIMIT 100
@@ -338,10 +338,10 @@ router.put("/orders/:orderID/status", async (req: Request, res: Response) => {
   try {
     await client.query(
       `UPDATE orders
-       SET orderstatus = $1, order_status = $1, delivery_status = $1,
+       SET orderstatus = $1::text, order_status = $1::text, delivery_status = $1::text,
            tracking_number = COALESCE($2, tracking_number),
-           shipped_at = CASE WHEN $1 = 'Shipped' THEN NOW() ELSE shipped_at END,
-           delivered_at = CASE WHEN $1 = 'Delivered' THEN NOW() ELSE delivered_at END,
+           shipped_at = CASE WHEN $1::text IN ('Shipped', 'Shipping') THEN NOW() ELSE shipped_at END,
+           delivered_at = CASE WHEN $1::text IN ('Delivered', 'Completed') THEN NOW() ELSE delivered_at END,
            updatedat = NOW()
        WHERE orderid = $3`,
       [status, trackingNumber || null, req.params.orderID],

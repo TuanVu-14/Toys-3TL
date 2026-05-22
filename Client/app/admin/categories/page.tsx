@@ -1,7 +1,7 @@
 "use client";
 
 import AdminLayout from "@/components/Admin/AdminLayout";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   getAdminCategories,
   createAdminCategory,
@@ -24,6 +24,7 @@ function CategoriesContent() {
   const [parent, setParent] = useState<number | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -84,6 +85,12 @@ function CategoriesContent() {
     fetchCategories();
   }, []);
 
+  const filteredCategories = useMemo(() => {
+    const kw = search.trim().toLowerCase();
+    if (!kw) return categories;
+    return categories.filter((c) => c.name.toLowerCase().includes(kw));
+  }, [categories, search]);
+
   const parentCategories = categories.filter((cat) => !cat.parentcategoryid);
 
   return (
@@ -98,12 +105,10 @@ function CategoriesContent() {
               Thêm, sửa và quản lý cấu trúc danh mục cha/con cho cửa hàng.
             </p>
           </div>
-          <button
-            onClick={fetchCategories}
-            className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            Tải lại
-          </button>
+<div className="flex gap-2 flex-wrap">
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên danh mục..." className="rounded-2xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-rose-400" />
+            <button onClick={fetchCategories} className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Tải lại</button>
+          </div>
         </div>
       </div>
 
@@ -129,7 +134,7 @@ function CategoriesContent() {
                 Không có danh mục nào.
               </p>
             ) : (
-              categories.map((category) => (
+              filteredCategories.map((category) => (
                 <div
                   key={category.categoryid}
                   className="flex flex-col gap-3 rounded-3xl border border-slate-100 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
