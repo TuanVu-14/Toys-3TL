@@ -1,4 +1,4 @@
-import React,{useLayoutEffect} from 'react'
+import React,{useEffect} from 'react'
 import userData from '@/controllers/userData';
 import useAuth from '@/controllers/Authentication';
 const Session = () => {
@@ -8,7 +8,7 @@ const Session = () => {
       await checkSession();
       await grabUserData();
     }
-    useLayoutEffect(() => {
+    useEffect(() => {
       sync();
     }, []);
     return <></>

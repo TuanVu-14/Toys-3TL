@@ -1,3 +1,4 @@
+"use client";
 import AdminLayout from "@/components/Admin/AdminLayout";
 import WarehouseManager from "@/components/Admin/WarehouseManager";
 
