@@ -46,7 +46,7 @@ router.get("/summary", async (_req: Request, res: Response) => {
     const [products, lowStock, pendingOrders, returns, batches] = await Promise.all([
       client.query("SELECT COUNT(*)::int AS count FROM products WHERE COALESCE(is_active, true) = true"),
       client.query("SELECT COUNT(*)::int AS count FROM products WHERE COALESCE(is_active, true) = true AND stock <= COALESCE(low_stock_threshold, 10)"),
-      client.query("SELECT COUNT(*)::int AS count FROM orders WHERE COALESCE(order_status, orderstatus) IN ('Confirmed','Prepared','Packed','Shipped')"),
+      client.query("SELECT COUNT(*)::int AS count FROM orders WHERE orderstatus IN ('Confirmed','Prepared','Packed','Shipped')"),
       client.query("SELECT COUNT(*)::int AS count FROM returns WHERE status NOT IN ('completed','rejected')"),
       client.query("SELECT COUNT(*)::int AS count FROM product_batches"),
     ]);
@@ -310,13 +310,13 @@ router.get("/orders", async (_req: Request, res: Response) => {
   try {
     const result = await client.query(`
       SELECT o.orderid, u.username, u.email, o.totalamount,
-             COALESCE(o.order_status, o.orderstatus) AS status,
-             o.delivery_status, o.tracking_number, o.createdat,
+             o.orderstatus AS status,
+             o.tracking_number, o.createdat,
              COALESCE(SUM(oi.quantity),0)::int AS item_count
       FROM orders o
       LEFT JOIN users u ON u.userid = o.userid
       LEFT JOIN orderitems oi ON oi.orderid = o.orderid
-      WHERE COALESCE(o.order_status, o.orderstatus) IN ('Confirmed','Preparing','Shipping','Prepared','Packed','Shipped','Delivered','Failed')
+      WHERE o.orderstatus IN ('Confirmed','Preparing','Shipping','Prepared','Packed','Shipped','Delivered','Failed')
       GROUP BY o.orderid, u.username, u.email
       ORDER BY o.createdat DESC
       LIMIT 100
@@ -338,7 +338,7 @@ router.put("/orders/:orderID/status", async (req: Request, res: Response) => {
   try {
     await client.query(
       `UPDATE orders
-       SET orderstatus = $1::text, order_status = $1::text, delivery_status = $1::text,
+       SET orderstatus = $1::text,
            tracking_number = COALESCE($2, tracking_number),
            shipped_at = CASE WHEN $1::text IN ('Shipped', 'Shipping') THEN NOW() ELSE shipped_at END,
            delivered_at = CASE WHEN $1::text IN ('Delivered', 'Completed') THEN NOW() ELSE delivered_at END,

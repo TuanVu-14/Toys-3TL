@@ -80,7 +80,7 @@ router.get("/summary", async (_req: Request, res: Response) => {
   try {
     const [products, pendingOrders, promotions, wishlistItems] = await Promise.all([
       client.query("SELECT COUNT(*)::int AS count FROM products WHERE COALESCE(is_active, true) = true"),
-      client.query("SELECT COUNT(*)::int AS count FROM orders WHERE COALESCE(order_status, orderstatus) IN ('Pending','Confirmed')"),
+      client.query("SELECT COUNT(*)::int AS count FROM orders WHERE orderstatus IN ('Pending','Confirmed')"),
       client.query("SELECT COUNT(*)::int AS count FROM promotions WHERE COALESCE(is_active, true) = true"),
       client.query("SELECT COUNT(*)::int AS count FROM wishlistitems"),
     ]);
@@ -138,8 +138,8 @@ router.get("/orders", async (_req: Request, res: Response) => {
   try {
     const result = await client.query(`
       SELECT o.orderid, u.username, u.email, o.totalamount,
-             COALESCE(o.order_status, o.orderstatus) AS status,
-             o.delivery_status, o.tracking_number, o.createdat,
+             o.orderstatus AS status,
+             o.tracking_number, o.createdat,
              COALESCE(SUM(oi.quantity),0)::int AS item_count
       FROM orders o
       LEFT JOIN users u ON u.userid = o.userid
@@ -159,9 +159,9 @@ router.put("/orders/:orderID/confirm", async (req: Request, res: Response) => {
   try {
     const result = await client.query(
       `UPDATE orders
-       SET orderstatus = 'Confirmed', order_status = 'Confirmed', delivery_status = 'Confirmed', updatedat = NOW()
+       SET orderstatus = 'Confirmed', updatedat = NOW()
        WHERE orderid = $1
-       RETURNING orderid, orderstatus, order_status, delivery_status`,
+       RETURNING orderid, orderstatus`,
       [req.params.orderID],
     );
     if (result.rows.length === 0) return res.status(404).json({ error: "Order not found" });
@@ -179,15 +179,11 @@ router.put("/orders/:orderID/status", async (req: Request, res: Response) => {
     const result = await client.query(
       `UPDATE orders
        SET orderstatus = $1::text,
-           order_status = $1::text,
-           delivery_status = CASE WHEN $1::text IN ('Completed', 'Delivered') THEN 'Delivered'
-                                  WHEN $1::text = 'Failed' THEN 'Failed'
-                                  ELSE $1::text END,
            shipped_at = CASE WHEN $1::text IN ('Shipped', 'Shipping') AND shipped_at IS NULL THEN NOW() ELSE shipped_at END,
            delivered_at = CASE WHEN $1::text IN ('Delivered','Completed') AND delivered_at IS NULL THEN NOW() ELSE delivered_at END,
            updatedat = NOW()
        WHERE orderid = $2
-       RETURNING orderid, orderstatus, order_status, delivery_status`,
+       RETURNING orderid, orderstatus`,
       [status, req.params.orderID],
     );
     if (result.rows.length === 0) return res.status(404).json({ error: "Order not found" });

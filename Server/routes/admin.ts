@@ -217,12 +217,12 @@ router.get("/admin/stats", adminAuth, async (_req: Request, res: Response) => {
       client.query("SELECT COUNT(*)::int AS count FROM products WHERE COALESCE(is_active, true) = true"),
       client.query("SELECT COUNT(*)::int AS count FROM orders"),
       client.query("SELECT COUNT(*)::int AS count FROM users WHERE COALESCE(is_active, true) = true"),
-      client.query("SELECT COALESCE(SUM(totalamount), 0)::numeric AS total FROM orders WHERE COALESCE(order_status, orderstatus) NOT IN ('Cancelled','Returned','Refunded','Payment Failed')"),
+      client.query("SELECT COALESCE(SUM(totalamount), 0)::numeric AS total FROM orders WHERE orderstatus NOT IN ('Cancelled','Returned','Refunded','Payment Failed')"),
       client.query("SELECT COUNT(*)::int AS count FROM products WHERE COALESCE(is_active, true) = true AND stock <= COALESCE(low_stock_threshold, 10)"),
     ]);
 
     const recentOrders = await client.query(`
-      SELECT o.orderid, o.totalamount, COALESCE(o.order_status, o.orderstatus) AS orderstatus,
+      SELECT o.orderid, o.totalamount, o.orderstatus AS orderstatus,
              o.createdat, u.username, u.email
       FROM orders o
       LEFT JOIN users u ON o.userid = u.userid
@@ -571,8 +571,7 @@ router.delete("/admin/products/:productID", adminAuth, async (req: Request, res:
 router.get("/admin/orders", adminAuth, async (_req: Request, res: Response) => {
   try {
     const response = await client.query(`
-      SELECT o.orderid, o.totalamount, COALESCE(o.order_status, o.orderstatus) AS orderstatus,
-             o.order_status, o.orderstatus AS legacy_orderstatus, o.delivery_status,
+      SELECT o.orderid, o.totalamount, o.orderstatus AS orderstatus,
              o.tracking_number, o.createdat, o.updatedat, u.username, u.email, u.userid,
              COALESCE(SUM(oi.quantity),0)::int AS item_count
       FROM orders o
@@ -607,14 +606,10 @@ async function updateOrderStatusHandler(req: Request, res: Response) {
   }
 
   try {
-    const deliveryStatus = buildOrderDeliveryStatus(status);
-
     const response = await client.query(
       `UPDATE orders
        SET orderstatus = $1::varchar,
-           order_status = $1::varchar,
-           delivery_status = COALESCE($3::varchar, delivery_status),
-           tracking_number = COALESCE(NULLIF($4::varchar, ''), tracking_number),
+           tracking_number = COALESCE(NULLIF($3::varchar, ''), tracking_number),
            shipped_at = CASE
              WHEN $1::varchar IN ('Shipped', 'Shipping') AND shipped_at IS NULL THEN NOW()
              ELSE shipped_at
@@ -625,11 +620,10 @@ async function updateOrderStatusHandler(req: Request, res: Response) {
            END,
            updatedat = NOW()
        WHERE orderid = $2::int
-       RETURNING orderid, orderstatus, order_status, delivery_status, tracking_number, shipped_at, delivered_at`,
+       RETURNING orderid, orderstatus, tracking_number, shipped_at, delivered_at`,
       [
         status,
         Number(req.params.orderID),
-        deliveryStatus,
         req.body.tracking_number || "",
       ],
     );
@@ -659,8 +653,6 @@ router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Respon
         o.userid,
         o.totalamount,
         o.orderstatus,
-        o.order_status,
-        o.delivery_status,
         o.tracking_number,
         o.createdat,
         o.updatedat,
@@ -1287,9 +1279,9 @@ router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
       client.query(
         `
         SELECT
-          COALESCE(SUM(CASE WHEN o.orderstatus = ANY($1) OR o.delivery_status = ANY($1) THEN o.totalamount ELSE 0 END), 0) AS revenue,
-          COALESCE(SUM(CASE WHEN (o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)) AND o.createdat >= NOW() - INTERVAL '7 days' THEN o.totalamount ELSE 0 END), 0) AS weekly_revenue,
-          COUNT(*) FILTER (WHERE o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)) AS completed_orders,
+          COALESCE(SUM(CASE WHEN o.orderstatus = ANY($1) THEN o.totalamount ELSE 0 END), 0) AS revenue,
+          COALESCE(SUM(CASE WHEN (o.orderstatus = ANY($1)) AND o.createdat >= NOW() - INTERVAL '7 days' THEN o.totalamount ELSE 0 END), 0) AS weekly_revenue,
+          COUNT(*) FILTER (WHERE o.orderstatus = ANY($1)) AS completed_orders,
           (SELECT COUNT(*) FROM users WHERE createdat >= NOW() - INTERVAL '30 days') AS new_customers
         FROM orders o
         `,
@@ -1304,7 +1296,7 @@ router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
         FROM orderitems oi
         INNER JOIN products pr ON pr.productid = oi.productid
         INNER JOIN orders o ON o.orderid = oi.orderid
-        WHERE o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)
+        WHERE o.orderstatus = ANY($1)
         GROUP BY pr.productid, pr.title
         ORDER BY sold_quantity DESC, revenue DESC
         LIMIT 10
@@ -1319,7 +1311,7 @@ router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
           COALESCE(SUM(o.totalamount), 0) AS total
         FROM orders o
         LEFT JOIN payments p ON p.orderid = o.orderid
-        WHERE o.orderstatus = ANY($1) OR o.delivery_status = ANY($1)
+        WHERE o.orderstatus = ANY($1)
         GROUP BY COALESCE(p.paymentmethod, 'Không rõ')
         ORDER BY total DESC
         `,
@@ -1332,7 +1324,7 @@ router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
           COUNT(*)::int AS orders,
           COALESCE(SUM(totalamount), 0) AS revenue
         FROM orders
-        WHERE (orderstatus = ANY($1) OR delivery_status = ANY($1))
+        WHERE orderstatus = ANY($1)
           AND createdat >= NOW() - INTERVAL '14 days'
         GROUP BY DATE_TRUNC('day', createdat)::date
         ORDER BY day ASC

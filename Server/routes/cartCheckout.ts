@@ -167,13 +167,12 @@ async function createCartOrder({
       `
       INSERT INTO orders (
         userid, totalamount, orderstatus, order_code,
-        is_gift, gift_message, gift_wrapping_type,
-        order_status, delivery_status
+        is_gift, gift_message, gift_wrapping_type
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING orderid
       `,
-      [userID, totalAmount, "Confirmed", "IN", gift_wrapping, gift_message, gift_wrap_style, "Confirmed", "Confirmed"]
+      [userID, totalAmount, "Pending", "IN", gift_wrapping, gift_message, gift_wrap_style]
     );
 
     const orderid = orderResult.rows[0].orderid;

@@ -1,30 +1,41 @@
-"use client"
-import Footer from '@/components/Footer'
-import React from 'react'
-import dynamic from 'next/dynamic'
-import Session from '../Session'
+"use client";
 
-const Menubar = dynamic(() => import('@/components/Mobile-Interface/Menubar'), { ssr: false })
-const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false })
-const Cart = dynamic(() => import('../ProductUi/Cart'), { ssr: false })
-const Favourite = dynamic(() => import('../ProductUi/Favourite'), { ssr: false })
+import React, { useEffect, useState } from "react";
+import Footer from "@/components/Footer";
+import Menubar from "@/components/Mobile-Interface/Menubar";
+import Navbar from "@/components/Navbar";
+import Cart from "../ProductUi/Cart";
+import Favourite from "../ProductUi/Favourite";
+import Session from "../Session";
 
-interface ParentComponentProps {
+interface CommonProps {
   Component: React.ComponentType;
 }
 
-const Common: React.FC<ParentComponentProps> = ({Component}) => {
-  return (
-    <div className='overflow-x-hidden w-screen h-screen flex flex-col items-center'>
-      <Session/>
-      <Menubar/>
-      <Cart/>
-      <Favourite/>
-      <Navbar/>
-      <Component/>
-      <Footer/>
-    </div>
-  )
-}
+const Common: React.FC<CommonProps> = ({ Component }) => {
+  const [mounted, setMounted] = useState(false);
 
-export default Common
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  return (
+    <>
+      <Session />
+      <main className="min-h-screen w-screen flex items-center flex-col overflow-x-hidden">
+        <Navbar />
+        <Cart />
+        <Favourite />
+        <Menubar />
+        <Component />
+        <Footer />
+      </main>
+    </>
+  );
+};
+
+export default Common;

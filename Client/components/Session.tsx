@@ -1,17 +1,23 @@
-import React,{useEffect} from 'react'
-import userData from '@/controllers/userData';
-import useAuth from '@/controllers/Authentication';
+"use client";
+
+import { useEffect } from "react";
+import userData from "@/controllers/userData";
+import useAuth from "@/controllers/Authentication";
+
 const Session = () => {
-    const {checkSession} = useAuth();
-    const { grabUserData } = userData();
-    async function sync(){
+  const { checkSession } = useAuth();
+  const { grabUserData } = userData();
+
+  useEffect(() => {
+    async function sync() {
       await checkSession();
       await grabUserData();
     }
-    useEffect(() => {
-      sync();
-    }, []);
-    return <></>
-}
+
+    sync();
+  }, []);
+
+  return null;
+};
 
 export default Session;
