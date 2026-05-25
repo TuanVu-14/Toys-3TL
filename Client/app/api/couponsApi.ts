@@ -1,15 +1,14 @@
-"use server";
+'use server'
 
-import axios from "axios";
-import { sign } from "jsonwebtoken";
+import axios from 'axios'
+import { sign } from 'jsonwebtoken'
+
+const url = process.env.BACKEND_URL
+const authKey = process.env.AUTH_KEY as string
 
 async function encrypt(key: string) {
-  const encryptedKey = await sign({}, key);
-  return encryptedKey;
+  return await sign({}, key)
 }
-
-const url = process.env.BACKEND_URL;
-const authKey = process.env.AUTH_KEY as string;
 
 export async function createChildProfile({
   user_id,
@@ -17,116 +16,89 @@ export async function createChildProfile({
   birth_date,
   gender,
 }: {
-  user_id: number;
-  child_name: string;
-  birth_date: string;
-  gender?: string;
+  user_id: number
+  child_name: string
+  birth_date: string
+  gender?: string
 }) {
-  const sendingKey = await encrypt(authKey);
-
+  const sendingKey = await encrypt(authKey)
   try {
     const response = await axios.post(
       `${url}/api/coupons/child-profile`,
-      {
-        user_id,
-        child_name,
-        birth_date,
-        gender,
-      },
-      {
-        headers: {
-          authorization: `Bearer ${sendingKey}`,
-        },
-      }
-    );
-
-    return {
-      status: response.status,
-      data: response.data,
-    };
+      { user_id, child_name, birth_date, gender },
+      { headers: { authorization: `Bearer ${sendingKey}` }, validateStatus: () => true },
+    )
+    return { status: response.status, data: response.data }
   } catch (error) {
-    console.error("createChildProfile error:", error);
-    return {
-      status: 500,
-      error: "Internal Server Error",
-    };
+    console.error('createChildProfile error:', error)
+    return { status: 500, error: 'Internal Server Error' }
   }
 }
 
 export async function getChildProfiles(userId: number) {
-  const sendingKey = await encrypt(authKey);
-
+  const sendingKey = await encrypt(authKey)
   try {
-    const response = await axios.get(
-      `${url}/api/coupons/child-profiles/${userId}`,
-      {
-        headers: {
-          authorization: `Bearer ${sendingKey}`,
-        },
-      }
-    );
-
-    return {
-      status: response.status,
-      data: response.data,
-    };
+    const response = await axios.get(`${url}/api/coupons/child-profiles/${userId}`, {
+      headers: { authorization: `Bearer ${sendingKey}` },
+      validateStatus: () => true,
+    })
+    return { status: response.status, data: response.data }
   } catch (error) {
-    console.error("getChildProfiles error:", error);
-    return {
-      status: 500,
-      error: "Internal Server Error",
-    };
+    console.error('getChildProfiles error:', error)
+    return { status: 500, error: 'Internal Server Error' }
   }
 }
 
 export async function getBirthdayCoupons(userId: number) {
-  const sendingKey = await encrypt(authKey);
-
+  const sendingKey = await encrypt(authKey)
   try {
-    const response = await axios.get(
-      `${url}/api/coupons/birthday/${userId}`,
-      {
-        headers: {
-          authorization: `Bearer ${sendingKey}`,
-        },
-      }
-    );
-
-    return {
-      status: response.status,
-      data: response.data,
-    };
+    const response = await axios.get(`${url}/api/coupons/birthday/${userId}`, {
+      headers: { authorization: `Bearer ${sendingKey}` },
+      validateStatus: () => true,
+    })
+    return { status: response.status, data: response.data }
   } catch (error) {
-    console.error("getBirthdayCoupons error:", error);
-    return {
-      status: 500,
-      error: "Internal Server Error",
-    };
+    console.error('getBirthdayCoupons error:', error)
+    return { status: 500, error: 'Internal Server Error' }
   }
 }
 
 export async function getGiftSuggestions(userId: number) {
-  const sendingKey = await encrypt(authKey);
-
+  const sendingKey = await encrypt(authKey)
   try {
-    const response = await axios.get(
-      `${url}/api/coupons/gift-suggestions/${userId}`,
-      {
-        headers: {
-          authorization: `Bearer ${sendingKey}`,
-        },
-      }
-    );
-
-    return {
-      status: response.status,
-      data: response.data,
-    };
+    const response = await axios.get(`${url}/api/coupons/gift-suggestions/${userId}`, {
+      headers: { authorization: `Bearer ${sendingKey}` },
+      validateStatus: () => true,
+    })
+    return { status: response.status, data: response.data }
   } catch (error) {
-    console.error("getGiftSuggestions error:", error);
+    console.error('getGiftSuggestions error:', error)
+    return { status: 500, error: 'Internal Server Error' }
+  }
+}
+
+export async function applyCouponHandler({
+  code,
+  userID,
+  amount,
+}: {
+  code: string
+  userID: string | number
+  amount: number
+}) {
+  const sendingKey = await encrypt(authKey)
+  try {
+    const response = await axios.post(
+      `${url}/api/coupons/apply`,
+      { code, userID, amount },
+      { headers: { authorization: `Bearer ${sendingKey}` }, validateStatus: () => true },
+    )
+    return { status: response.status, data: response.data }
+  } catch (error: any) {
+    console.error('applyCouponHandler error:', error?.response?.data || error)
     return {
       status: 500,
-      error: "Internal Server Error",
-    };
+      error: error?.response?.data?.error || 'Không áp dụng được mã giảm giá',
+    }
   }
 }

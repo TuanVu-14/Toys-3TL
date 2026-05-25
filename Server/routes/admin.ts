@@ -721,8 +721,6 @@ router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Respon
         oi.orderid,
         oi.productid,
         oi.quantity,
-        oi.colorid,
-        oi.sizeid,
         oi.gift_wrapping,
         oi.gift_wrap_style,
         oi.gift_message,
@@ -736,8 +734,8 @@ router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Respon
         pi.imglink AS image_url,
         pi.imgalt AS image_alt,
 
-        pc.colorname,
-        ps.sizename,
+        NULL::text AS colorname,
+        NULL::text AS sizename,
 
         ROUND((pr.price * oi.quantity), 2) AS raw_total,
         ROUND((pr.price * oi.quantity) * COALESCE(pr.discount, 0) / 100.0, 2) AS discount_amount,
@@ -745,8 +743,6 @@ router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Respon
       FROM orderitems oi
       LEFT JOIN products pr ON pr.productid = oi.productid
       LEFT JOIN productimages pi ON pi.productid = oi.productid AND COALESCE(pi.isprimary, false) = true
-      LEFT JOIN productcolors pc ON pc.colorid = oi.colorid
-      LEFT JOIN productsizes ps ON ps.sizeid = oi.sizeid
       WHERE oi.orderid = $1
       ORDER BY oi.orderitemid ASC
       `,

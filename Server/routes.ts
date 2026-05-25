@@ -17,7 +17,7 @@ import couponsRouter from './routes/coupons';
 import warehouseRoutes from "./routes/warehouse";
 import salesRoutes from "./routes/sales";
 import toyFilter from "./routes/toyFilter";
-
+import customerOrdersRoutes from "./routes/customerOrders";
 const router = express.Router();
 
 router.use("/", authentication);
@@ -38,5 +38,5 @@ router.use("/", toyFilter);
 router.use("/coupons", couponsRouter);
 router.use("/warehouse", warehouseRoutes);
 router.use("/sales", salesRoutes);
-
+router.use("/", customerOrdersRoutes);
 export default router;
