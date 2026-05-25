@@ -102,38 +102,6 @@ router.post("/product/create/image", async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-router.post("/product/create/size", async (req: Request, res: Response) => {
-  const { productID, sizeName, inStock } = req.body;
-  const sizeID = IDGenerator();
-  const productSizesQuery = `INSERT INTO productparams (sizeid,productid,sizename,instock) VALUES ($1, $2, $3, $4)`;
-  try {
-    await client.query(productSizesQuery, [
-      sizeID,
-      productID,
-      sizeName,
-      inStock,
-    ]);
-    res.status(200).json({ message: "Size Added Successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-});
-router.post("/product/create/color", async (req: Request, res: Response) => {
-  const { productID, colorName, colorClass } = req.body;
-  const colorID = IDGenerator();
-  const productColorsQuery = `INSERT INTO productcolors (colorid, productid, colorname, colorclass) VALUES ($1, $2, $3, $4)`;
-  try {
-    await client.query(productColorsQuery, [
-      colorID,
-      productID,
-      colorName,
-      colorClass,
-    ]);
-    res.status(200).json({ message: "Color Added Successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-});
 async function review(productID: string) {
   try {
     const result = await client.query(
@@ -147,34 +115,6 @@ async function review(productID: string) {
   } catch (error) {
     console.error(error);
     return [0, []];
-  }
-}
-async function getColors(productID: string) {
-  try {
-    const result = await client.query(
-      `SELECT colorid,colorname,colorclass FROM productcolors WHERE productid = $1`,
-      [productID],
-    );
-    if (result.rows.length === 0) {
-      return [];
-    }
-    return result.rows;
-  } catch (error) {
-    return [];
-  }
-}
-async function getSizes(productID: string) {
-  try {
-    const result = await client.query(
-      `SELECT sizeid,sizename,instock FROM productsizes WHERE productid = $1`,
-      [productID],
-    );
-    if (result.rows.length === 0) {
-      return [];
-    }
-    return result.rows;
-  } catch (error) {
-    return [];
   }
 }
 async function getImages(productID: string) {
@@ -267,12 +207,12 @@ router.get(
   brands.safety_certificates`,
           [productID],
         );
-        const [colors, sizes, images] = await Promise.all([
-          getColors(productID),
-          getSizes(productID),
-          getImages(productID),
-        ]);
+        const images = await getImages(productID);
         const [reviewCounts, reviews] = await review(productID);
+        if (result.rows.length === 0) {
+          return res.status(404).json({ message: "Product not found" });
+        }
+
         const assignedData = result.rows[0];
         const price = Number(assignedData.price);
         const discount = Number(assignedData.discount || 0);
@@ -298,8 +238,6 @@ router.get(
           imglink: assignedData.imglink,
           imgalt: assignedData.imgalt,
           imgcollection: images,
-          colors,
-          sizes,
           reviews,
           brand_name: assignedData.brand_name,
           manufacturer_info: assignedData.manufacturer_info,

@@ -118,56 +118,41 @@ const AddressInsertSchema = checkSchema({
 },
 });
 const cartItemSchema = checkSchema({
-    userID: {
-        in: ['body'],
-        isInt:true,
-        errorMessage: 'The userID must be provided',
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
+  cartItemID: {
+    in: ["body"],
+    optional: true,
+    isInt: true,
+    toInt: true,
+  },
+  userID: {
+    in: ["body"],
+    errorMessage: "The userID must be provided",
+    isInt: true,
+    toInt: true,
+    notEmpty: true,
+  },
+  productID: {
+    in: ["body"],
+    errorMessage: "The productID must be provided",
+    isInt: true,
+    toInt: true,
+    notEmpty: true,
+  },
+  productPrice: {
+    in: ["body"],
+    optional: true,
+    isFloat: true,
+    toFloat: true,
+  },
+  quantity: {
+    in: ["body"],
+    errorMessage: "The quantity must be provided",
+    isInt: {
+      options: { min: 1 },
     },
-    productID: {
-        in: ['body'],
-        isInt:true,
-        isLength:{options:{min:1,max:15}},
-        errorMessage: 'The productID must be provided',
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
-    },
-    quantity: {
-        in: ['body'],
-        isInt:true,
-        isLength:{options:{min:1,max:2}},
-        errorMessage: 'The quantity must be provided',
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
-    },
-    sizeID: {
-        in: ['body'],
-        isInt:true,
-        isLength:{options:{min:1,max:10}},
-        errorMessage: 'The sizeID must be provided',
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
-    },
-    colorID: {
-        in: ['body'],
-        isInt:true,
-        errorMessage: 'The colorID must be provided',
-        isLength:{options:{min:1,max:10}},
-        notEmpty:true,
-        isNumeric:true,
-        trim:true,
-        escape:true
-    }
+    toInt: true,
+    notEmpty: true,
+  },
 });
 const cartActionSchema = checkSchema({
     userID: {

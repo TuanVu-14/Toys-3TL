@@ -11,7 +11,7 @@ const userIDSchema = checkSchema(
       trim: true,
     },
   },
-  ["body", "params"]
+  ["body", "params"],
 );
 
 const paymentCreationSchema = checkSchema(
@@ -33,7 +33,7 @@ const paymentCreationSchema = checkSchema(
       escape: true,
     },
   },
-  ["body"]
+  ["body"],
 );
 
 export { userIDSchema, paymentCreationSchema };

@@ -36,17 +36,6 @@ interface ProductImage {
   imgalt: string
 }
 
-interface ProductSize {
-  sizeid: number
-  sizename: string
-  instock: boolean
-}
-
-interface ProductColor {
-  colorid: number
-  colorname: string
-  colorclass: string
-}
 
 interface Categories {
   subcategory: string
@@ -71,8 +60,6 @@ interface Product {
   imglink: string
   imgalt: string
   imgcollection: ProductImage[]
-  colors: ProductColor[]
-  sizes: ProductSize[]
   reviews: Review[]
   discount: number
 }
@@ -95,8 +82,6 @@ const defaultData: Product = {
   imglink: '',
   imgalt: '',
   imgcollection: [],
-  colors: [],
-  sizes: [],
   reviews: [],
   discount: 0,
 }
@@ -139,21 +124,11 @@ const ProductPage = () => {
   const [dialogType, setDialogType] = useState<string | null>(null)
   const [selectedReview, setSelectedReview] = useState<Review | null>(null)
   const [selectedRating, setSelectedRating] = useState(1)
-  const [selectedColor, setSelectedColor] = useState<ProductColor>({
-    colorid: 0,
-    colorname: 'Default',
-    colorclass: 'col_default',
-  })
-  const [selectedSize, setSelectedSize] = useState<ProductSize>({
-    sizeid: 0,
-    sizename: 'Default',
-    instock: true,
-  })
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
 
   const maxQuantity = Number(data.stock || 0)
-  const outOfStock = maxQuantity <= 0 || (data.sizes.length > 0 && !selectedSize.instock)
+  const outOfStock = maxQuantity <= 0
 
   const images = useMemo(() => {
     const allImages: ProductImage[] = [
@@ -192,28 +167,11 @@ const ProductPage = () => {
         ...product,
         reviews: normalizedReviews,
         imgcollection: product.imgcollection || [],
-        colors: product.colors || [],
-        sizes: product.sizes || [],
         stock: Number(product.stock || 0),
         discount: Number(product.discount || 0),
       })
       setFound(true)
 
-      const firstColor = product.colors?.[0] || {
-        colorid: 0,
-        colorname: 'Default',
-        colorclass: 'col_default',
-      }
-
-      const firstSize = product.sizes?.find((size) => size.instock) ||
-        product.sizes?.[0] || {
-          sizeid: 0,
-          sizename: 'Default',
-          instock: true,
-        }
-
-      setSelectedColor(firstColor)
-      setSelectedSize(firstSize)
       setSelectedImageIndex(0)
       setQuantity(1)
     } else {
@@ -261,7 +219,7 @@ const ProductPage = () => {
     setStockMessage('')
 
     if (outOfStock) {
-      setStockMessage('Sản phẩm đã hết hàng hoặc size đang chọn không còn hàng.')
+      setStockMessage('Sản phẩm đã hết hàng.')
       return
     }
 
@@ -291,14 +249,6 @@ const ProductPage = () => {
     const cartItemData = {
       cartItemID: IDGenerator(),
       ...commonProductData,
-      productColor: selectedColor.colorname,
-      colorname: selectedColor.colorname,
-      colorID: selectedColor.colorid,
-      colorid: selectedColor.colorid,
-      productSize: selectedSize.sizename,
-      sizename: selectedSize.sizename,
-      sizeID: selectedSize.sizeid,
-      sizeid: selectedSize.sizeid,
       quantity,
     }
 
@@ -315,8 +265,6 @@ const ProductPage = () => {
             userID,
             productID: data.productid,
             productPrice: finalPrice,
-            colorID: selectedColor.colorid,
-            sizeID: selectedSize.sizeid,
             quantity,
           })
 
@@ -532,52 +480,6 @@ const ProductPage = () => {
                 {stockMessage && <p className="mt-2 text-sm text-red-500">{stockMessage}</p>}
               </div>
 
-              {data.colors.length > 0 && (
-                <div className="mt-8">
-                  <p className="mb-3 font-semibold text-gray-900">Color</p>
-                  <div className="flex flex-wrap gap-3">
-                    {data.colors.map((color) => (
-                      <button
-                        type="button"
-                        key={color.colorid}
-                        onClick={() => setSelectedColor(color)}
-                        title={color.colorname}
-                        className={`h-11 w-11 rounded-full border-2 ${
-                          selectedColor.colorid === color.colorid
-                            ? 'border-indigo-600 ring-2 ring-indigo-200'
-                            : 'border-gray-200'
-                        }`}
-                      >
-                        <span className={`block h-full w-full rounded-full ${color.colorclass}`} />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {data.sizes.length > 0 && (
-                <div className="mt-8">
-                  <p className="mb-3 font-semibold text-gray-900">Size</p>
-                  <div className="flex flex-wrap gap-3">
-                    {data.sizes.map((size) => (
-                      <button
-                        type="button"
-                        key={size.sizeid}
-                        disabled={!size.instock}
-                        onClick={() => setSelectedSize(size)}
-                        className={`min-w-28 rounded-lg border px-5 py-3 font-semibold ${
-                          selectedSize.sizeid === size.sizeid
-                            ? 'border-indigo-600 text-indigo-600'
-                            : 'border-gray-200'
-                        } disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400`}
-                      >
-                        {size.sizename}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div className="mt-8 flex flex-wrap gap-4">
                 <button
                   type="button"
@@ -592,7 +494,7 @@ const ProductPage = () => {
                   type="button"
                   disabled={btnLoading || outOfStock || quantity > maxQuantity}
                   onClick={() =>
-                    router.push(`/checkout/${data.productid}/${selectedSize.sizeid}/${selectedColor.colorid}?qty=${quantity}`)
+                    router.push(`/checkout/${data.productid}?qty=${quantity}`)
                   }
                   className="h-12 w-48 rounded-lg border-2 border-yellow-400 font-semibold transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300"
                 >

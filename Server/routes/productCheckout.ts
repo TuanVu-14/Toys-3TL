@@ -31,38 +31,35 @@ function getDeliveryDate(): string {
 
 async function getDefaultAddress(userid: number | string) {
   const addressResult = await client.query(
-    `SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true`,
-    [userid]
+    `SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true LIMIT 1`,
+    [userid],
   );
+
   return addressResult.rows[0]?.addressid;
 }
 
-async function getProductCheckoutData(productid: number | string, colorid: number | string, sizeid: number | string) {
+async function getProductCheckoutData(productid: number | string) {
   const productQuery = `
     SELECT p.title,
            p.price,
            COALESCE(p.discount, 0) AS discount,
            ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100) AS discountedprice,
            p.stock,
-           ps.sizename,
-           pc.colorname,
            pi.imglink,
            pi.imgalt
     FROM products p
-    JOIN productcolors pc ON pc.productid = p.productid AND pc.colorid = $2
-    JOIN productsizes ps ON ps.productid = p.productid AND ps.sizeid = $3
-    JOIN productimages pi ON pi.productid = p.productid AND pi.isprimary = true
-    WHERE p.productid = $1 AND p.is_active = true
+    LEFT JOIN productimages pi ON pi.productid = p.productid AND COALESCE(pi.isprimary, false) = true
+    WHERE p.productid = $1 AND COALESCE(p.is_active, true) = true
+    LIMIT 1
   `;
-  const result = await client.query(productQuery, [productid, colorid, sizeid]);
+
+  const result = await client.query(productQuery, [productid]);
   return result.rows[0];
 }
 
 async function createSingleProductOrder({
   userid,
   productid,
-  colorid,
-  sizeid,
   quantity = 1,
   paymentMethod,
   paymentStatus,
@@ -74,8 +71,6 @@ async function createSingleProductOrder({
 }: {
   userid: number | string;
   productid: number | string;
-  colorid: number | string;
-  sizeid: number | string;
   quantity?: number;
   paymentMethod: string;
   paymentStatus: string;
@@ -86,14 +81,17 @@ async function createSingleProductOrder({
   gift_message: string | null;
 }) {
   await client.query("BEGIN");
+
   try {
-    const product = await getProductCheckoutData(productid, colorid, sizeid);
+    const product = await getProductCheckoutData(productid);
+
     if (!product) {
       await client.query("ROLLBACK");
       return { status: 404, error: "Product not found" };
     }
 
     const addressid = await getDefaultAddress(userid);
+
     if (!addressid) {
       await client.query("ROLLBACK");
       return { status: 404, error: "Address not found" };
@@ -122,15 +120,7 @@ async function createSingleProductOrder({
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING orderid
       `,
-      [
-        userid,
-        totalAmount,
-        "Pending",
-        "IN",
-        gift_wrapping,
-        gift_message,
-        gift_wrap_style,
-      ]
+      [userid, totalAmount, "Pending", "IN", gift_wrapping, gift_message, gift_wrap_style],
     );
 
     const orderid = orderResult.rows[0].orderid;
@@ -142,7 +132,7 @@ async function createSingleProductOrder({
       INSERT INTO shipping (shippingid, orderid, addressid, shippingmethod, shippingcost, trackingnumber, deliveredat)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
-      [shippingid, orderid, addressid, "Giao hàng tiêu chuẩn", SHIPPING_CHARGE, trackingnumber, deliveryDate]
+      [shippingid, orderid, addressid, "Giao hàng tiêu chuẩn", SHIPPING_CHARGE, trackingnumber, deliveryDate],
     );
 
     await client.query(
@@ -153,55 +143,65 @@ async function createSingleProductOrder({
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
-      [paymentid, orderid, paymentMethod, paymentStatus, amount, transactionid, addressid, gatewayId || null]
+      [paymentid, orderid, paymentMethod, paymentStatus, amount, transactionid, addressid, gatewayId || null],
     );
 
     await client.query(
       `
       INSERT INTO orderitems (
         orderitemid, orderid, productid, quantity, shippingid, paymentid,
-        colorid, sizeid, gift_wrapping, gift_wrap_style, gift_message
+        gift_wrapping, gift_wrap_style, gift_message
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `,
-      [orderitemid, orderid, productid, orderQuantity, shippingid, paymentid, colorid, sizeid, gift_wrapping, gift_wrap_style, gift_message]
+      [orderitemid, orderid, productid, orderQuantity, shippingid, paymentid, gift_wrapping, gift_wrap_style, gift_message],
     );
 
-    await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2 WHERE productid = $1`, [productid, orderQuantity]);
-    await client.query(`UPDATE products SET stock = GREATEST(stock - $2, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`, [productid, orderQuantity]);
+    await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2 WHERE productid = $1`, [
+      productid,
+      orderQuantity,
+    ]);
+
+    await client.query(
+      `UPDATE products SET stock = GREATEST(stock - $2, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`,
+      [productid, orderQuantity],
+    );
 
     await client.query("COMMIT");
     return { status: 200, orderid };
-  } catch (error) {
+  } catch (error: any) {
     await client.query("ROLLBACK");
     console.error("Error creating order:", error);
-    return { status: 500, error: "Internal Server Error" };
+    return { status: 500, error: error?.message || "Internal Server Error" };
   }
 }
 
 router.get("/payment-methods", async (_req: Request, res: Response) => {
   try {
     const result = await client.query(
-      `SELECT id, name, type, status, config FROM payment_methods WHERE status = true ORDER BY id ASC`
+      `SELECT id, name, type, status, config FROM payment_methods WHERE status = true ORDER BY id ASC`,
     );
+
     return res.status(200).json(result.rows);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching payment methods:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error?.message || "Internal Server Error" });
   }
 });
 
 router.post("/payment-on-delivery/create-order", orderCreationSchema, async (req: Request, res: Response) => {
   const result = validationResult(req);
-  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
 
-  const { userid, productid, colorid, sizeid, quantity } = matchedData(req);
+  if (!result.isEmpty()) {
+    return res.status(400).json({ message: "Validation error", errors: result.array() });
+  }
+
+  const { userid, productid, quantity } = matchedData(req);
   const gift = getGiftOptions(req);
+
   const created = await createSingleProductOrder({
     userid,
     productid,
-    colorid,
-    sizeid,
     quantity,
     paymentMethod: "Thanh toán khi nhận hàng",
     paymentStatus: "Pending",
@@ -209,22 +209,27 @@ router.post("/payment-on-delivery/create-order", orderCreationSchema, async (req
     ...gift,
   });
 
-  if (created.status === 200) return res.status(200).json({ orderid: created.orderid });
+  if (created.status === 200) {
+    return res.status(200).json({ orderid: created.orderid });
+  }
+
   return res.status(created.status).json({ error: created.error });
 });
 
 router.post("/online/create-order", orderCreationSchema2, async (req: Request, res: Response) => {
   const result = validationResult(req);
-  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
 
-  const { userid, productid, colorid, sizeid, quantity } = matchedData(req);
-  const paymentMethod = String(req.body.paymentMethod || "Thanh toán online");
+  if (!result.isEmpty()) {
+    return res.status(400).json({ message: "Validation error", errors: result.array() });
+  }
+
+  const { userid, productid, quantity } = matchedData(req);
+  const paymentMethod = String(req.body.paymentMethod || "Thanh toán online demo");
   const gift = getGiftOptions(req);
+
   const created = await createSingleProductOrder({
     userid,
     productid,
-    colorid,
-    sizeid,
     quantity,
     paymentMethod,
     paymentStatus: "Paid",
@@ -233,15 +238,22 @@ router.post("/online/create-order", orderCreationSchema2, async (req: Request, r
     ...gift,
   });
 
-  if (created.status === 200) return res.status(200).json({ orderid: created.orderid });
+  if (created.status === 200) {
+    return res.status(200).json({ orderid: created.orderid });
+  }
+
   return res.status(created.status).json({ error: created.error });
 });
 
 router.get("/orders/status/:orderID", OrderIDSchema, async (req: Request, res: Response) => {
   const result = validationResult(req);
-  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
+
+  if (!result.isEmpty()) {
+    return res.status(400).json({ message: "Validation error", errors: result.array() });
+  }
 
   const { orderID } = matchedData(req);
+
   try {
     const orderResult = await client.query(
       `
@@ -250,43 +262,51 @@ router.get("/orders/status/:orderID", OrderIDSchema, async (req: Request, res: R
       LEFT JOIN payments p ON p.orderid = o.orderid
       WHERE o.orderid = $1
       `,
-      [orderID]
+      [orderID],
     );
 
     if (orderResult.rows.length === 0) return res.status(404).json({ error: "Order not found" });
+
     const { orderstatus, paymentstatus } = orderResult.rows[0];
+
     if (orderstatus === "Failed" || paymentstatus === "Failed") return res.sendStatus(210);
     if (paymentstatus === "Pending") return res.sendStatus(205);
+
     return res.sendStatus(200);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error checking order status:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error?.message || "Internal Server Error" });
   }
 });
 
-router.get("/checkout/product-details/:productid/:sizeid/:colorid", checkoutSchema, async (req: Request, res: Response) => {
+router.get("/checkout/product-details/:productid", checkoutSchema, async (req: Request, res: Response) => {
   const result = validationResult(req);
-  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
 
-  const { productid, sizeid, colorid } = matchedData(req);
+  if (!result.isEmpty()) {
+    return res.status(400).json({ message: "Validation error", errors: result.array() });
+  }
+
+  const { productid } = matchedData(req);
+
   try {
-    const productDetails = await getProductCheckoutData(productid, colorid, sizeid);
-    if (!productDetails) return res.status(404).json({ error: "Product details not found" });
+    const productDetails = await getProductCheckoutData(productid);
+
+    if (!productDetails) {
+      return res.status(404).json({ error: "Product details not found" });
+    }
 
     return res.status(200).json({
       title: productDetails.title,
-      price: productDetails.price,
-      discount: productDetails.discount,
-      discountedprice: productDetails.discountedprice,
-      sizename: productDetails.sizename,
-      colorname: productDetails.colorname,
+      price: Number(productDetails.price || 0),
+      discount: Number(productDetails.discount || 0),
+      discountedprice: Number(productDetails.discountedprice || 0),
       imglink: productDetails.imglink,
       imgalt: productDetails.imgalt,
       shippingcost: SHIPPING_CHARGE,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching product details:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error?.message || "Internal Server Error" });
   }
 });
 

@@ -3,17 +3,15 @@
 import axios from 'axios'
 import { sign } from 'jsonwebtoken'
 
-interface cart {
+interface CartPayload {
   cartItemID?: number
   userID: number
   productID: number
   productPrice?: number
-  colorID: number
-  sizeID: number
   quantity: number
 }
 
-interface wishlist {
+interface WishlistPayload {
   wishlistItemID?: number
   userID: number
   productID: number
@@ -37,13 +35,13 @@ function handleAxiosError(error: unknown) {
   return { status: 500, error: 'Internal Server Error' }
 }
 
-async function cartAddHandler({ userID, productID, productPrice, colorID, sizeID, quantity }: cart) {
+async function cartAddHandler({ userID, productID, productPrice, quantity }: CartPayload) {
   const sendingKey = await encrypt(authKey)
 
   try {
     const response = await axios.post(
       `${url}/api/user/insert/cartitem`,
-      { userID, productID, productPrice, colorID, sizeID, quantity },
+      { userID, productID, productPrice, quantity },
       { headers: { authorization: `Bearer ${sendingKey}` } },
     )
 
@@ -53,7 +51,7 @@ async function cartAddHandler({ userID, productID, productPrice, colorID, sizeID
   }
 }
 
-async function wishlistAddHandler({ wishlistItemID, userID, productID }: wishlist) {
+async function wishlistAddHandler({ wishlistItemID, userID, productID }: WishlistPayload) {
   const sendingKey = await encrypt(authKey)
 
   try {

@@ -25,29 +25,6 @@ const fetchAddresses = async (userID: number) => {
     return result.rows;
 };
 
-const fetchColor = async (productID: number) => {
-    const colorQuery = `
-        SELECT colorclass, colorname, colorid
-        FROM productcolors
-        WHERE productid = $1
-        LIMIT 1;
-    `;
-    const colorValues = [productID];
-    const colorResult = await client.query(colorQuery, colorValues);
-    return colorResult.rows[0];
-};
-
-const fetchSize = async (productID: number) => {
-    const sizeQuery = `
-        SELECT sizeid, sizename, instock
-        FROM productsizes
-        WHERE productid = $1
-        LIMIT 1;
-    `;
-    const sizeValues = [productID];
-    const sizeResult = await client.query(sizeQuery, sizeValues);
-    return sizeResult.rows[0];
-};
 
 const fetchCartItems = async (userID: number) => {
   const cartQuery = `
@@ -59,18 +36,10 @@ const fetchCartItems = async (userID: number) => {
       products.price AS "productPrice",
       products.stock AS "productStock",
       productimages.imglink AS "productImg",
-      productimages.imgalt AS "productAlt",
-      productcolors.colorclass AS "colorClass",
-      productcolors.colorname AS "productColor",
-      productcolors.colorid AS "colorID",
-      productsizes.sizeid AS "sizeID",
-      productsizes.sizename AS "productSize",
-      productsizes.instock
+      productimages.imgalt AS "productAlt"
     FROM cartitems
     INNER JOIN products ON cartitems.productid = products.productid
     LEFT JOIN productimages ON cartitems.productid = productimages.productid AND productimages.isprimary = true
-    LEFT JOIN productcolors ON cartitems.productid = productcolors.productid AND cartitems.colorid = productcolors.colorid
-    LEFT JOIN productsizes ON cartitems.productid = productsizes.productid AND cartitems.sizeid = productsizes.sizeid
     WHERE cartitems.userid = $1;
   `;
   const cartValues = [userID];
@@ -147,7 +116,7 @@ router.post('/user/cart-items',userIDSchema, async (req: Request, res: Response)
     if(result.isEmpty()){
         const { userID } = matchedData(req);
         try {
-            // Query to fetch cart items by userID, including size and color
+            // Query to fetch cart items by userID
             const query = `
   SELECT
     cartitems.cartitemid AS "cartItemID",
@@ -157,18 +126,10 @@ router.post('/user/cart-items',userIDSchema, async (req: Request, res: Response)
     products.price AS "productPrice",
     products.stock AS "productStock",
     productimages.imglink AS "productImg",
-    productimages.imgalt AS "productAlt",
-    productcolors.colorclass AS "colorClass",
-    productcolors.colorname AS "productColor",
-    productcolors.colorid AS "colorID",
-    productsizes.sizeid AS "sizeID",
-    productsizes.sizename AS "productSize",
-    productsizes.instock
+    productimages.imgalt AS "productAlt"
   FROM cartitems
   INNER JOIN products ON cartitems.productid = products.productid
   LEFT JOIN productimages ON cartitems.productid = productimages.productid AND productimages.isprimary = true
-  LEFT JOIN productcolors ON cartitems.productid = productcolors.productid AND cartitems.colorid = productcolors.colorid
-  LEFT JOIN productsizes ON cartitems.productid = productsizes.productid AND cartitems.sizeid = productsizes.sizeid
   WHERE cartitems.userid = $1;
 `;
 
@@ -325,52 +286,70 @@ router.post('/user/orders',userTokenSchema,async (req: Request, res: Response) =
     }
     
 });
-router.post('/user/insert/cartitem',cartItemSchema,async(req:Request,res:Response)=>{
-    const result = validationResult(req);
-    if(result.isEmpty()){
-        const { userID, productID, quantity, sizeID, colorID } = matchedData(req);
-        const cartItemID = IDGenerator();
-        
-        const checkQuery = `
-            SELECT cartitemid, quantity 
-            FROM cartitems 
-            WHERE userid = $1 AND productid = $2 AND sizeid = $3 AND colorid = $4
-        `;
-        const checkValues = [userID, productID, sizeID, colorID];
-    
-        const insertQuery = `
-            INSERT INTO cartitems (cartitemid, userid, productid, quantity, sizeid, colorid) 
-            VALUES ($1, $2, $3, $4, $5, $6)
-        `;
-        const insertValues = [cartItemID, userID, productID, quantity, sizeID, colorID];
-    
-        const updateQuery = `
-            UPDATE cartitems 
-            SET quantity = quantity + $1 
-            WHERE cartitemid = $2
-        `;
-    
-        try {
-            const checkResult = await client.query(checkQuery, checkValues);
-    
-            if (checkResult.rows.length > 0) {
-                // Item already exists, update its quantity
-                const existingCartItemID = checkResult.rows[0].cartitemid;
-                await client.query(updateQuery, [quantity, existingCartItemID]);
-            } else {
-                // Item does not exist, insert a new row
-                await client.query(insertQuery, insertValues);
-            }
-    
-            res.status(200).json({ message: 'CartItem added or updated successfully' });
-        } catch (error) {
-            res.status(500).json({ message: 'Internal Server Error' });
-        }
-    }else
-    {
-        console.log(result);
-        res.status(500).json({ message: 'Validation error' });
+router.post('/user/insert/cartitem', cartItemSchema, async (req: Request, res: Response) => {
+  const result = validationResult(req);
+
+  if (result.isEmpty()) {
+    const { userID, productID, quantity } = matchedData(req);
+    const cartItemID = IDGenerator();
+
+    const checkQuery = `
+      SELECT cartitemid, quantity
+      FROM cartitems
+      WHERE userid = $1 AND productid = $2
+    `;
+
+    const checkValues = [userID, productID];
+
+    const insertQuery = `
+      INSERT INTO cartitems (cartitemid, userid, productid, quantity)
+      VALUES ($1, $2, $3, $4)
+    `;
+
+    const insertValues = [cartItemID, userID, productID, quantity];
+
+    const updateQuery = `
+      UPDATE cartitems
+      SET quantity = quantity + $1
+      WHERE cartitemid = $2
+    `;
+
+    try {
+      const productResult = await client.query(
+        `SELECT stock FROM products WHERE productid = $1 AND COALESCE(is_active, true) = true`,
+        [productID],
+      );
+
+      if (productResult.rows.length === 0) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      const stock = Number(productResult.rows[0].stock || 0);
+      const checkResult = await client.query(checkQuery, checkValues);
+
+      const currentQuantity =
+        checkResult.rows.length > 0 ? Number(checkResult.rows[0].quantity || 0) : 0;
+
+      if (currentQuantity + Number(quantity) > stock) {
+        return res.status(409).json({ message: "Not enough stock" });
+      }
+
+      if (checkResult.rows.length > 0) {
+        const existingCartItemID = checkResult.rows[0].cartitemid;
+        await client.query(updateQuery, [quantity, existingCartItemID]);
+      } else {
+        await client.query(insertQuery, insertValues);
+      }
+
+      res.status(200).json({ message: 'CartItem added or updated successfully' });
+    } catch (error) {
+      console.error("Insert cart item error:", error);
+      res.status(500).json({ message: 'Internal Server Error' });
     }
+  } else {
+    console.log(result);
+    res.status(400).json({ message: 'Validation error', errors: result.array() });
+  }
 });
 router.delete('/user/delete/cartitem',cartActionSchema,async(req:Request,res:Response)=>{
     const result = validationResult(req);
@@ -455,32 +434,6 @@ const fetchOrderAddresses = async (userID: number,addressID:number) => {
     return result.rows[0];
 };
 
-const fetchOrderColor = async (productID: number,colorID:number) => {
-    const colorQuery = `
-        SELECT colorname
-        FROM productcolors
-        WHERE productid = $1 AND colorid = $2
-        LIMIT 1;
-    `;
-    const colorValues = [productID,colorID];
-    const colorResult = await client.query(colorQuery, colorValues);
-    if(colorResult.rows.length === 0) return {colorname:null}
-    else return colorResult.rows[0];
-};
-
-const fetchOrderSize = async (productID: number,sizeID:number) => {
-    const sizeQuery = `
-        SELECT sizename
-        FROM productsizes
-        WHERE productid = $1 AND sizeid = $2
-        LIMIT 1;
-    `;
-    const sizeValues = [productID,sizeID];
-    const sizeResult = await client.query(sizeQuery, sizeValues);
-    if(sizeResult.rows.length === 0) return {sizename:null}
-    else return sizeResult.rows[0];
-    
-};
 router.get('/user/order-detail/:userIDToken/:orderID',orderSchema,async (req:Request,res:Response)=>{
     const result = validationResult(req);
     if(result.isEmpty()){
@@ -504,8 +457,6 @@ router.get('/user/order-detail/:userIDToken/:orderID',orderSchema,async (req:Req
         productimages.imgalt,
         payments.billingaddress,
         shipping.addressid,
-        orderitems.colorid,
-        orderitems.sizeid,
         orderitems.productid,
         orders.order_code,
         orders.totalamount
@@ -526,18 +477,14 @@ router.get('/user/order-detail/:userIDToken/:orderID',orderSchema,async (req:Req
                 return res.status(404).json({message:'Data not Found'});
             }
             
-            const [shippingAddress,billingAddress,color,size] = await Promise.all([
+            const [shippingAddress,billingAddress] = await Promise.all([
                 fetchOrderAddresses(userID.userID,result.rows[0].addressid),
-                fetchOrderAddresses(userID.userID,result.rows[0].billingaddress),
-                fetchOrderColor(result.rows[0].productid,result.rows[0].colorid),
-                fetchOrderSize(result.rows[0].productid,result.rows[0].sizeid)
+                fetchOrderAddresses(userID.userID,result.rows[0].billingaddress)
             ]);
             const data = {
                 ...result.rows[0],
                 shippingaddress:{...shippingAddress},
-                billingaddress:{...billingAddress},
-                ...color,
-                ...size
+                billingaddress:{...billingAddress}
             }
             
             res.status(200).json(

@@ -1,8 +1,10 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+"use client";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { CheckCircleIcon, CreditCardIcon, GiftIcon, TruckIcon } from "@heroicons/react/24/outline";
 import userData from "@/controllers/userData";
 import useAuth from "@/controllers/Authentication";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useApp } from "@/Helpers/AccountDialog";
 import Loading from "../Loading";
 import {
   checkoutProductDataHandler,
@@ -12,471 +14,423 @@ import {
   PaymentMethod,
 } from "@/app/api/paymentSystem";
 import { formatPrice } from "@/features/UIUpdates/CartWishlist";
-import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useAppSelector } from "@/app/hooks";
 
-interface ProductDetails {
+interface ProductCheckoutData {
   title: string;
-  price: string | number;
-  discount: string | number;
-  discountedprice?: string | number;
-  sizename: string;
-  colorname: string;
-  imglink: string;
-  imgalt: string;
+  price: number;
+  discount: number;
+  discountedprice: number;
+  imglink?: string;
+  imgalt?: string;
   shippingcost: number;
 }
 
-const emptyProductDetails: ProductDetails = {
-  title: "",
-  price: 0,
-  discount: 0,
-  discountedprice: 0,
-  sizename: "",
-  colorname: "",
-  imglink: "",
-  imgalt: "",
-  shippingcost: 30000,
-};
+interface CurrentUser {
+  userID?: number;
+  userid?: number;
+}
 
-const normalizePaymentName = (method?: PaymentMethod) => method?.name || "Thanh toán khi nhận hàng";
+type CheckoutResponse =
+  | { status: number; data: { orderid?: number; error?: string; message?: string } }
+  | { status: number; error: string; data?: undefined };
 
-const methodDescription = (method: PaymentMethod) => {
-  if (method.config?.description) return method.config.description;
-  switch (method.type) {
+const COD_FEE = 15000;
+
+function getAccountID(account: unknown) {
+  return Number(
+    (account as { userID?: number; userid?: number })?.userID ??
+      (account as { userid?: number })?.userid ??
+      0,
+  );
+}
+
+function normalizeText(value: unknown) {
+  return String(value || "").toLowerCase();
+}
+
+function getPaymentKind(method?: PaymentMethod) {
+  const raw = `${method?.type || ""} ${method?.name || ""}`;
+  const value = normalizeText(raw);
+
+  if (value.includes("cod") || value.includes("nhận hàng")) return "COD";
+  if (value.includes("momo")) return "MOMO";
+  if (value.includes("vnpay")) return "VNPAY";
+  if (value.includes("atm") || value.includes("napa") || value.includes("visa") || value.includes("master")) return "CARD";
+  if (value.includes("chuyển khoản") || value.includes("bank")) return "BANK";
+  return "ONLINE";
+}
+
+function normalizePaymentName(method: PaymentMethod) {
+  const kind = getPaymentKind(method);
+
+  if (kind === "COD") return "Thanh toán khi nhận hàng";
+  if (kind === "MOMO") return "Ví Momo";
+  if (kind === "VNPAY") return "VNPay";
+  if (kind === "CARD") return "Thẻ ATM/Napas/Visa/Mastercard";
+  if (kind === "BANK") return "Chuyển khoản ngân hàng";
+
+  return method.name || "Thanh toán online";
+}
+
+function getCheckoutError(response: CheckoutResponse) {
+  if ("error" in response && response.error) return response.error;
+  return response.data?.error || response.data?.message || "Không tạo được đơn hàng. Vui lòng thử lại.";
+}
+
+function paymentDescription(method: PaymentMethod) {
+  const kind = getPaymentKind(method);
+
+  switch (kind) {
     case "COD":
-      return "Thanh toán khi nhận hàng";
-    case "E-Wallet":
-      return "Thanh toán qua ví điện tử";
-    case "Gateway":
-      return "Quét QR hoặc chuyển khoản qua cổng thanh toán";
-    case "Card":
-      return "ATM/Napas/Visa/Mastercard";
-    case "BankTransfer":
-      return "Chuyển khoản ngân hàng";
+      return "Thanh toán tiền mặt khi nhận hàng. Phù hợp nếu bạn muốn kiểm tra hàng trước.";
+    case "MOMO":
+      return "Tạo đơn hàng và quét QR Momo demo để hoàn tất thanh toán.";
+    case "VNPAY":
+      return "Tạo đơn hàng và thanh toán qua cổng VNPay demo.";
+    case "CARD":
+      return "Thanh toán demo bằng thẻ ATM/Napas/Visa/Mastercard.";
+    case "BANK":
+      return "Tạo đơn hàng và chuyển khoản theo thông tin của cửa hàng.";
     default:
-      return "Phương thức thanh toán online";
+      return "Thanh toán online demo, không gọi Stripe hay cổng thật.";
   }
-};
+}
 
-const getLocalQrImage = (method: PaymentMethod) => {
-  if (method.config?.qrImageUrl) return method.config.qrImageUrl;
+function paymentBadge(method: PaymentMethod) {
+  const kind = getPaymentKind(method);
 
-  const provider = String(method.config?.provider || method.type).toLowerCase();
-  if (provider.includes("momo")) return "/images/payment/momo-qr.png";
-  if (provider.includes("vnpay")) return "/images/payment/vnpay-qr.png";
-  if (method.type === "Card" || provider.includes("card")) return "/images/payment/card-qr.png";
-  if (method.type === "BankTransfer" || provider.includes("bank")) return "/images/payment/bank-qr.png";
+  if (kind === "COD") return "+15.000đ phí xử lý COD";
+  if (kind === "MOMO") return "QR Momo demo";
+  if (kind === "VNPAY") return "Cổng VNPay demo";
+  if (kind === "CARD") return "Thanh toán thẻ demo";
+  if (kind === "BANK") return "Chuyển khoản theo nội dung";
+  return "Online demo";
+}
 
-  return "/images/payment/online-payment-qr.png";
-};
+function demoPaymentInfo(method?: PaymentMethod, totalAmount?: number, productID?: string) {
+  const kind = getPaymentKind(method);
 
-const buildPaymentQrContent = (method: PaymentMethod | undefined, amount: number, paymentCode: string) => {
-  if (!method || method.type === "COD") return null;
+  if (!method || kind === "COD") {
+    return null;
+  }
 
-  const storeName = method.config?.storeName || "TOYS 3TL";
-  const bankAccount = method.config?.bankAccount || "1234567890";
-  const bankAccountName = method.config?.bankAccountName || "TOYS 3TL";
-  const transferNote = `${paymentCode} ${storeName}`;
-  const isBankTransfer = method.type === "BankTransfer" || String(method.config?.provider || "").toLowerCase().includes("bank");
+  const amount = formatPrice(Number(totalAmount || 0));
+  const content = `3TL-${productID || "ORDER"}`;
 
-  return {
-    imageUrl: getLocalQrImage(method),
-    transferNote,
-    bankAccount: isBankTransfer ? bankAccount : "",
-    bankAccountName,
-    instructions: isBankTransfer
-      ? "Quét QR bằng app ngân hàng, nhập đúng số tiền và nội dung chuyển khoản rồi xác nhận."
-      : `Mở ${method.name}, quét mã QR, nhập đúng số tiền và nội dung thanh toán rồi xác nhận.`,
-  };
-};
+  if (kind === "BANK") {
+    return (
+      <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+        <p className="font-bold">Thông tin chuyển khoản demo</p>
+        <div className="mt-2 grid gap-1">
+          <p>Ngân hàng: MB Bank</p>
+          <p>Số tài khoản: 0123456789</p>
+          <p>Chủ tài khoản: 3TL Store</p>
+          <p>Số tiền: {amount}</p>
+          <p>Nội dung: {content}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900">
+      <p className="font-bold">{paymentBadge(method)}</p>
+      <p className="mt-1">
+        Đây là thanh toán online demo cho đồ án. Sau khi bấm PLACE ORDER, hệ thống tạo đơn và ghi nhận phương thức
+        thanh toán, không gọi Stripe nên không còn lỗi key/gateway.
+      </p>
+      <p className="mt-2">Số tiền: {amount}</p>
+      <p>Nội dung: {content}</p>
+    </div>
+  );
+}
 
 const Checkout = () => {
-  const { appState, setLoggedIn } = useApp();
-  const loggedIn = appState.loggedIn;
-  const params = useParams<{ productID: string; colorID: string; sizeID: string }>();
   const router = useRouter();
+  const params = useParams<{ productID: string }>();
   const searchParams = useSearchParams();
   const { checkSession } = useAuth();
   const { grabUserData } = userData();
+  const defaultAccount = useAppSelector((state) => state.userState.defaultAccount);
 
   const [loading, setLoading] = useState(true);
-  const [dialogType, setDialogType] = useState<"addressRequired" | "defaultAddressRequired" | null>(null);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<number>(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [product, setProduct] = useState<ProductCheckoutData | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [giftOptions, setGiftOptions] = useState({
-    gift_wrapping: false,
-    gift_wrap_style: "",
-    gift_message_template: "",
-    gift_message: "",
-  });
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-
-  const dataVar = useRef<ProductDetails>(emptyProductDetails);
-  const data = dataVar.current;
-  const found = useRef(false);
-  const orderCreationError = useRef(false);
-  const genUserData = useRef({ userID: 0, userName: "", email: "", mobile_number: "", dob: "" });
-  const paymentCodeRef = useRef(`T3TL${Date.now()}`);
-  const genUserAddress = useRef({
-    addressID: 0,
-    addressType: "HOME",
-    contactNumber: 0,
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    country: "",
-    postalCode: "",
-    userName: "",
-    is_default: true,
-  });
+  const [selectedPaymentId, setSelectedPaymentId] = useState<number | null>(null);
+  const [giftWrapping, setGiftWrapping] = useState(false);
+  const [giftWrapStyle, setGiftWrapStyle] = useState("");
+  const [giftMessage, setGiftMessage] = useState("");
+  const userRef = useRef<CurrentUser | null>(null);
 
   const quantity = Math.max(1, Number(searchParams.get("qty") || 1));
-  const originalPrice = Number(data.price || 0);
-  const discountedPrice = Number(
-    data.discountedprice || originalPrice - (originalPrice * Number(data.discount || 0)) / 100
+
+  const selectedPayment = useMemo(
+    () => paymentMethods.find((method) => method.id === selectedPaymentId) || paymentMethods[0],
+    [paymentMethods, selectedPaymentId],
   );
-  const shipping = Number(data.shippingcost || 30000);
-  const lineOriginalPrice = originalPrice * quantity;
-  const lineDiscountedPrice = discountedPrice * quantity;
-  const discountAmount = Math.max(lineOriginalPrice - lineDiscountedPrice, 0);
-  const selectedPayment = paymentMethods.find((m) => m.id === selectedPaymentId);
-  const paymentFee = Number(selectedPayment?.config?.fee || 0);
-  const totalAmount = Math.max(lineDiscountedPrice + shipping + paymentFee, 0);
-  const finalGiftMessage =
-    giftOptions.gift_message.trim() !== "" ? giftOptions.gift_message : giftOptions.gift_message_template;
-  const paymentContent = buildPaymentQrContent(selectedPayment, totalAmount, paymentCodeRef.current);
 
-  async function dataRequest() {
-    const response = await checkoutProductDataHandler({
-      productID: params.productID,
-      colorID: params.colorID,
-      sizeID: params.sizeID,
-    });
-    if (response.status === 200) {
-      dataVar.current = response.data;
-      found.current = true;
-      return;
+  const itemAmount = Number(product?.discountedprice || 0) * quantity;
+  const shippingCost = Number(product?.shippingcost || 0);
+  const paymentFee = getPaymentKind(selectedPayment) === "COD" ? COD_FEE : 0;
+  const totalAmount = itemAmount + shippingCost + paymentFee;
+
+  useEffect(() => {
+    const userID = getAccountID(defaultAccount);
+
+    if (userID) {
+      userRef.current = { userID, userid: userID };
     }
-    router.push("/");
-  }
+  }, [defaultAccount]);
 
-  async function loadPaymentMethods() {
-    const response = await paymentMethodsHandler();
-    if (response.status === 200 && response.data.length > 0) {
-      setPaymentMethods(response.data);
-      const firstActive = response.data.find((method) => method.status);
-      if (firstActive) setSelectedPaymentId(firstActive.id);
-    }
-  }
+  useEffect(() => {
+    async function sync() {
+      setLoading(true);
+      setError("");
 
-  async function sync() {
-    await Promise.all([dataRequest(), loadPaymentMethods()]);
-    if (!found.current) return;
+      const [productResponse, paymentResponse, sessionResponse] = await Promise.all([
+        checkoutProductDataHandler({ productID: params.productID }),
+        paymentMethodsHandler(),
+        checkSession(),
+      ]);
 
-    const sessionCheck = await checkSession();
-    const userDataCheck = await grabUserData();
-
-    if (sessionCheck?.success && userDataCheck?.success) {
-      setLoggedIn(true);
-      if (userDataCheck.addresses?.length === 0) {
-        setDialogType("addressRequired");
+      if (productResponse.status !== 200) {
         setLoading(false);
+        router.push("/");
         return;
       }
-      if (sessionCheck.data) genUserData.current = sessionCheck.data;
-      userDataCheck.addresses?.forEach((each) => {
-        if (each.is_default) genUserAddress.current = each;
-      });
-      if (genUserAddress.current.addressID === 0) {
-        setDialogType("defaultAddressRequired");
+
+      if (!sessionResponse?.success) {
         setLoading(false);
+        router.push("/sign-in");
         return;
       }
+
+      await grabUserData();
+
+      setProduct(productResponse.data);
+
+      const methods =
+        paymentResponse.status === 200 && Array.isArray(paymentResponse.data)
+          ? paymentResponse.data.filter((method: PaymentMethod) => method.status)
+          : [];
+
+      setPaymentMethods(methods);
+      setSelectedPaymentId(methods[0]?.id || null);
       setLoading(false);
-    } else {
-      router.push("/sign-in");
     }
-  }
 
-  async function submitOrder(confirmedOnlinePayment = false) {
-    if (!selectedPayment) return;
+    sync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.productID]);
 
-    if (selectedPayment.type !== "COD" && !confirmedOnlinePayment) {
-      setPaymentDialogOpen(true);
+  async function submitOrder() {
+    if (!product || !selectedPayment) return;
+
+    const userid = getAccountID(defaultAccount) || Number(userRef.current?.userID || userRef.current?.userid || 0);
+
+    if (!userid) {
+      setError("Không lấy được thông tin tài khoản. Vui lòng tải lại trang hoặc đăng nhập lại.");
       return;
     }
 
-    setPaymentDialogOpen(false);
-    setLoading(true);
+    setSubmitting(true);
+    setError("");
 
     const payload = {
-      userid: genUserData.current.userID,
+      userid,
       productid: params.productID,
-      colorid: params.colorID,
-      sizeid: params.sizeID,
       quantity,
-      gift_wrapping: giftOptions.gift_wrapping,
-      gift_wrap_style: giftOptions.gift_wrap_style,
-      gift_message: finalGiftMessage,
+      gift_wrapping: giftWrapping,
+      gift_wrap_style: giftWrapStyle,
+      gift_message: giftMessage,
     };
 
     const response =
-      selectedPayment.type === "COD"
+      getPaymentKind(selectedPayment) === "COD"
         ? await paymentOnDeliveryHandler(payload)
-        : await onlineCheckoutHandler({ ...payload, paymentMethod: normalizePaymentName(selectedPayment) });
+        : await onlineCheckoutHandler({
+            ...payload,
+            paymentMethod: normalizePaymentName(selectedPayment),
+          });
 
-    if (response.status === 200) {
+    if (response.status === 200 && response.data?.orderid) {
       router.push(`/order-confirmation/${response.data.orderid}`);
       return;
     }
 
-    orderCreationError.current = true;
-    setLoading(false);
+    setError(getCheckoutError(response as CheckoutResponse));
+    setSubmitting(false);
   }
 
-  useLayoutEffect(() => {
-    sync();
-  }, []);
+  if (loading) return <Loading />;
 
-  const DialogBox = ({ type }: { type: "addressRequired" | "defaultAddressRequired" }) => (
-    <Dialog open={dialogType === type} onClose={() => setDialogType(null)} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-          <DialogTitle className="text-lg font-bold text-gray-900">
-            {type === "addressRequired" ? "Address Required" : "Default Address Required"}
-          </DialogTitle>
-          <p className="mt-2 text-sm text-gray-600">
-            {type === "addressRequired"
-              ? "Please add an address to proceed with checkout."
-              : "Please add a default address or set an existing address as default."}
-          </p>
-          <button
-            onClick={() => router.push("/account-settings")}
-            className="mt-4 rounded-lg bg-primary-700 px-4 py-2 text-white"
-          >
-            Go to Account Settings
-          </button>
-        </DialogPanel>
+  if (!product) {
+    return <div className="mx-auto max-w-3xl p-8 text-center text-red-500">Không tìm thấy sản phẩm.</div>;
+  }
+
+  return (
+    <main className="mx-auto w-[92%] max-w-6xl py-10">
+      <div className="mb-8">
+        <p className="text-sm text-gray-500">Trang chủ / Thanh toán</p>
+        <h1 className="mt-2 text-3xl font-bold text-gray-900">Thanh toán đơn hàng</h1>
+        <p className="mt-2 text-gray-500">Kiểm tra sản phẩm, chọn phương thức thanh toán và xác nhận đơn hàng.</p>
       </div>
-    </Dialog>
-  );
 
-  const PaymentQrDialog = () => (
-    <Dialog open={paymentDialogOpen} onClose={() => setPaymentDialogOpen(false)} className="relative z-50">
-      <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
-          <DialogTitle className="text-lg font-bold text-gray-900">
-            Thanh toán bằng {selectedPayment?.name}
-          </DialogTitle>
-          <p className="mt-2 text-sm text-gray-600">
-            Quét mã QR bên dưới, thanh toán đúng số tiền rồi bấm “Tôi đã thanh toán” để tạo đơn hàng.
-          </p>
+      <div className="grid gap-8 lg:grid-cols-[1fr_430px]">
+        <section className="space-y-6">
+          <div className="rounded-3xl border bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <CheckCircleIcon className="h-6 w-6 text-green-600" />
+              <h2 className="text-xl font-semibold text-gray-900">Sản phẩm đặt mua</h2>
+            </div>
 
-          {paymentContent && (
-            <div className="mt-5 rounded-lg border border-gray-200 p-4 text-center">
-              <img src={paymentContent.imageUrl} alt={`QR ${selectedPayment?.name}`} className="mx-auto h-64 w-64 object-contain" />
-              <div className="mt-4 space-y-2 text-left text-sm text-gray-700">
-                <p><span className="font-semibold">Số tiền:</span> {formatPrice(totalAmount)}</p>
-                <p><span className="font-semibold">Nội dung:</span> {paymentContent.transferNote}</p>
-                {paymentContent.bankAccount && (
-                  <p><span className="font-semibold">Tài khoản:</span> {paymentContent.bankAccount} - {paymentContent.bankAccountName}</p>
+            <div className="mt-6 flex gap-5 rounded-2xl bg-gray-50 p-4">
+              <img
+                src={product.imglink || "/no-image.png"}
+                alt={product.imgalt || product.title}
+                className="h-32 w-32 rounded-2xl border bg-white object-contain"
+              />
+
+              <div className="flex flex-1 flex-col justify-center">
+                <h3 className="text-lg font-bold text-gray-900">{product.title}</h3>
+                <p className="mt-1 text-sm text-gray-500">Số lượng: {quantity}</p>
+                <p className="mt-3 text-xl font-bold text-red-500">{formatPrice(product.discountedprice)}</p>
+
+                {Number(product.discount || 0) > 0 && (
+                  <p className="mt-1 text-sm text-gray-400">
+                    Đã giảm {Number(product.discount)}% từ giá gốc {formatPrice(product.price)}
+                  </p>
                 )}
-                <p className="text-gray-500">{paymentContent.instructions}</p>
               </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <GiftIcon className="h-6 w-6 text-pink-500" />
+              <h2 className="text-xl font-semibold text-gray-900">Dịch vụ gói quà</h2>
+            </div>
+
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-2xl border p-4">
+              <input
+                type="checkbox"
+                checked={giftWrapping}
+                onChange={(e) => setGiftWrapping(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                <span className="block font-semibold text-gray-900">Gói quà cho sản phẩm</span>
+                <span className="text-sm text-gray-500">Phù hợp khi mua đồ chơi làm quà sinh nhật, Noel hoặc Trung thu.</span>
+              </span>
+            </label>
+
+            {giftWrapping && (
+              <div className="mt-4 grid gap-3">
+                <input
+                  value={giftWrapStyle}
+                  onChange={(e) => setGiftWrapStyle(e.target.value)}
+                  placeholder="Ví dụ: Gói giấy xanh, nơ đỏ"
+                  className="w-full rounded-xl border px-4 py-3 outline-none focus:border-yellow-400"
+                />
+                <textarea
+                  value={giftMessage}
+                  onChange={(e) => setGiftMessage(e.target.value)}
+                  placeholder="Lời nhắn tặng quà"
+                  rows={4}
+                  className="w-full rounded-xl border px-4 py-3 outline-none focus:border-yellow-400"
+                />
+              </div>
+            )}
+          </div>
+        </section>
+
+        <aside className="h-fit rounded-3xl border bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <TruckIcon className="h-6 w-6 text-yellow-500" />
+            <h2 className="text-xl font-semibold text-gray-900">Tóm tắt đơn hàng</h2>
+          </div>
+
+          <div className="mt-6 space-y-4 text-sm text-gray-700">
+            <div className="flex justify-between">
+              <span>Tạm tính</span>
+              <span className="font-semibold">{formatPrice(itemAmount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Phí giao hàng</span>
+              <span className="font-semibold">{formatPrice(shippingCost)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Phí COD</span>
+              <span className="font-semibold">{formatPrice(paymentFee)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-4 text-lg font-bold">
+              <span>Tổng cộng</span>
+              <span className="text-red-500">{formatPrice(totalAmount)}</span>
+            </div>
+          </div>
+
+          <div className="mt-8 flex items-center gap-3">
+            <CreditCardIcon className="h-6 w-6 text-blue-500" />
+            <h3 className="font-semibold text-gray-900">Phương thức thanh toán</h3>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {paymentMethods.map((method) => {
+              const active = selectedPaymentId === method.id;
+
+              return (
+                <button
+                  type="button"
+                  key={method.id}
+                  onClick={() => setSelectedPaymentId(method.id)}
+                  className={`w-full rounded-2xl border p-4 text-left transition ${
+                    active ? "border-yellow-400 bg-yellow-50 shadow-sm" : "border-gray-200 hover:border-yellow-300"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border ${
+                        active ? "border-yellow-500 bg-yellow-400" : "border-gray-300"
+                      }`}
+                    >
+                      {active && <span className="h-2 w-2 rounded-full bg-white" />}
+                    </span>
+
+                    <span className="flex-1">
+                      <span className="block font-bold text-gray-900">{method.name}</span>
+                      <span className="mt-1 block text-xs leading-5 text-gray-500">{paymentDescription(method)}</span>
+                      <span className="mt-2 inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                        {paymentBadge(method)}
+                      </span>
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {demoPaymentInfo(selectedPayment, totalAmount, params.productID)}
+
+          {error && (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+              {error}
             </div>
           )}
 
-          <div className="mt-5 flex gap-3">
-            <button
-              type="button"
-              onClick={() => setPaymentDialogOpen(false)}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
-            >
-              Hủy
-            </button>
-            <button
-              type="button"
-              onClick={() => submitOrder(true)}
-              className="flex-1 rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800"
-            >
-              Tôi đã thanh toán
-            </button>
-          </div>
-        </DialogPanel>
+          <button
+            type="button"
+            disabled={submitting || !selectedPayment}
+            onClick={submitOrder}
+            className="mt-6 h-12 w-full rounded-2xl bg-yellow-400 font-bold text-gray-900 transition hover:bg-yellow-500 disabled:cursor-not-allowed disabled:bg-gray-200"
+          >
+            {submitting ? "Đang tạo đơn..." : "PLACE ORDER"}
+          </button>
+        </aside>
       </div>
-    </Dialog>
-  );
-
-  return (
-    <section className="bg-white py-8 antialiased md:py-16">
-      <DialogBox type="addressRequired" />
-      <DialogBox type="defaultAddressRequired" />
-      <PaymentQrDialog />
-      {loading && <Loading />}
-
-      <form id="informational-form" onSubmit={(e) => { e.preventDefault(); submitOrder(false); }} className="mx-auto max-w-screen-xl px-4 2xl:px-0">
-        <ol className="mb-8 flex items-center gap-6 text-sm font-medium text-gray-500">
-          <li className="text-primary-700">1. Product</li>
-          <li className="text-primary-700">2. Checkout</li>
-          <li>3. Order summary</li>
-        </ol>
-
-        <div className="lg:flex lg:items-start lg:gap-12 xl:gap-16">
-          <div className="min-w-0 flex-1 space-y-8">
-            <div>
-              <h2 className="mb-4 text-xl font-semibold text-gray-900">Delivery Details</h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {[
-                  ["Your name", genUserData.current.userName],
-                  ["Your email*", genUserData.current.email],
-                  ["Country*", genUserAddress.current.country],
-                  ["City*", genUserAddress.current.city],
-                  ["Phone Number*", genUserData.current.mobile_number],
-                  ["Pin Code", genUserAddress.current.postalCode],
-                  ["Address 1", genUserAddress.current.addressLine1],
-                  ["Address 2", genUserAddress.current.addressLine2],
-                ].map(([label, value]) => (
-                  <label key={label} className="block text-sm font-medium text-gray-900">
-                    {label}
-                    <input
-                      readOnly
-                      value={String(value || "")}
-                      className="mt-2 block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm"
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="mb-4 text-xl font-semibold text-gray-900">Payment</h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {paymentMethods.map((method) => (
-                  <label
-                    key={method.id}
-                    className={`cursor-pointer rounded-lg border p-4 ${selectedPaymentId === method.id ? "border-primary-600 bg-primary-50" : "border-gray-200"}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="radio"
-                        name="payment-method"
-                        checked={selectedPaymentId === method.id}
-                        onChange={() => setSelectedPaymentId(method.id)}
-                        className="mt-1 h-4 w-4"
-                      />
-                      <div>
-                        <p className="font-medium text-gray-900">{method.name}</p>
-                        <p className="text-sm text-gray-500">{methodDescription(method)}</p>
-                        {Number(method.config?.fee || 0) > 0 && (
-                          <p className="mt-1 text-sm text-gray-500">+{formatPrice(Number(method.config?.fee))} phí xử lý</p>
-                        )}
-                      </div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-gray-200 p-4 sm:flex sm:items-center sm:gap-6">
-              <img src={data.imglink} alt={data.imgalt} className="h-20 w-24 object-contain" />
-              <div className="mt-4 flex-1 sm:mt-0">
-                <h4 className="text-lg font-semibold text-gray-900">{data.title}</h4>
-                <p className="text-sm text-gray-600">Size: {data.sizename}</p>
-                <p className="text-sm text-gray-600">Color: {data.colorname}</p>
-                <p className="text-sm text-gray-600">Quantity: {quantity}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xl font-bold text-gray-900">{formatPrice(lineDiscountedPrice)}</p>
-                {discountAmount > 0 && <p className="text-sm text-gray-500 line-through">{formatPrice(lineOriginalPrice)}</p>}
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-pink-100 bg-pink-50 p-4">
-              <h3 className="mb-3 text-lg font-semibold text-gray-900">🎁 Gift Options</h3>
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <input
-                  type="checkbox"
-                  checked={giftOptions.gift_wrapping}
-                  onChange={(e) => setGiftOptions({ ...giftOptions, gift_wrapping: e.target.checked })}
-                />
-                Add Gift Wrapping
-              </label>
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <select
-                  value={giftOptions.gift_wrap_style}
-                  onChange={(e) => setGiftOptions({ ...giftOptions, gift_wrap_style: e.target.value })}
-                  className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"
-                >
-                  <option value="">Select a wrapping style</option>
-                  <option>Classic Red</option>
-                  <option>Birthday Theme</option>
-                  <option>Christmas Theme</option>
-                  <option>Baby Blue</option>
-                  <option>Princess Pink</option>
-                </select>
-                <select
-                  value={giftOptions.gift_message_template}
-                  onChange={(e) => setGiftOptions({ ...giftOptions, gift_message_template: e.target.value })}
-                  className="rounded-lg border border-gray-300 bg-white p-2.5 text-sm"
-                >
-                  <option value="">Select a message template</option>
-                  <option>Happy Birthday! Wishing you joy and creativity!</option>
-                  <option>A special gift just for you!</option>
-                  <option>Merry Christmas!</option>
-                </select>
-              </div>
-              <input
-                value={giftOptions.gift_message}
-                onChange={(e) => setGiftOptions({ ...giftOptions, gift_message: e.target.value })}
-                placeholder="Personal Message"
-                className="mt-4 block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm"
-              />
-            </div>
-          </div>
-
-          <aside className="mt-8 w-full space-y-6 lg:mt-0 lg:max-w-md">
-            <div className="rounded-lg border border-gray-200 p-6">
-              <h3 className="mb-4 text-xl font-semibold text-gray-900">Order summary</h3>
-              <div className="divide-y divide-gray-200">
-                <div className="flex justify-between py-3 text-gray-600">
-                  <span>Subtotal</span>
-                  <span className="font-medium text-gray-900">{formatPrice(lineDiscountedPrice)}</span>
-                </div>
-                <div className="flex justify-between py-3 text-gray-600">
-                  <span>Shipping Charge</span>
-                  <span className="font-medium text-gray-900">{formatPrice(shipping)}</span>
-                </div>
-                {paymentFee > 0 && (
-                  <div className="flex justify-between py-3 text-gray-600">
-                    <span>Payment Processing Charge</span>
-                    <span className="font-medium text-gray-900">{formatPrice(paymentFee)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between py-3 text-gray-600">
-                  <span>Discount</span>
-                  <span className="font-medium text-green-600">{formatPrice(discountAmount)}</span>
-                </div>
-                <div className="flex justify-between py-3 text-lg font-bold text-gray-900">
-                  <span>Total</span>
-                  <span>{formatPrice(totalAmount)}</span>
-                </div>
-              </div>
-              <button
-                disabled={!loggedIn || loading || !selectedPayment}
-                type="submit"
-                className="mt-6 w-full rounded-lg bg-primary-700 px-5 py-3 text-sm font-medium text-white hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Place Order
-              </button>
-              {orderCreationError.current && <p className="mt-3 text-sm text-red-600">Không tạo được đơn hàng. Vui lòng thử lại.</p>}
-            </div>
-          </aside>
-        </div>
-      </form>
-    </section>
+    </main>
   );
 };
 
