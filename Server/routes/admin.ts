@@ -332,7 +332,6 @@ router.put("/admin/users/:userID/role", adminAuth, async (req: Request, res: Res
   }
 });
 
-// Soft delete: thực tế không nên xóa user đã có đơn hàng vì sẽ lỗi khóa ngoại và mất lịch sử bán hàng.
 router.delete("/admin/users/:userID", adminAuth, async (req: Request, res: Response) => {
   try {
     await client.query("UPDATE users SET is_active = false, updatedat = NOW() WHERE userid = $1", [req.params.userID]);

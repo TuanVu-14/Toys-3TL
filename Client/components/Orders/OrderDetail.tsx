@@ -1,6 +1,7 @@
+"use client"
 import formatDate from '@/app/api/dateConvert';
 import { orderDetailHandler } from '@/app/api/orders';
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Loading from '../Loading';
 import OrderNotFound from './OrderNotFound';
@@ -98,6 +99,7 @@ const OrderDetail = () => {
   const dataVar = useRef(emptyOrder);
   const data = dataVar.current;
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const found = useRef(false);
   const dataChecked = useRef(false);
   const loggedIn = useRef(true);
@@ -140,9 +142,12 @@ const OrderDetail = () => {
     }
   }
 
-  useLayoutEffect(() => {
+  useEffect(() => {
+    setMounted(true);
     fetchData();
   }, []);
+
+  if (!mounted) return null;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
