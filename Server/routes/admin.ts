@@ -87,20 +87,20 @@ async function upsertPrimaryProductImage(productID: number | string, imageUrl?: 
   if (!safeUrl) return;
 
   const existing = await client.query(
-    "SELECT imageid FROM productimages WHERE productid = $1 AND COALESCE(isprimary, false) = true LIMIT 1",
+    "SELECT imageid FROM productimages WHERE productid = $1::int AND COALESCE(isprimary, false) = true LIMIT 1",
     [productID],
   );
 
   if (existing.rows.length) {
     await client.query(
-      "UPDATE productimages SET imglink = $1, imgalt = COALESCE($2, imgalt), isprimary = true WHERE imageid = $3",
+      "UPDATE productimages SET imglink = $1, imgalt = COALESCE($2, imgalt), isprimary = true WHERE imageid = $3::int",
       [safeUrl, imageAlt || null, existing.rows[0].imageid],
     );
     return;
   }
 
   await client.query(
-    "INSERT INTO productimages (imageid, productid, imglink, imgalt, isprimary) VALUES ($1, $2, $3, $4, true)",
+    "INSERT INTO productimages (imageid, productid, imglink, imgalt, isprimary) VALUES ($1::int, $2::int, $3::text, $4::varchar, true)",
     [IDGenerator(), productID, safeUrl, imageAlt || null],
   );
 }
@@ -176,7 +176,7 @@ router.post("/admin/bootstrap", async (req: Request, res: Response) => {
     res.status(201).json({ message: "Admin account created", data });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -207,7 +207,7 @@ router.post("/admin/create", adminAuth, async (req: Request, res: Response) => {
     res.status(201).json({ message: "Admin account created", data });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -240,7 +240,7 @@ router.get("/admin/stats", adminAuth, async (_req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -254,7 +254,7 @@ router.get("/admin/users", adminAuth, async (_req: Request, res: Response) => {
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -285,7 +285,7 @@ router.post("/admin/users", adminAuth, async (req: Request, res: Response) => {
     res.status(201).json({ message: "User created successfully", data });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -314,7 +314,7 @@ router.put("/admin/users/:userID", adminAuth, async (req: Request, res: Response
     res.status(200).json({ message: "User updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -328,7 +328,7 @@ router.put("/admin/users/:userID/role", adminAuth, async (req: Request, res: Res
     res.status(200).json({ message: "Role updated", role: nextRole });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -338,7 +338,7 @@ router.delete("/admin/users/:userID", adminAuth, async (req: Request, res: Respo
     res.status(200).json({ message: "User disabled" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -361,7 +361,7 @@ router.get("/admin/products", adminAuth, async (_req: Request, res: Response) =>
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -395,7 +395,7 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
 
   try {
     if (!title || !categoryid || price === undefined || Number(price) < 0) {
-      return res.status(400).json({ error: "Missing or invalid title/category/price" });
+      return res.status(400).json({ error: "Thiếu tên sản phẩm, danh mục hoặc giá không hợp lệ." });
     }
 
     await client.query("BEGIN");
@@ -437,11 +437,11 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
     await upsertPrimaryProductImage(product.rows[0].productid, image_url || imglink || imgid, image_alt || imgalt || title);
 
     await client.query("COMMIT");
-    res.status(201).json({ data: product.rows[0] });
+    res.status(201).json({ message: "Thêm sản phẩm thành công", data: product.rows[0] });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -477,7 +477,7 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
 
   try {
     if (!title || !categoryid || price === undefined || Number(price) < 0) {
-      return res.status(400).json({ error: "Missing or invalid title/category/price" });
+      return res.status(400).json({ error: "Thiếu tên sản phẩm, danh mục hoặc giá không hợp lệ." });
     }
 
     await client.query("BEGIN");
@@ -526,11 +526,11 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
 
     await client.query("COMMIT");
 
-    res.status(200).json({ message: "Product updated" });
+    res.status(200).json({ message: "Cập nhật sản phẩm thành công" });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -553,7 +553,7 @@ router.put("/admin/products/:productID/params", adminAuth, async (req: Request, 
     res.status(200).json({ message: "Product params updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -561,10 +561,10 @@ router.put("/admin/products/:productID/params", adminAuth, async (req: Request, 
 router.delete("/admin/products/:productID", adminAuth, async (req: Request, res: Response) => {
   try {
     await client.query("UPDATE products SET is_active = false, updatedat = NOW() WHERE productid = $1", [req.params.productID]);
-    res.status(200).json({ message: "Product disabled" });
+    res.status(200).json({ message: "Đã ẩn sản phẩm" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -583,7 +583,7 @@ router.get("/admin/orders", adminAuth, async (_req: Request, res: Response) => {
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -764,7 +764,7 @@ router.get("/admin/orders/:orderID", adminAuth, async (req: Request, res: Respon
     });
   } catch (error) {
     console.error("GET /admin/orders/:orderID error:", error);
-    return res.status(500).json({ error: "Server Error" });
+    return res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -785,7 +785,7 @@ router.get("/admin/categories", adminAuth, async (_req: Request, res: Response) 
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -802,7 +802,7 @@ router.post("/admin/categories", adminAuth, async (req: Request, res: Response) 
     res.status(201).json({ data: response.rows[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -818,7 +818,7 @@ router.put("/admin/categories/:categoryID", adminAuth, async (req: Request, res:
     res.status(200).json({ message: "Category updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -830,7 +830,7 @@ router.delete("/admin/categories/:categoryID", adminAuth, async (req: Request, r
     res.status(200).json({ message: "Category deleted" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1010,7 +1010,7 @@ router.get("/admin/promotions", adminAuth, async (_req: Request, res: Response) 
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1027,7 +1027,7 @@ router.post("/admin/promotions", adminAuth, async (req: Request, res: Response) 
     res.status(201).json({ data: response.rows[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1040,7 +1040,7 @@ router.put("/admin/promotions/:promotionID/toggle", adminAuth, async (req: Reque
     res.status(200).json({ message: "Promotion status updated", is_active: newStatus });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1050,7 +1050,7 @@ router.delete("/admin/promotions/:promotionID", adminAuth, async (req: Request, 
     res.status(200).json({ message: "Promotion disabled" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1060,7 +1060,7 @@ router.get("/admin/payments", adminAuth, async (_req: Request, res: Response) =>
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1075,7 +1075,7 @@ router.post("/admin/payments", adminAuth, async (req: Request, res: Response) =>
     res.status(201).json({ data: response.rows[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1086,7 +1086,7 @@ router.put("/admin/payments/:paymentID", adminAuth, async (req: Request, res: Re
     res.status(200).json({ message: "Payment method updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1096,7 +1096,7 @@ router.delete("/admin/payments/:paymentID", adminAuth, async (req: Request, res:
     res.status(200).json({ message: "Payment method disabled" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1106,7 +1106,7 @@ router.get("/admin/shipping", adminAuth, async (_req: Request, res: Response) =>
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1121,7 +1121,7 @@ router.post("/admin/shipping", adminAuth, async (req: Request, res: Response) =>
     res.status(201).json({ data: response.rows[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1132,7 +1132,7 @@ router.put("/admin/shipping/:shippingID", adminAuth, async (req: Request, res: R
     res.status(200).json({ message: "Shipping zone updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1142,7 +1142,7 @@ router.delete("/admin/shipping/:shippingID", adminAuth, async (req: Request, res
     res.status(200).json({ message: "Shipping zone disabled" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1152,7 +1152,7 @@ router.get("/admin/content", adminAuth, async (_req: Request, res: Response) => 
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1161,13 +1161,13 @@ router.post("/admin/content", adminAuth, async (req: Request, res: Response) => 
   try {
     if (!title || !type || !location) return res.status(400).json({ error: "Missing required fields" });
     const response = await client.query(
-      "INSERT INTO content_items (title, type, location, content_data, status) VALUES ($1, $2, $3, $4, true) RETURNING id, title, type, location, status",
+      "INSERT INTO content_items (title, type, location, content_data, status) VALUES ($1::int, $2::int, $3::text, $4::varchar, true) RETURNING id, title, type, location, status",
       [title, type, location, content_data || null],
     );
     res.status(201).json({ data: response.rows[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1178,7 +1178,7 @@ router.put("/admin/content/:contentID", adminAuth, async (req: Request, res: Res
     res.status(200).json({ message: "Content updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1188,7 +1188,7 @@ router.delete("/admin/content/:contentID", adminAuth, async (req: Request, res: 
     res.status(200).json({ message: "Content disabled" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1207,7 +1207,7 @@ router.get("/admin/reviews", adminAuth, async (_req: Request, res: Response) => 
     res.status(200).json({ data: response.rows });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1218,7 +1218,7 @@ router.put("/admin/reviews/:reviewID/status", adminAuth, async (req: Request, re
     res.status(200).json({ message: "Review status updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1228,7 +1228,7 @@ router.delete("/admin/reviews/:reviewID", adminAuth, async (req: Request, res: R
     res.status(200).json({ message: "Review hidden" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1242,7 +1242,7 @@ router.get("/admin/settings", adminAuth, async (_req: Request, res: Response) =>
     res.status(200).json({ data: settings });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1264,7 +1264,7 @@ router.post("/admin/settings", adminAuth, async (req: Request, res: Response) =>
     res.status(200).json({ message: "Settings updated" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 
@@ -1348,7 +1348,7 @@ router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: "Lỗi máy chủ" });
   }
 });
 

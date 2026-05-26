@@ -28,13 +28,13 @@ async function fetchProductData(productid: string, quantity: number) {
            p.title,
            p.price,
            COALESCE(p.discount, 0) AS discount,
-           ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100) AS discountedprice,
+           ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100, 2) AS discountedprice,
            p.stock,
            pi.imglink,
            pi.imgalt
     FROM products p
     LEFT JOIN productimages pi ON pi.productid = p.productid AND pi.isprimary = true
-    WHERE p.productid = $1 AND COALESCE(p.is_active, true) = true
+    WHERE p.productid = $1::int AND COALESCE(p.is_active, true) = true
     LIMIT 1
   `;
   const productResult = await client.query(productQuery, [productid]);
@@ -69,34 +69,34 @@ function cartItemFilterClause(selectedIDs: number[]) {
 }
 
 async function getDefaultAddress(userid: number | string) {
-  const result = await client.query(`SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true`, [userid]);
+  const result = await client.query(`SELECT addressid FROM addresses WHERE userid = $1::int AND COALESCE(is_default, false) = true`, [userid]);
   return result.rows[0]?.addressid;
 }
 
 router.get("/checkout-cart/product-details/:userID", userIDSchema, async (req: Request, res: Response) => {
   const result = validationResult(req);
-  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
+  if (!result.isEmpty()) return res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: result.array() });
   const { userID } = matchedData(req);
 
   try {
     const selectedIDs = parseSelectedCartItemIDs(req.query.items);
     const filter = cartItemFilterClause(selectedIDs);
     const cartItems = await client.query(
-      `SELECT cartitemid, productid, quantity FROM cartitems WHERE userid = $1${filter.clause}`,
+      `SELECT cartitemid, productid, quantity FROM cartitems WHERE userid = $1::int${filter.clause}`,
       [userID, ...filter.params],
     );
-    if (cartItems.rows.length === 0) return res.status(404).json({ error: "cart items not found" });
+    if (cartItems.rows.length === 0) return res.status(404).json({ error: "Không có sản phẩm nào trong giỏ hàng." });
 
     const products = await Promise.all(
       cartItems.rows.map((each) => fetchProductData(each.productid, each.quantity)),
     );
     const validProducts = products.filter(Boolean);
-    if (validProducts.length === 0) return res.status(404).json({ error: "Product details not found" });
+    if (validProducts.length === 0) return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
 
     return res.status(200).json({ products: validProducts });
   } catch (error) {
     console.error("Error fetching cart checkout details:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Lỗi máy chủ khi lấy dữ liệu thanh toán giỏ hàng." });
   }
 });
 
@@ -124,18 +124,18 @@ async function createCartOrder({
     const selectedIDs = cartItemIDs.filter((id) => Number.isInteger(Number(id)) && Number(id) > 0).map(Number);
     const filter = cartItemFilterClause(selectedIDs);
     const cartItems = await client.query(
-      `SELECT cartitemid, productid, quantity FROM cartitems WHERE userid = $1${filter.clause}`,
+      `SELECT cartitemid, productid, quantity FROM cartitems WHERE userid = $1::int${filter.clause}`,
       [userID, ...filter.params],
     );
     if (cartItems.rows.length === 0) {
       await client.query("ROLLBACK");
-      return { status: 404, error: "cart items not found" };
+      return { status: 404, error: "Không có sản phẩm nào trong giỏ hàng." };
     }
 
     const addressid = await getDefaultAddress(userID);
     if (!addressid) {
       await client.query("ROLLBACK");
-      return { status: 404, error: "Address not found" };
+      return { status: 404, error: "Bạn chưa có địa chỉ giao hàng mặc định." };
     }
 
     let itemsAmount = 0;
@@ -147,7 +147,7 @@ async function createCartOrder({
       if (!product) continue;
       if (Number(product.stock || 0) < Number(item.quantity)) {
         await client.query("ROLLBACK");
-        return { status: 409, error: "Not enough stock" };
+        return { status: 409, error: "Số lượng mua vượt quá số lượng còn trong kho." };
       }
       const lineAmount = Number(product.discountedprice) * Number(item.quantity);
       itemsAmount += lineAmount;
@@ -157,17 +157,17 @@ async function createCartOrder({
 
     if (orderItems.length === 0) {
       await client.query("ROLLBACK");
-      return { status: 404, error: "Product details not found" };
+      return { status: 404, error: "Không tìm thấy sản phẩm." };
     }
 
-    const totalAmount = itemsAmount + totalShipping + paymentFee;
+    const totalAmount = Math.round((itemsAmount + totalShipping + paymentFee) * 100) / 100;
     const orderResult = await client.query(
       `
       INSERT INTO orders (
         userid, totalamount, orderstatus, order_code,
         is_gift, gift_message, gift_wrapping_type
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1::int, $2::numeric(18,2), $3::varchar, $4::varchar, $5::boolean, $6::text, $7::varchar)
       RETURNING orderid
       `,
       [userID, totalAmount, "Pending", "IN", gift_wrapping, gift_message, gift_wrap_style],
@@ -181,13 +181,13 @@ async function createCartOrder({
 
     await client.query(
       `INSERT INTO shipping (shippingid, orderid, addressid, shippingmethod, shippingcost, trackingnumber, deliveredat)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+       VALUES ($1::int, $2::int, $3::int, $4::varchar, $5::numeric(18,2), $6::varchar, $7::timestamp)`,
       [shippingid, orderid, addressid, "Giao hàng tiêu chuẩn", totalShipping, trackingnumber, getDeliveryDate()],
     );
 
     await client.query(
       `INSERT INTO payments (paymentid, orderid, paymentmethod, paymentstatus, amount, transactionid, billingaddress, paymentgateway_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+       VALUES ($1::int, $2::int, $3::varchar, $4::varchar, $5::numeric(18,2), $6::varchar, $7::int, $8::varchar)`,
       [paymentid, orderid, paymentMethod, paymentStatus, itemsAmount, transactionid, addressid, paymentStatus === "Paid" ? `DEMO-${Date.now()}` : null],
     );
 
@@ -199,7 +199,7 @@ async function createCartOrder({
           orderitemid, orderid, productid, quantity, shippingid, paymentid,
           gift_wrapping, gift_wrap_style, gift_message
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1::int, $2::int, $3::int, $4::int, $5::int, $6::int, $7::boolean, $8::text, $9::text)
         `,
         [
           orderitemid,
@@ -213,27 +213,27 @@ async function createCartOrder({
           gift_message,
         ],
       );
-      await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2 WHERE productid = $1`, [item.productid, item.quantity]);
-      await client.query(`UPDATE products SET stock = GREATEST(stock - $2, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`, [item.productid, item.quantity]);
+      await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2::int WHERE productid = $1::int`, [item.productid, item.quantity]);
+      // Không trừ stock lần nữa ở đây vì lego13.sql đã có trigger trg_orderitems_update_stock.
     }
 
     if (selectedIDs.length > 0) {
-      await client.query(`DELETE FROM cartitems WHERE userid = $1 AND cartitemid = ANY($2::int[])`, [userID, selectedIDs]);
+      await client.query(`DELETE FROM cartitems WHERE userid = $1::int AND cartitemid = ANY($2::int[])`, [userID, selectedIDs]);
     } else {
-      await client.query(`DELETE FROM cartitems WHERE userid = $1`, [userID]);
+      await client.query(`DELETE FROM cartitems WHERE userid = $1::int`, [userID]);
     }
     await client.query("COMMIT");
     return { status: 200, orderid };
-  } catch (error) {
+  } catch (error: any) {
     await client.query("ROLLBACK");
     console.error("Error creating cart order:", error);
-    return { status: 500, error: "Internal Server Error" };
+    return { status: 500, error: error?.message?.includes("inconsistent types") ? "Database đang còn trigger/câu SQL cũ gây lỗi kiểu dữ liệu. Hãy chạy file SQL fix trong thư mục db rồi thử lại." : error?.message?.includes("numeric") ? "Tổng tiền vượt giới hạn cột tiền. Hãy chạy file SQL fix numeric(18,2)." : "Không tạo được đơn hàng. Vui lòng thử lại." };
   }
 }
 
 router.post("/cart-payment-on-delivery/create-order", userIDSchema, async (req: Request, res: Response) => {
   const result = validationResult(req);
-  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
+  if (!result.isEmpty()) return res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: result.array() });
   const { userID } = matchedData(req);
   const cartItemIDs = parseSelectedCartItemIDs(req.body.cartItemIDs);
   const gift = getGiftOptions(req);
@@ -247,13 +247,13 @@ router.post("/cart-payment-on-delivery/create-order", userIDSchema, async (req: 
     ...gift,
   });
 
-  if (created.status === 200) return res.status(200).json({ orderid: created.orderid, message: "Successfully created order" });
+  if (created.status === 200) return res.status(200).json({ orderid: created.orderid, message: "Tạo đơn hàng thành công" });
   return res.status(created.status).json({ error: created.error });
 });
 
 router.post("/cart-online/create-order", paymentCreationSchema, async (req: Request, res: Response) => {
   const result = validationResult(req);
-  if (!result.isEmpty()) return res.status(400).json({ message: "Validation error", errors: result.array() });
+  if (!result.isEmpty()) return res.status(400).json({ message: "Dữ liệu không hợp lệ", errors: result.array() });
   const { userID } = matchedData(req);
   const cartItemIDs = parseSelectedCartItemIDs(req.body.cartItemIDs);
   const gift = getGiftOptions(req);
@@ -268,7 +268,7 @@ router.post("/cart-online/create-order", paymentCreationSchema, async (req: Requ
     ...gift,
   });
 
-  if (created.status === 200) return res.status(200).json({ orderid: created.orderid, message: "Successfully created order" });
+  if (created.status === 200) return res.status(200).json({ orderid: created.orderid, message: "Tạo đơn hàng thành công" });
   return res.status(created.status).json({ error: created.error });
 });
 

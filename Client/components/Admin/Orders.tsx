@@ -72,14 +72,14 @@ type AdminOrder = {
 
 // 8 trạng thái chuẩn theo nghiệp vụ
 const ORDER_STATUSES = [
-  { value: "Pending",    label: "Chờ xác nhận" },
-  { value: "Confirmed",  label: "Đã xác nhận" },
-  { value: "Preparing",  label: "Đang chuẩn bị hàng" },
-  { value: "Shipping",   label: "Đang giao hàng" },
-  { value: "Completed",  label: "Giao thành công / Hoàn thành" },
-  { value: "Cancelled",  label: "Đã hủy" },
-  { value: "Returned",   label: "Hoàn trả / Hoàn hàng" },
-  { value: "Failed",     label: "Giao thất bại" },
+  { value: "Pending", label: "Chờ xác nhận" },
+  { value: "Confirmed", label: "Đã xác nhận" },
+  { value: "Packed", label: "Đã đóng gói" },
+  { value: "Shipped", label: "Đang giao hàng" },
+  { value: "Delivered", label: "Giao thành công" },
+  { value: "Cancelled", label: "Đã hủy" },
+  { value: "Returned", label: "Hoàn trả" },
+  { value: "Failed", label: "Giao thất bại" },
 ];
 
 const displayDate = (value?: string) => {
@@ -172,7 +172,7 @@ export default function OrdersPage() {
                 ...order,
                 orderstatus: status,
                 order_status: status,
-                delivery_status: ["Completed"].includes(status) ? "Delivered" : order.delivery_status,
+                delivery_status: ["Delivered"].includes(status) ? "Delivered" : order.delivery_status,
               }
             : order,
         ),
@@ -184,7 +184,7 @@ export default function OrdersPage() {
                 ...prev,
                 orderstatus: status,
                 order_status: status,
-                delivery_status: ["Completed"].includes(status) ? "Delivered" : prev.delivery_status,
+                delivery_status: ["Delivered"].includes(status) ? "Delivered" : prev.delivery_status,
               }
             : prev,
         );

@@ -5,7 +5,7 @@ import { client } from "../data/DB";
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_ENCRYPTION_KEY as string;
 
-const FULFILLMENT_STATUSES = ["Preparing", "Shipping", "Completed", "Failed", "Prepared", "Packed", "Shipped", "Delivered"];
+const FULFILLMENT_STATUSES = ["Confirmed", "Packed", "Shipped", "Delivered", "Cancelled"];
 
 function parseCookie(cookieHeader: string | undefined) {
   return (cookieHeader || "").split(";").reduce<Record<string, string>>((acc, part) => {
@@ -338,10 +338,10 @@ router.put("/orders/:orderID/status", async (req: Request, res: Response) => {
   try {
     await client.query(
       `UPDATE orders
-       SET orderstatus = $1::text,
+       SET orderstatus = $1::varchar,
            tracking_number = COALESCE($2, tracking_number),
-           shipped_at = CASE WHEN $1::text IN ('Shipped', 'Shipping') THEN NOW() ELSE shipped_at END,
-           delivered_at = CASE WHEN $1::text IN ('Delivered', 'Completed') THEN NOW() ELSE delivered_at END,
+           shipped_at = CASE WHEN $1::varchar IN ('Shipped', 'Shipping') THEN NOW() ELSE shipped_at END,
+           delivered_at = CASE WHEN $1::varchar IN ('Delivered', 'Completed') THEN NOW() ELSE delivered_at END,
            updatedat = NOW()
        WHERE orderid = $3`,
       [status, trackingNumber || null, req.params.orderID],

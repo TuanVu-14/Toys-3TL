@@ -143,7 +143,8 @@ router.get('/home/banner', async (_req: Request, res: Response) => {
         createdat,
         updatedat
       FROM banners
-      ORDER BY bannerid ASC
+      WHERE COALESCE(is_active, true) = true
+      ORDER BY COALESCE(sort_order, 0), bannerid ASC
     `)
 
     res.status(200).json({ data: response.rows })

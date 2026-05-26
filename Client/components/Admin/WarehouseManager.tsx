@@ -25,12 +25,13 @@ const cardClass = "rounded-3xl bg-white border border-rose-100 shadow-sm p-6";
 const inputClass = "w-full rounded-xl border border-rose-100 bg-white px-4 py-3 text-sm outline-none focus:border-rose-300";
 const buttonClass = "rounded-xl bg-slate-950 text-white px-5 py-3 text-sm font-bold hover:bg-rose-500 transition";
 
-// Trạng thái cho Order Fulfillment (kho phụ trách: chuẩn bị → đóng gói → giao)
+// Trạng thái cho Xử lý đơn hàng (kho phụ trách: chuẩn bị → đóng gói → giao)
 const FULFILLMENT_STATUSES = [
-  { value: "Preparing", label: "Đang chuẩn bị hàng" },
-  { value: "Shipping",  label: "Đang giao hàng" },
-  { value: "Completed", label: "Giao thành công" },
-  { value: "Failed",    label: "Giao thất bại" },
+  { value: "Confirmed", label: "Đã xác nhận" },
+  { value: "Packed", label: "Đã đóng gói" },
+  { value: "Shipped", label: "Đang giao hàng" },
+  { value: "Delivered", label: "Giao thành công" },
+  { value: "Cancelled", label: "Đã hủy" },
 ];
 
 // Trạng thái cho hàng trả lại
@@ -189,7 +190,7 @@ export default function WarehouseManager() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {[["inventory", "Nhập / xuất kho"], ["alerts", "Cảnh báo tồn kho"], ["batches", "Lô sản phẩm"], ["orders", "Order Fulfillment"], ["returns", "Hàng trả lại"]].map(([key, label]) => (
+        {[["inventory", "Nhập / xuất kho"], ["alerts", "Cảnh báo tồn kho"], ["batches", "Lô sản phẩm"], ["orders", "Xử lý đơn hàng"], ["returns", "Hàng trả lại"]].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${tab === key ? "bg-rose-400 text-white" : "border border-rose-100 bg-white text-rose-500"}`}>{label}</button>
         ))}
       </div>
@@ -314,7 +315,7 @@ export default function WarehouseManager() {
         </TableCard>
       ) : null}
 
-      {/* ─── Tab: Order Fulfillment ───────────────────────────────────────── */}
+      {/* ─── Tab: Xử lý đơn hàng ───────────────────────────────────────── */}
       {tab === "orders" ? (
         <TableCard title="Chuẩn bị - Đóng gói - Giao hàng">
           <Table
@@ -324,7 +325,7 @@ export default function WarehouseManager() {
               order.username || order.email || "—",
               formatPrice(Number(order.totalamount || 0)),
               order.item_count,
-              order.status,
+              (FULFILLMENT_STATUSES.find((s) => s.value === order.status)?.label || order.status),
               <div className="flex flex-wrap gap-1" key={order.orderid}>
                 {FULFILLMENT_STATUSES.map((s) => (
                   <button

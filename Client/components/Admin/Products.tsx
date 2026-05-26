@@ -90,7 +90,8 @@ const emptyForm: ProductFormData = {
   is_active: true,
 };
 
-const inputClass = "mt-2 w-full rounded-2xl border border-rose-200 px-4 py-2 text-sm outline-none focus:border-rose-500";
+const inputClass =
+  "mt-2 w-full rounded-2xl border border-rose-200 px-4 py-2 text-sm outline-none focus:border-rose-500";
 
 function finalPrice(product: AdminProduct) {
   const price = Number(product.price || 0);
@@ -108,7 +109,9 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
+  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(
+    null,
+  );
   const [search, setSearch] = useState("");
   const [formData, setFormData] = useState<ProductFormData>(emptyForm);
   // preview ảnh được chọn từ file
@@ -119,11 +122,16 @@ export default function ProductsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [productsRes, categoriesRes] = await Promise.all([getAdminProducts(), getAdminCategories()]);
+      const [productsRes, categoriesRes] = await Promise.all([
+        getAdminProducts(),
+        getAdminCategories(),
+      ]);
       setProducts(productsRes.data?.data || []);
       setCategories(categoriesRes.data?.data || []);
     } catch (err) {
-      setError("Không lấy được sản phẩm. Kiểm tra server, token admin hoặc SQL bổ sung.");
+      setError(
+        "Không lấy được sản phẩm. Kiểm tra server, token admin hoặc SQL bổ sung.",
+      );
     } finally {
       setLoading(false);
     }
@@ -224,17 +232,25 @@ export default function ProductsPage() {
     };
 
     try {
-      if (editingProduct) await updateAdminProduct(editingProduct.productid, payload);
+      if (editingProduct)
+        await updateAdminProduct(editingProduct.productid, payload);
       else await createAdminProduct(payload);
       await fetchProducts();
       setShowForm(false);
     } catch {
-      setError("Không lưu được sản phẩm. Kiểm tra các trường bắt buộc và database.");
+      setError(
+        "Không lưu được sản phẩm. Kiểm tra các trường bắt buộc và database.",
+      );
     }
   };
 
   const handleDelete = async (productID: number) => {
-    if (!confirm("Ẩn sản phẩm này khỏi cửa hàng? Sản phẩm đã bán sẽ vẫn giữ lịch sử đơn hàng.")) return;
+    if (
+      !confirm(
+        "Ẩn sản phẩm này khỏi cửa hàng? Sản phẩm đã bán sẽ vẫn giữ lịch sử đơn hàng.",
+      )
+    )
+      return;
     try {
       await deleteAdminProduct(productID);
       await fetchProducts();
@@ -254,18 +270,44 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-3xl border border-rose-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-rose-500">Product Catalog Administration</p>
-          <h2 className="text-2xl font-bold text-slate-900">Quản lý sản phẩm đồ chơi</h2>
-          <p className="mt-1 text-sm text-slate-500">Quản lý giá, tồn kho, độ tuổi, kỹ năng, chất liệu và chứng nhận an toàn.</p>
+          <p className="text-sm font-semibold text-rose-500">
+            Quản trị danh mục sản phẩm
+          </p>
+          <h2 className="text-2xl font-bold text-slate-900">
+            Quản lý sản phẩm đồ chơi
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Quản lý giá, tồn kho, độ tuổi, kỹ năng, chất liệu và chứng nhận an
+            toàn.
+          </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên, thương hiệu, độ tuổi..." className="rounded-2xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-rose-500" />
-          <button onClick={fetchProducts} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Tải lại</button>
-          <button onClick={() => handleOpenForm()} className="rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600">Thêm sản phẩm</button>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm tên, thương hiệu, độ tuổi..."
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-rose-500"
+          />
+          <button
+            onClick={fetchProducts}
+            className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+          >
+            Tải lại
+          </button>
+          <button
+            onClick={() => handleOpenForm()}
+            className="rounded-2xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600"
+          >
+            Thêm sản phẩm
+          </button>
         </div>
       </div>
 
-      {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
+      {error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {error}
+        </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
         <table className="min-w-full divide-y divide-slate-100 text-sm">
@@ -281,91 +323,346 @@ export default function ProductsPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td className="px-5 py-8 text-center text-slate-500" colSpan={6}>Đang tải...</td></tr>
-            ) : filteredProducts.length === 0 ? (
-              <tr><td className="px-5 py-8 text-center text-slate-500" colSpan={6}>Không có sản phẩm nào.</td></tr>
-            ) : filteredProducts.map((product) => (
-              <tr key={product.productid} className={product.is_active === false ? "bg-slate-50 opacity-60" : ""}>
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <img src={productImage(product)} alt={product.image_alt || product.title} className="h-16 w-16 rounded-xl border border-slate-100 object-cover" />
-                    <div className="min-w-0">
-                      <div className="font-semibold text-slate-900">{product.title}</div>
-                      <div className="mt-1 max-w-xs truncate text-xs text-slate-500">{product.description || "Chưa có mô tả"}</div>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
-                    {product.isnew ? <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-600">New</span> : null}
-                    {product.issale ? <span className="rounded-full bg-rose-50 px-2 py-1 text-rose-600">Sale</span> : null}
-                    {product.is_active === false ? <span className="rounded-full bg-slate-200 px-2 py-1 text-slate-600">Đã ẩn</span> : null}
-                  </div>
-                </td>
-                <td className="px-5 py-4 text-slate-600">
-                  <div>{product.category || "Chưa phân loại"}</div>
-                  <div className="text-xs text-slate-400">{product.age_group || "—"} • {product.gender || "unisex"}</div>
-                  <div className="text-xs text-slate-400">{product.skill_type || "—"} • {product.brand || "—"}</div>
-                </td>
-                <td className="px-5 py-4">
-                  <div className="font-semibold text-slate-900">{formatPrice(finalPrice(product))}</div>
-                  <div className="text-xs text-slate-400 line-through">{formatPrice(Number(product.price || 0))}</div>
-                  {Number(product.discount || 0) > 0 ? <div className="text-xs font-semibold text-rose-500">-{product.discount}%</div> : null}
-                </td>
-                <td className="px-5 py-4"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${stockClass(product)}`}>{product.stock} / ngưỡng {product.low_stock_threshold || 10}</span></td>
-                <td className="px-5 py-4 text-xs text-slate-500">
-                  <div>{product.material || "—"}</div>
-                  <div>{product.safety_certificates || "Chưa nhập chứng nhận"}</div>
-                </td>
-                <td className="px-5 py-4 text-right">
-                  <button onClick={() => handleOpenForm(product)} className="mr-2 rounded-2xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50">Sửa</button>
-                  <button onClick={() => handleDelete(product.productid)} className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100">Ẩn</button>
+              <tr>
+                <td
+                  className="px-5 py-8 text-center text-slate-500"
+                  colSpan={6}
+                >
+                  Đang tải...
                 </td>
               </tr>
-            ))}
+            ) : filteredProducts.length === 0 ? (
+              <tr>
+                <td
+                  className="px-5 py-8 text-center text-slate-500"
+                  colSpan={6}
+                >
+                  Không có sản phẩm nào.
+                </td>
+              </tr>
+            ) : (
+              filteredProducts.map((product) => (
+                <tr
+                  key={product.productid}
+                  className={
+                    product.is_active === false ? "bg-slate-50 opacity-60" : ""
+                  }
+                >
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={productImage(product)}
+                        alt={product.image_alt || product.title}
+                        className="h-16 w-16 rounded-xl border border-slate-100 object-cover"
+                      />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-900">
+                          {product.title}
+                        </div>
+                        <div className="mt-1 max-w-xs truncate text-xs text-slate-500">
+                          {product.description || "Chưa có mô tả"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
+                      {product.isnew ? (
+                        <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-600">
+                          New
+                        </span>
+                      ) : null}
+                      {product.issale ? (
+                        <span className="rounded-full bg-rose-50 px-2 py-1 text-rose-600">
+                          Sale
+                        </span>
+                      ) : null}
+                      {product.is_active === false ? (
+                        <span className="rounded-full bg-slate-200 px-2 py-1 text-slate-600">
+                          Đã ẩn
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-slate-600">
+                    <div>{product.category || "Chưa phân loại"}</div>
+                    <div className="text-xs text-slate-400">
+                      {product.age_group || "—"} • {product.gender || "unisex"}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {product.skill_type || "—"} • {product.brand || "—"}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="font-semibold text-slate-900">
+                      {formatPrice(finalPrice(product))}
+                    </div>
+                    <div className="text-xs text-slate-400 line-through">
+                      {formatPrice(Number(product.price || 0))}
+                    </div>
+                    {Number(product.discount || 0) > 0 ? (
+                      <div className="text-xs font-semibold text-rose-500">
+                        -{product.discount}%
+                      </div>
+                    ) : null}
+                  </td>
+                  <td className="px-5 py-4">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${stockClass(product)}`}
+                    >
+                      {product.stock} / ngưỡng{" "}
+                      {product.low_stock_threshold || 10}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-xs text-slate-500">
+                    <div>{product.material || "—"}</div>
+                    <div>
+                      {product.safety_certificates || "Chưa nhập chứng nhận"}
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <button
+                      onClick={() => handleOpenForm(product)}
+                      className="mr-2 rounded-2xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.productid)}
+                      className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                    >
+                      Ẩn
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {showForm ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <form onSubmit={handleSubmitForm} className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-6 shadow-xl">
+          <form
+            onSubmit={handleSubmitForm}
+            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white p-6 shadow-xl"
+          >
             <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-900">{editingProduct ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới"}</h3>
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-full px-3 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+              <h3 className="text-xl font-bold text-slate-900">
+                {editingProduct ? "Cập nhật sản phẩm" : "Thêm sản phẩm mới"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="rounded-full px-3 py-1 text-slate-500 hover:bg-slate-100"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="text-sm font-semibold text-slate-700">Tên sản phẩm<input required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Danh mục
-                <select required value={formData.categoryid} onChange={(e) => setFormData({ ...formData, categoryid: Number(e.target.value) })} className={inputClass}>
+              <label className="text-sm font-semibold text-slate-700">
+                Tên sản phẩm
+                <input
+                  required
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Danh mục
+                <select
+                  required
+                  value={formData.categoryid}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      categoryid: Number(e.target.value),
+                    })
+                  }
+                  className={inputClass}
+                >
                   <option value={0}>Chọn danh mục</option>
-                  {categories.map((cat) => <option key={cat.categoryid} value={cat.categoryid}>{cat.name}</option>)}
+                  {categories.map((cat) => (
+                    <option key={cat.categoryid} value={cat.categoryid}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <label className="text-sm font-semibold text-slate-700 md:col-span-2">Mô tả<textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={inputClass} rows={3} /></label>
-              <label className="text-sm font-semibold text-slate-700">Giá<input type="number" min={0} required value={formData.price} onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Giảm giá %<input type="number" min={0} max={100} value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Tồn kho<input type="number" min={0} required value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Ngưỡng cảnh báo tồn thấp<input type="number" min={0} value={formData.low_stock_threshold} onChange={(e) => setFormData({ ...formData, low_stock_threshold: Number(e.target.value) })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Độ tuổi
-                <select value={formData.age_group} onChange={(e) => setFormData({ ...formData, age_group: e.target.value })} className={inputClass}>
-                  <option value="0-2">0-2</option><option value="3-5">3-5</option><option value="6-8">6-8</option><option value="9-12">9-12</option><option value="12+">12+</option><option value="All">All</option>
+              <label className="text-sm font-semibold text-slate-700 md:col-span-2">
+                Mô tả
+                <textarea
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className={inputClass}
+                  rows={3}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Giá
+                <input
+                  type="number"
+                  min={0}
+                  required
+                  value={formData.price}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: Number(e.target.value) })
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Giảm giá %
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={formData.discount}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      discount: Number(e.target.value),
+                    })
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Tồn kho
+                <input
+                  type="number"
+                  min={0}
+                  required
+                  value={formData.stock}
+                  onChange={(e) =>
+                    setFormData({ ...formData, stock: Number(e.target.value) })
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Ngưỡng cảnh báo tồn thấp
+                <input
+                  type="number"
+                  min={0}
+                  value={formData.low_stock_threshold}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      low_stock_threshold: Number(e.target.value),
+                    })
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Độ tuổi
+                <select
+                  value={formData.age_group}
+                  onChange={(e) =>
+                    setFormData({ ...formData, age_group: e.target.value })
+                  }
+                  className={inputClass}
+                >
+                  <option value="0-2">0-2</option>
+                  <option value="3-5">3-5</option>
+                  <option value="6-8">6-8</option>
+                  <option value="9-12">9-12</option>
+                  <option value="12+">12+</option>
+                  <option value="All">All</option>
                 </select>
               </label>
-              <label className="text-sm font-semibold text-slate-700">Giới tính
-                <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })} className={inputClass}>
-                  <option value="unisex">Unisex</option><option value="boy">Boy</option><option value="girl">Girl</option>
+              <label className="text-sm font-semibold text-slate-700">
+                Giới tính
+                <select
+                  value={formData.gender}
+                  onChange={(e) =>
+                    setFormData({ ...formData, gender: e.target.value })
+                  }
+                  className={inputClass}
+                >
+                  <option value="unisex">Mọi giới tính</option>
+                  <option value="boy">Bé trai</option>
+                  <option value="girl">Bé gái</option>
                 </select>
               </label>
-              <label className="text-sm font-semibold text-slate-700">Chất liệu<input value={formData.material} onChange={(e) => setFormData({ ...formData, material: e.target.value })} className={inputClass} placeholder="abs_plastic, wood, fabric..." /></label>
-              <label className="text-sm font-semibold text-slate-700">Kỹ năng phát triển<input value={formData.skill_type} onChange={(e) => setFormData({ ...formData, skill_type: e.target.value })} className={inputClass} placeholder="STEM, tư duy, vận động..." /></label>
-              <label className="text-sm font-semibold text-slate-700">Thương hiệu<input value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700">Mã nhà cung cấp<input value={formData.supplier_id} onChange={(e) => setFormData({ ...formData, supplier_id: e.target.value })} className={inputClass} /></label>
-              <label className="text-sm font-semibold text-slate-700 md:col-span-2">Chứng nhận an toàn<textarea value={formData.safety_certificates} onChange={(e) => setFormData({ ...formData, safety_certificates: e.target.value })} className={inputClass} rows={2} placeholder="CE, EN71, ASTM..." /></label>
-              <label className="text-sm font-semibold text-slate-700 md:col-span-2">Tags<input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} className={inputClass} /></label>
+              <label className="text-sm font-semibold text-slate-700">
+                Chất liệu
+                <input
+                  value={formData.material}
+                  onChange={(e) =>
+                    setFormData({ ...formData, material: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="abs_plastic, wood, fabric..."
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Kỹ năng phát triển
+                <input
+                  value={formData.skill_type}
+                  onChange={(e) =>
+                    setFormData({ ...formData, skill_type: e.target.value })
+                  }
+                  className={inputClass}
+                  placeholder="STEM, tư duy, vận động..."
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Thương hiệu
+                <input
+                  value={formData.brand}
+                  onChange={(e) =>
+                    setFormData({ ...formData, brand: e.target.value })
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Mã nhà cung cấp
+                <input
+                  value={formData.supplier_id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, supplier_id: e.target.value })
+                  }
+                  className={inputClass}
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700 md:col-span-2">
+                Chứng nhận an toàn
+                <textarea
+                  value={formData.safety_certificates}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      safety_certificates: e.target.value,
+                    })
+                  }
+                  className={inputClass}
+                  rows={2}
+                  placeholder="CE, EN71, ASTM..."
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700 md:col-span-2">
+                Tags
+                <input
+                  value={formData.tags}
+                  onChange={(e) =>
+                    setFormData({ ...formData, tags: e.target.value })
+                  }
+                  className={inputClass}
+                />
+              </label>
 
               {/* ─── Upload ảnh chính ─────────────────────────────────────── */}
               <div className="md:col-span-2">
-                <p className="text-sm font-semibold text-slate-700">Ảnh chính sản phẩm</p>
+                <p className="text-sm font-semibold text-slate-700">
+                  Ảnh chính sản phẩm
+                </p>
                 <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start">
                   {/* Preview */}
                   {imagePreview ? (
@@ -397,8 +694,12 @@ export default function ProductsPage() {
                       className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-rose-200 bg-rose-50 px-4 py-6 text-center transition hover:border-rose-400 hover:bg-rose-100"
                     >
                       <span className="text-2xl">📷</span>
-                      <span className="mt-1 text-sm font-semibold text-rose-500">Chọn ảnh từ máy tính</span>
-                      <span className="mt-1 text-xs text-slate-400">JPG, PNG, WEBP — tối đa 5MB</span>
+                      <span className="mt-1 text-sm font-semibold text-rose-500">
+                        Chọn ảnh từ máy tính
+                      </span>
+                      <span className="mt-1 text-xs text-slate-400">
+                        JPG, PNG, WEBP — tối đa 5MB
+                      </span>
                     </label>
                     <input
                       id="product-image-upload"
@@ -409,7 +710,9 @@ export default function ProductsPage() {
                       onChange={handleImageFileChange}
                     />
                     {imagePreview && (
-                      <p className="text-xs text-emerald-600">✓ Ảnh đã được chọn</p>
+                      <p className="text-xs text-emerald-600">
+                        ✓ Ảnh đã được chọn
+                      </p>
                     )}
                   </div>
                 </div>
@@ -417,15 +720,62 @@ export default function ProductsPage() {
             </div>
 
             <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-4">
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={formData.isnew} onChange={(e) => setFormData({ ...formData, isnew: e.target.checked })} /> New</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={formData.issale} onChange={(e) => setFormData({ ...formData, issale: e.target.checked })} /> Sale</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={formData.isdiscount} onChange={(e) => setFormData({ ...formData, isdiscount: e.target.checked })} /> Discount</label>
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={formData.is_active} onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })} /> Đang bán</label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={formData.isnew}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isnew: e.target.checked })
+                  }
+                />{" "}
+                Hàng mới
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={formData.issale}
+                  onChange={(e) =>
+                    setFormData({ ...formData, issale: e.target.checked })
+                  }
+                />{" "}
+                Đang giảm giá
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={formData.isdiscount}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isdiscount: e.target.checked })
+                  }
+                />{" "}
+                Có chiết khấu
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={(e) =>
+                    setFormData({ ...formData, is_active: e.target.checked })
+                  }
+                />{" "}
+                Đang bán
+              </label>
             </div>
 
             <div className="mt-6 flex gap-3">
-              <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 font-semibold hover:bg-slate-50">Hủy</button>
-              <button type="submit" className="flex-1 rounded-2xl bg-rose-500 px-4 py-3 font-semibold text-white hover:bg-rose-600">{editingProduct ? "Cập nhật" : "Thêm"}</button>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 font-semibold hover:bg-slate-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                className="flex-1 rounded-2xl bg-rose-500 px-4 py-3 font-semibold text-white hover:bg-rose-600"
+              >
+                {editingProduct ? "Cập nhật" : "Thêm"}
+              </button>
             </div>
           </form>
         </div>

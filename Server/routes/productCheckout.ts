@@ -12,7 +12,6 @@ const router = express.Router();
 
 const SHIPPING_CHARGE = 30000;
 const COD_FEE = 15000;
-
 const IDGenerator = () => Math.round(Math.random() * 1000 * 1000 * 100);
 
 function getGiftOptions(req: Request) {
@@ -29,9 +28,29 @@ function getDeliveryDate(): string {
   return deliveryDate.toISOString().replace("T", " ").slice(0, 19);
 }
 
+function toMoney(value: unknown) {
+  const number = Number(value || 0);
+  if (!Number.isFinite(number)) return 0;
+  return Math.round(number * 100) / 100;
+}
+
+function vietnameseCheckoutError(error: any) {
+  const message = String(error?.message || "");
+  if (message.includes("numeric field overflow")) {
+    return "Tổng tiền đơn hàng vượt giới hạn kiểu dữ liệu trong database. Hãy chạy file SQL fix numeric(18,2), sau đó đặt lại đơn hàng.";
+  }
+  if (message.includes("inconsistent types deduced for parameter")) {
+    return "Database đang còn trigger/câu SQL cũ gây lỗi kiểu dữ liệu. Hãy chạy file SQL fix trong thư mục db rồi thử lại.";
+  }
+  if (message.toLowerCase().includes("not enough stock") || message.toLowerCase().includes("stock")) {
+    return "Số lượng mua vượt quá số lượng còn trong kho.";
+  }
+  return message || "Không tạo được đơn hàng. Vui lòng thử lại.";
+}
+
 async function getDefaultAddress(userid: number | string) {
   const addressResult = await client.query(
-    `SELECT addressid FROM addresses WHERE userid = $1 AND is_default = true LIMIT 1`,
+    `SELECT addressid FROM addresses WHERE userid = $1::int AND COALESCE(is_default, false) = true LIMIT 1`,
     [userid],
   );
 
@@ -40,16 +59,17 @@ async function getDefaultAddress(userid: number | string) {
 
 async function getProductCheckoutData(productid: number | string) {
   const productQuery = `
-    SELECT p.title,
+    SELECT p.productid,
+           p.title,
            p.price,
            COALESCE(p.discount, 0) AS discount,
-           ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100) AS discountedprice,
+           ROUND(p.price * (100 - COALESCE(p.discount, 0)) / 100, 2) AS discountedprice,
            p.stock,
            pi.imglink,
            pi.imgalt
     FROM products p
     LEFT JOIN productimages pi ON pi.productid = p.productid AND COALESCE(pi.isprimary, false) = true
-    WHERE p.productid = $1 AND COALESCE(p.is_active, true) = true
+    WHERE p.productid = $1::int AND COALESCE(p.is_active, true) = true
     LIMIT 1
   `;
 
@@ -87,25 +107,25 @@ async function createSingleProductOrder({
 
     if (!product) {
       await client.query("ROLLBACK");
-      return { status: 404, error: "Product not found" };
+      return { status: 404, error: "Không tìm thấy sản phẩm." };
     }
 
     const addressid = await getDefaultAddress(userid);
 
     if (!addressid) {
       await client.query("ROLLBACK");
-      return { status: 404, error: "Address not found" };
+      return { status: 404, error: "Bạn chưa có địa chỉ giao hàng mặc định." };
     }
 
     const orderQuantity = Math.max(1, Number(quantity || 1));
 
     if (Number(product.stock || 0) < orderQuantity) {
       await client.query("ROLLBACK");
-      return { status: 409, error: "Not enough stock" };
+      return { status: 409, error: "Số lượng mua vượt quá số lượng còn trong kho." };
     }
 
-    const amount = Number(product.discountedprice) * orderQuantity;
-    const totalAmount = amount + SHIPPING_CHARGE + paymentFee;
+    const amount = toMoney(Number(product.discountedprice) * orderQuantity);
+    const totalAmount = toMoney(amount + SHIPPING_CHARGE + paymentFee);
     const shippingid = IDGenerator();
     const paymentid = IDGenerator();
     const orderitemid = IDGenerator();
@@ -117,7 +137,7 @@ async function createSingleProductOrder({
         userid, totalamount, orderstatus, order_code,
         is_gift, gift_message, gift_wrapping_type
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1::int, $2::numeric(18,2), $3::varchar, $4::varchar, $5::boolean, $6::text, $7::varchar)
       RETURNING orderid
       `,
       [userid, totalAmount, "Pending", "IN", gift_wrapping, gift_message, gift_wrap_style],
@@ -130,7 +150,7 @@ async function createSingleProductOrder({
     await client.query(
       `
       INSERT INTO shipping (shippingid, orderid, addressid, shippingmethod, shippingcost, trackingnumber, deliveredat)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1::int, $2::int, $3::int, $4::varchar, $5::numeric(18,2), $6::varchar, $7::timestamp)
       `,
       [shippingid, orderid, addressid, "Giao hàng tiêu chuẩn", SHIPPING_CHARGE, trackingnumber, deliveryDate],
     );
@@ -141,7 +161,7 @@ async function createSingleProductOrder({
         paymentid, orderid, paymentmethod, paymentstatus, amount,
         transactionid, billingaddress, paymentgateway_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      VALUES ($1::int, $2::int, $3::varchar, $4::varchar, $5::numeric(18,2), $6::varchar, $7::int, $8::varchar)
       `,
       [paymentid, orderid, paymentMethod, paymentStatus, amount, transactionid, addressid, gatewayId || null],
     );
@@ -152,27 +172,23 @@ async function createSingleProductOrder({
         orderitemid, orderid, productid, quantity, shippingid, paymentid,
         gift_wrapping, gift_wrap_style, gift_message
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1::int, $2::int, $3::int, $4::int, $5::int, $6::int, $7::boolean, $8::text, $9::text)
       `,
       [orderitemid, orderid, productid, orderQuantity, shippingid, paymentid, gift_wrapping, gift_wrap_style, gift_message],
     );
 
-    await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2 WHERE productid = $1`, [
+    await client.query(`UPDATE productparams SET sold = COALESCE(sold, 0) + $2::int WHERE productid = $1::int`, [
       productid,
       orderQuantity,
     ]);
 
-    await client.query(
-      `UPDATE products SET stock = GREATEST(stock - $2, 0), updatedat = CURRENT_TIMESTAMP WHERE productid = $1`,
-      [productid, orderQuantity],
-    );
-
+    // Không trừ stock lần nữa ở đây vì lego13.sql đã có trigger trg_orderitems_update_stock.
     await client.query("COMMIT");
     return { status: 200, orderid };
   } catch (error: any) {
     await client.query("ROLLBACK");
     console.error("Error creating order:", error);
-    return { status: 500, error: error?.message || "Internal Server Error" };
+    return { status: 500, error: vietnameseCheckoutError(error) };
   }
 }
 
@@ -185,7 +201,7 @@ router.get("/payment-methods", async (_req: Request, res: Response) => {
     return res.status(200).json(result.rows);
   } catch (error: any) {
     console.error("Error fetching payment methods:", error);
-    return res.status(500).json({ error: error?.message || "Internal Server Error" });
+    return res.status(500).json({ error: vietnameseCheckoutError(error) });
   }
 });
 
@@ -193,7 +209,7 @@ router.post("/payment-on-delivery/create-order", orderCreationSchema, async (req
   const result = validationResult(req);
 
   if (!result.isEmpty()) {
-    return res.status(400).json({ message: "Validation error", errors: result.array() });
+    return res.status(400).json({ message: "Dữ liệu đặt hàng không hợp lệ", errors: result.array() });
   }
 
   const { userid, productid, quantity } = matchedData(req);
@@ -220,7 +236,7 @@ router.post("/online/create-order", orderCreationSchema2, async (req: Request, r
   const result = validationResult(req);
 
   if (!result.isEmpty()) {
-    return res.status(400).json({ message: "Validation error", errors: result.array() });
+    return res.status(400).json({ message: "Dữ liệu đặt hàng không hợp lệ", errors: result.array() });
   }
 
   const { userid, productid, quantity } = matchedData(req);
@@ -249,7 +265,7 @@ router.get("/orders/status/:orderID", OrderIDSchema, async (req: Request, res: R
   const result = validationResult(req);
 
   if (!result.isEmpty()) {
-    return res.status(400).json({ message: "Validation error", errors: result.array() });
+    return res.status(400).json({ message: "Mã đơn hàng không hợp lệ", errors: result.array() });
   }
 
   const { orderID } = matchedData(req);
@@ -260,22 +276,23 @@ router.get("/orders/status/:orderID", OrderIDSchema, async (req: Request, res: R
       SELECT o.orderstatus, p.paymentstatus, p.paymentmethod
       FROM orders o
       LEFT JOIN payments p ON p.orderid = o.orderid
-      WHERE o.orderid = $1
+      WHERE o.orderid = $1::int
       `,
       [orderID],
     );
 
-    if (orderResult.rows.length === 0) return res.status(404).json({ error: "Order not found" });
+    if (orderResult.rows.length === 0) return res.status(404).json({ error: "Không tìm thấy đơn hàng." });
 
-    const { orderstatus, paymentstatus } = orderResult.rows[0];
+    const { orderstatus, paymentstatus, paymentmethod } = orderResult.rows[0];
+    const isCOD = String(paymentmethod || "").toLowerCase().includes("nhận hàng") || String(paymentmethod || "").toLowerCase().includes("cod");
 
     if (orderstatus === "Failed" || paymentstatus === "Failed") return res.sendStatus(210);
-    if (paymentstatus === "Pending") return res.sendStatus(205);
+    if (paymentstatus === "Pending" && !isCOD) return res.sendStatus(205);
 
     return res.sendStatus(200);
   } catch (error: any) {
     console.error("Error checking order status:", error);
-    return res.status(500).json({ error: error?.message || "Internal Server Error" });
+    return res.status(500).json({ error: vietnameseCheckoutError(error) });
   }
 });
 
@@ -283,7 +300,7 @@ router.get("/checkout/product-details/:productid", checkoutSchema, async (req: R
   const result = validationResult(req);
 
   if (!result.isEmpty()) {
-    return res.status(400).json({ message: "Validation error", errors: result.array() });
+    return res.status(400).json({ message: "Mã sản phẩm không hợp lệ", errors: result.array() });
   }
 
   const { productid } = matchedData(req);
@@ -292,7 +309,7 @@ router.get("/checkout/product-details/:productid", checkoutSchema, async (req: R
     const productDetails = await getProductCheckoutData(productid);
 
     if (!productDetails) {
-      return res.status(404).json({ error: "Product details not found" });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     return res.status(200).json({
@@ -303,10 +320,11 @@ router.get("/checkout/product-details/:productid", checkoutSchema, async (req: R
       imglink: productDetails.imglink,
       imgalt: productDetails.imgalt,
       shippingcost: SHIPPING_CHARGE,
+      stock: Number(productDetails.stock || 0),
     });
   } catch (error: any) {
     console.error("Error fetching product details:", error);
-    return res.status(500).json({ error: error?.message || "Internal Server Error" });
+    return res.status(500).json({ error: vietnameseCheckoutError(error) });
   }
 });
 

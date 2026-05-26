@@ -178,9 +178,9 @@ router.put("/orders/:orderID/status", async (req: Request, res: Response) => {
   try {
     const result = await client.query(
       `UPDATE orders
-       SET orderstatus = $1::text,
-           shipped_at = CASE WHEN $1::text IN ('Shipped', 'Shipping') AND shipped_at IS NULL THEN NOW() ELSE shipped_at END,
-           delivered_at = CASE WHEN $1::text IN ('Delivered','Completed') AND delivered_at IS NULL THEN NOW() ELSE delivered_at END,
+       SET orderstatus = $1::varchar,
+           shipped_at = CASE WHEN $1::varchar IN ('Shipped', 'Shipping') AND shipped_at IS NULL THEN NOW() ELSE shipped_at END,
+           delivered_at = CASE WHEN $1::varchar IN ('Delivered','Completed') AND delivered_at IS NULL THEN NOW() ELSE delivered_at END,
            updatedat = NOW()
        WHERE orderid = $2
        RETURNING orderid, orderstatus`,

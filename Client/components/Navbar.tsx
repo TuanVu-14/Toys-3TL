@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import { HeartIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 import { useAppSelector } from '@/app/hooks'
 import { toNumber } from '@/features/UIUpdates/CartWishlist'
-
+import NotificationBell from "./Notifications/NotificationBell";
 const Navbar = () => {
   const router = useRouter()
   const socialMedia = ['facebook', 'twitter', 'instagram', 'linkedin']
@@ -73,11 +73,11 @@ const Navbar = () => {
           </div>
 
           <p className="text-sm text-white">
-            FREE SHIPPING THIS WEEK ORDER OVER - 500K
+            MIỄN PHÍ VẬN CHUYỂN TUẦN NÀY CHO ĐƠN TỪ 500K
           </p>
 
           <p className="hidden sm:block text-sm font-medium text-white">
-            Shop Now
+            Mua ngay
           </p>
         </div>
       </div>
@@ -98,7 +98,7 @@ const Navbar = () => {
             >
               <input
                 name="searchEntry"
-                placeholder="Enter your product name..."
+                placeholder="Nhập tên sản phẩm..."
                 type="text"
                 className="outline-0 ml-5 text-[15px] w-[90%] placeholder:text-base placeholder:text-silver bg-inherit focus:outline-none"
               />
@@ -110,7 +110,7 @@ const Navbar = () => {
 
             <div className="gap-5 text-davysilver my-8 hidden sm:flex sm:items-center">
               <Account />
-
+              <NotificationBell />
               <button
                 type="button"
                 onClick={toggleFav}
@@ -167,7 +167,7 @@ const Navbar = () => {
                 <span className="relative inline-block px-3 py-1">
                   {btn.name.toUpperCase()}
 
-                  {btn.name === 'Sale' && (
+                  {btn.name === 'Khuyến mãi' && (
                     <svg
                       viewBox="0 0 120 40"
                       className="absolute -top-2 -left-2 w-[130%] h-[160%] pointer-events-none"
@@ -188,7 +188,7 @@ const Navbar = () => {
 
               {selectIndex === index &&
                 isDropdownVisible &&
-                btn.name === 'Categories' && (
+                btn.name === 'Danh mục' && (
                   <div
                     onMouseEnter={() => openDropdown(index)}
                     onMouseLeave={closeDropdown}
@@ -200,7 +200,7 @@ const Navbar = () => {
               {selectIndex === index &&
                 btn.isExtendable &&
                 isDropdownVisible &&
-                btn.name !== 'Categories' && (
+                btn.name !== 'Danh mục' && (
                   <div
                     onMouseEnter={() => openDropdown(index)}
                     onMouseLeave={closeDropdown}

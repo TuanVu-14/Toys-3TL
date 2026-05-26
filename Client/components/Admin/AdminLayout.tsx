@@ -5,32 +5,33 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppSelector } from "@/app/hooks";
 import useAuth from "@/controllers/Authentication";
+import NotificationBell from "@/components/Notifications/NotificationBell";
 
 type MenuItem = { label: string; href: string; roles: string[]; group: "common" | "sales" | "warehouse" | "system" };
 
 const sidebarItems: MenuItem[] = [
-  { label: "Dashboard", href: "/admin", roles: ["admin", "sales_staff", "warehouse_manager"], group: "common" },
-  { label: "Sales Management", href: "/admin/sales", roles: ["admin", "sales_staff"], group: "sales" },
-  { label: "Warehouse Management", href: "/admin/warehouse", roles: ["admin", "warehouse_manager"], group: "warehouse" },
-  { label: "Orders", href: "/admin/orders", roles: ["admin", "sales_staff", "warehouse_manager"], group: "sales" },
-  { label: "Products", href: "/admin/products", roles: ["admin"], group: "system" },
-  { label: "Users", href: "/admin/users", roles: ["admin"], group: "system" },
-  { label: "Categories", href: "/admin/categories", roles: ["admin"], group: "system" },
-  { label: "Brands", href: "/admin/brands", roles: ["admin"], group: "system" },
-  { label: "Collections", href: "/admin/collections", roles: ["admin"], group: "system" },
-  { label: "Reviews", href: "/admin/reviews", roles: ["admin", "sales_staff"], group: "sales" },
-  { label: "Shipping", href: "/admin/shipping", roles: ["admin", "warehouse_manager"], group: "warehouse" },
-  { label: "Payments", href: "/admin/payments", roles: ["admin"], group: "system" },
-  { label: "Content", href: "/admin/content", roles: ["admin"], group: "system" },
-  { label: "Reports", href: "/admin/reports", roles: ["admin"], group: "system" },
-  { label: "Settings", href: "/admin/settings", roles: ["admin"], group: "system" },
+  { label: "Tổng quan", href: "/admin", roles: ["admin", "sales_staff", "warehouse_manager"], group: "common" },
+  { label: "Quản lý bán hàng", href: "/admin/sales", roles: ["admin", "sales_staff"], group: "sales" },
+  { label: "Quản lý kho", href: "/admin/warehouse", roles: ["admin", "warehouse_manager"], group: "warehouse" },
+  { label: "Đơn hàng", href: "/admin/orders", roles: ["admin", "sales_staff", "warehouse_manager"], group: "sales" },
+  { label: "Sản phẩm", href: "/admin/products", roles: ["admin"], group: "system" },
+  { label: "Người dùng", href: "/admin/users", roles: ["admin"], group: "system" },
+  { label: "Danh mục", href: "/admin/categories", roles: ["admin"], group: "system" },
+  { label: "Thương hiệu", href: "/admin/brands", roles: ["admin"], group: "system" },
+  { label: "Bộ sưu tập", href: "/admin/collections", roles: ["admin"], group: "system" },
+  { label: "Đánh giá", href: "/admin/reviews", roles: ["admin", "sales_staff"], group: "sales" },
+  { label: "Vận chuyển", href: "/admin/shipping", roles: ["admin", "warehouse_manager"], group: "warehouse" },
+  { label: "Thanh toán", href: "/admin/payments", roles: ["admin"], group: "system" },
+  { label: "Nội dung", href: "/admin/content", roles: ["admin"], group: "system" },
+  { label: "Báo cáo", href: "/admin/reports", roles: ["admin"], group: "system" },
+  { label: "Cài đặt", href: "/admin/settings", roles: ["admin"], group: "system" },
 ];
 
 const roleNames: Record<string, string> = {
-  admin: "System Admin",
-  sales_staff: "Sales Staff",
-  warehouse_manager: "Warehouse Manager",
-  customer: "Customer",
+  admin: "Quản trị hệ thống",
+  sales_staff: "Nhân viên bán hàng",
+  warehouse_manager: "Quản trị kho",
+  customer: "Khách hàng",
 };
 
 const fallbackByRole: Record<string, string> = {
@@ -93,8 +94,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
         <div className="rounded-3xl bg-white p-8 text-center shadow-sm">
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-rose-100 border-t-rose-500" />
-          <h1 className="text-lg font-bold text-slate-900">Checking access</h1>
-          <p className="mt-1 text-sm">Please wait...</p>
+          <h1 className="text-lg font-bold text-slate-900">Đang kiểm tra quyền truy cập</h1>
+          <p className="mt-1 text-sm">Vui lòng đợi...</p>
         </div>
       </div>
     );
@@ -138,10 +139,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="sticky top-0 z-30 border-b border-rose-100 bg-white/90 px-4 py-4 backdrop-blur lg:px-8">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">Admin Console › {roleNames[role]}</p>
-              <h1 className="text-xl font-bold text-slate-900">Management Dashboard</h1>
+              <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">Bảng quản trị › {roleNames[role]}</p>
+              <h1 className="text-xl font-bold text-slate-900">Management Tổng quan</h1>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 font-bold text-white">{roleInitial(role)}</div>
+            <div className="flex items-center gap-3"><NotificationBell /><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 font-bold text-white">{roleInitial(role)}</div></div>
           </div>
           <div className="mt-4 flex gap-2 overflow-x-auto lg:hidden">
             {menu.map((item) => <Link key={item.href} href={item.href} className={`whitespace-nowrap rounded-2xl px-3 py-2 text-xs font-semibold ${pathname === item.href ? "bg-rose-500 text-white" : "bg-slate-100 text-slate-600"}`}>{item.label}</Link>)}

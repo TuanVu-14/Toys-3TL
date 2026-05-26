@@ -7,20 +7,20 @@ type NavButton = {
 };
 
 const navBtns: NavButton[] = [
-  { name: 'Home', isExtendable: false, extendables: [], catLink: '/' },
-  { name: 'Categories', isExtendable: false, extendables: [], catLink: '/categories/lego-building' },
+  { name: 'Trang chủ', isExtendable: false, extendables: [], catLink: '/' },
+  { name: 'Danh mục', isExtendable: false, extendables: [], catLink: '/categories/lego-building' },
   { name: 'Lego', isExtendable: false, extendables: [], catLink: '/categories/lego-building' },
-  { name: 'New arrival', isExtendable: false, extendables: [], catLink: '/categories/new-arrival' },
-  { name: 'Best sellers', isExtendable: false, extendables: [], catLink: '/categories/best-sellers' },
-  { name: 'Sale', isExtendable: false, extendables: [], catLink: '/categories/sale' },
-  { name: 'Blog', isExtendable: false, extendables: [], catLink: '/blog' },
+  { name: 'Sản phẩm mới', isExtendable: false, extendables: [], catLink: '/categories/new-arrival' },
+  { name: 'Bán chạy', isExtendable: false, extendables: [], catLink: '/categories/best-sellers' },
+  { name: 'Khuyến mãi', isExtendable: false, extendables: [], catLink: '/categories/sale' },
+  { name: 'Bài viết', isExtendable: false, extendables: [], catLink: '/blog' },
 ];
 const categoryDropDown = [
   {
-    title: 'LEGO & Building',
+    title: 'LEGO & Lắp ráp',
     catLink: '/categories/lego-building',
     imgLink: '/images/sale.jpg',
-    imgAlt: 'LEGO & Building',
+    imgAlt: 'LEGO & Lắp ráp',
     imgRedirectLink: '/categories/lego-building',
     subCategories: [
       { title: 'LEGO lắp ráp', link: '/categories/lego-building' },
@@ -31,10 +31,10 @@ const categoryDropDown = [
     ],
   },
   {
-    title: 'STEM & Science',
+    title: 'STEM & Khoa học',
     catLink: '/categories/stem-science',
     imgLink: '/images/sale2.jpg',
-    imgAlt: 'STEM & Science',
+    imgAlt: 'STEM & Khoa học',
     imgRedirectLink: '/categories/stem-science',
     subCategories: [
       { title: 'Đồ chơi STEM', link: '/categories/stem-science' },
@@ -45,10 +45,10 @@ const categoryDropDown = [
     ],
   },
   {
-    title: 'Remote Control',
+    title: 'Điều khiển từ xa',
     catLink: '/categories/remote-control',
     imgLink: '/images/sale3.jpg',
-    imgAlt: 'Remote Control',
+    imgAlt: 'Điều khiển từ xa',
     imgRedirectLink: '/categories/remote-control',
     subCategories: [
       { title: 'Xe điều khiển', link: '/categories/remote-control' },
@@ -59,10 +59,10 @@ const categoryDropDown = [
     ],
   },
   {
-    title: 'Dolls & Figures',
+    title: 'Búp bê & Mô hình',
     catLink: '/categories/dolls-figures',
     imgLink: '/images/sale4.png',
-    imgAlt: 'Dolls & Figures',
+    imgAlt: 'Búp bê & Mô hình',
     imgRedirectLink: '/categories/dolls-figures',
     subCategories: [
       { title: 'Búp bê', link: '/categories/dolls-figures' },
@@ -73,10 +73,10 @@ const categoryDropDown = [
     ],
   },
   {
-    title: 'Board Games',
+    title: 'Board game',
     catLink: '/categories/board-games',
     imgLink: '',
-    imgAlt: 'Board Games',
+    imgAlt: 'Board game',
     imgRedirectLink: '/categories/board-games',
     subCategories: [
       { title: 'Đồ chơi gia đình', link: '/categories/board-games' },
@@ -87,38 +87,38 @@ const categoryDropDown = [
     ],
   },
   {
-    title: 'Outdoor & Baby',
+    title: 'Ngoài trời & Em bé',
     catLink: '/categories/outdoor-toys',
     imgLink: '',
-    imgAlt: 'Outdoor & Baby',
+    imgAlt: 'Ngoài trời & Em bé',
     imgRedirectLink: '/categories/outdoor-toys',
     subCategories: [
-      { title: 'Outdoor Toys', link: '/categories/outdoor-toys' },
-      { title: 'Baby Toys', link: '/categories/baby-toys' },
+      { title: 'Đồ chơi ngoài trời', link: '/categories/outdoor-toys' },
+      { title: 'Đồ chơi em bé', link: '/categories/baby-toys' },
       { title: 'Vận động ngoài trời', link: '/categories/outdoor-toys' },
       { title: 'Đồ chơi 0-2 tuổi', link: '/categories/baby-toys' },
       { title: 'An toàn cho bé', link: '/categories/baby-toys' },
     ],
   },
   {
-    title: 'Creative & Puzzle',
+    title: 'Sáng tạo & Xếp hình',
     catLink: '/categories/arts-crafts',
     imgLink: '',
-    imgAlt: 'Creative & Puzzle',
+    imgAlt: 'Sáng tạo & Xếp hình',
     imgRedirectLink: '/categories/arts-crafts',
     subCategories: [
-      { title: 'Arts & Crafts', link: '/categories/arts-crafts' },
-      { title: 'Puzzles', link: '/categories/puzzles' },
+      { title: 'Mỹ thuật & Thủ công', link: '/categories/arts-crafts' },
+      { title: 'Xếp hình', link: '/categories/puzzles' },
       { title: 'Mỹ thuật', link: '/categories/arts-crafts' },
       { title: 'Sáng tạo thủ công', link: '/categories/arts-crafts' },
       { title: 'Rèn trí nhớ', link: '/categories/puzzles' },
     ],
   },
   {
-    title: 'Musical Toys',
+    title: 'Đồ chơi âm nhạc',
     catLink: '/categories/musical-toys',
     imgLink: '',
-    imgAlt: 'Musical Toys',
+    imgAlt: 'Đồ chơi âm nhạc',
     imgRedirectLink: '/categories/musical-toys',
     subCategories: [
       { title: 'Đồ chơi âm nhạc', link: '/categories/musical-toys' },
@@ -131,52 +131,52 @@ const categoryDropDown = [
 ];
 
 const leftStatus = [
-  { imgLink: '/images/icon.png', title: 'LEGO & Building', links: [{ title: 'LEGO lắp ráp', link: '/categories/lego-building' }] },
-  { imgLink: '/images/icon1.png', title: 'STEM & Science', links: [{ title: 'Đồ chơi STEM', link: '/categories/stem-science' }] },
-  { imgLink: '/images/icon2.png', title: 'Remote Control', links: [{ title: 'Xe điều khiển', link: '/categories/remote-control' }] },
-  { imgLink: '/images/icon3.jpg', title: 'Dolls & Figures', links: [{ title: 'Búp bê', link: '/categories/dolls-figures' }] },
-  { imgLink: '/images/icon4.png', title: 'Board Games', links: [{ title: 'Cờ bàn', link: '/categories/board-games' }] },
-  { imgLink: '/images/icon5.png', title: 'Outdoor Toys', links: [{ title: 'Vận động ngoài trời', link: '/categories/outdoor-toys' }] },
-  { imgLink: '/images/icon6.png', title: 'Baby Toys', links: [{ title: 'Đồ chơi 0-2 tuổi', link: '/categories/baby-toys' }] },
-  { imgLink: '/images/icon7.png', title: 'Arts & Crafts', links: [{ title: 'Mỹ thuật', link: '/categories/arts-crafts' }] },
-  { imgLink: '/images/icon8.png', title: 'Puzzles', links: [{ title: 'Rèn trí nhớ', link: '/categories/puzzles' }] },
-  { imgLink: '/images/icon9.png', title: 'Musical Toys', links: [{ title: 'Nhạc cụ trẻ em', link: '/categories/musical-toys' }] },
+  { imgLink: '/images/icon.png', title: 'LEGO & Lắp ráp', links: [{ title: 'LEGO lắp ráp', link: '/categories/lego-building' }] },
+  { imgLink: '/images/icon1.png', title: 'STEM & Khoa học', links: [{ title: 'Đồ chơi STEM', link: '/categories/stem-science' }] },
+  { imgLink: '/images/icon2.png', title: 'Điều khiển từ xa', links: [{ title: 'Xe điều khiển', link: '/categories/remote-control' }] },
+  { imgLink: '/images/icon3.jpg', title: 'Búp bê & Mô hình', links: [{ title: 'Búp bê', link: '/categories/dolls-figures' }] },
+  { imgLink: '/images/icon4.png', title: 'Board game', links: [{ title: 'Cờ bàn', link: '/categories/board-games' }] },
+  { imgLink: '/images/icon5.png', title: 'Đồ chơi ngoài trời', links: [{ title: 'Vận động ngoài trời', link: '/categories/outdoor-toys' }] },
+  { imgLink: '/images/icon6.png', title: 'Đồ chơi em bé', links: [{ title: 'Đồ chơi 0-2 tuổi', link: '/categories/baby-toys' }] },
+  { imgLink: '/images/icon7.png', title: 'Mỹ thuật & Thủ công', links: [{ title: 'Mỹ thuật', link: '/categories/arts-crafts' }] },
+  { imgLink: '/images/icon8.png', title: 'Xếp hình', links: [{ title: 'Rèn trí nhớ', link: '/categories/puzzles' }] },
+  { imgLink: '/images/icon9.png', title: 'Đồ chơi âm nhạc', links: [{ title: 'Nhạc cụ trẻ em', link: '/categories/musical-toys' }] },
 ];
 
 const footerSections = [
   {
-    sectionName: 'Popular Categories',
+    sectionName: 'Danh mục phổ biến',
     items: [
-      { title: 'LEGO & Building', link: '/categories/lego-building' },
-      { title: 'STEM & Science', link: '/categories/stem-science' },
-      { title: 'Remote Control', link: '/categories/remote-control' },
-      { title: 'Dolls & Figures', link: '/categories/dolls-figures' },
-      { title: 'Board Games', link: '/categories/board-games' },
+      { title: 'LEGO & Lắp ráp', link: '/categories/lego-building' },
+      { title: 'STEM & Khoa học', link: '/categories/stem-science' },
+      { title: 'Điều khiển từ xa', link: '/categories/remote-control' },
+      { title: 'Búp bê & Mô hình', link: '/categories/dolls-figures' },
+      { title: 'Board game', link: '/categories/board-games' },
     ],
   },
   {
-    sectionName: 'Products',
+    sectionName: 'Sản phẩm',
     items: [
       { title: 'Blog', link: '/blog' },
-      { title: 'Contact Us', link: '/contact' },
-      { title: 'Our Services', link: '/our-services' },
+      { title: 'Liên hệ', link: '/contact' },
+      { title: 'Dịch vụ', link: '/our-services' },
     ],
   },
   {
-    sectionName: 'Our Company',
+    sectionName: 'Cửa hàng',
     items: [
-      { title: 'About Us', link: '/about' },
-      { title: 'Privacy Policy', link: '/policy/privacypolicy' },
-      { title: 'Secure Payment', link: '/securepayment' },
-      { title: 'Terms And Conditions', link: '/policy/terms&conditions' },
-      { title: 'Refund & Cancellation', link: '/policy/refund&cancellation' },
+      { title: 'Giới thiệu', link: '/about' },
+      { title: 'Chính sách bảo mật', link: '/policy/privacypolicy' },
+      { title: 'Thanh toán an toàn', link: '/securepayment' },
+      { title: 'Điều khoản sử dụng', link: '/policy/terms&conditions' },
+      { title: 'Đổi trả & Hủy đơn', link: '/policy/refund&cancellation' },
     ],
   },
   {
-    sectionName: 'Contact',
+    sectionName: 'Liên hệ',
     items: [
-      { title: 'Location: SN 26B, Đường Nguyễn Thái Học, phường Vĩnh Phúc, tỉnh Phú Thọ', link: '#' },
-      { title: 'Phone: 0384361840', link: '#' },
+      { title: 'Địa chỉ: SN 26B, Đường Nguyễn Thái Học, phường Vĩnh Phúc, tỉnh Phú Thọ', link: '#' },
+      { title: 'Số điện thoại: 0384361840', link: '#' },
       { title: 'Email: uno22516@gmail.com', link: '#' },
     ],
   },
@@ -249,16 +249,16 @@ const serviceFeatures: InfoFeature[] = [];
 const currentEvent = {};
 const footerCategories = footerSections;
 const allCategories = [
-  { name: 'LEGO & Building', link: '/categories/lego-building' },
-  { name: 'STEM & Science', link: '/categories/stem-science' },
-  { name: 'Remote Control', link: '/categories/remote-control' },
-  { name: 'Dolls & Figures', link: '/categories/dolls-figures' },
-  { name: 'Board Games', link: '/categories/board-games' },
-  { name: 'Outdoor Toys', link: '/categories/outdoor-toys' },
-  { name: 'Baby Toys', link: '/categories/baby-toys' },
-  { name: 'Arts & Crafts', link: '/categories/arts-crafts' },
-  { name: 'Puzzles', link: '/categories/puzzles' },
-  { name: 'Musical Toys', link: '/categories/musical-toys' },
+  { name: 'LEGO & Lắp ráp', link: '/categories/lego-building' },
+  { name: 'STEM & Khoa học', link: '/categories/stem-science' },
+  { name: 'Điều khiển từ xa', link: '/categories/remote-control' },
+  { name: 'Búp bê & Mô hình', link: '/categories/dolls-figures' },
+  { name: 'Board game', link: '/categories/board-games' },
+  { name: 'Đồ chơi ngoài trời', link: '/categories/outdoor-toys' },
+  { name: 'Đồ chơi em bé', link: '/categories/baby-toys' },
+  { name: 'Mỹ thuật & Thủ công', link: '/categories/arts-crafts' },
+  { name: 'Xếp hình', link: '/categories/puzzles' },
+  { name: 'Đồ chơi âm nhạc', link: '/categories/musical-toys' },
 ];
 
 export {
