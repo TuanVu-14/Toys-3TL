@@ -7,6 +7,7 @@ import {
   OrderIDSchema,
 } from "../validators/productCheckoutValidator";
 import { matchedData, validationResult } from "express-validator";
+import { createRoleNotification, createUserNotification } from "./notifications";
 
 const router = express.Router();
 
@@ -46,6 +47,14 @@ function vietnameseCheckoutError(error: any) {
     return "Số lượng mua vượt quá số lượng còn trong kho.";
   }
   return message || "Không tạo được đơn hàng. Vui lòng thử lại.";
+}
+
+async function safeCreateNotification(task: () => Promise<void>) {
+  try {
+    await task();
+  } catch (error) {
+    console.error("Notification creation failed, order will continue:", error);
+  }
 }
 
 async function getDefaultAddress(userid: number | string) {
@@ -183,6 +192,47 @@ async function createSingleProductOrder({
     ]);
 
     // Không trừ stock lần nữa ở đây vì lego13.sql đã có trigger trg_orderitems_update_stock.
+
+    await safeCreateNotification(() => createUserNotification({
+      userid,
+      title: `Đặt hàng thành công #${orderid}`,
+      message: `Bạn đã đặt ${orderQuantity} sản phẩm. Tổng thanh toán là ${totalAmount.toLocaleString("vi-VN")}đ.`,
+      type: "order",
+      related_table: "orders",
+      related_id: orderid,
+      action_url: `/order-detail/${orderid}`,
+    }));
+
+    await safeCreateNotification(() => createRoleNotification({
+      role: "sales_staff",
+      title: `Đơn hàng mới #${orderid}`,
+      message: "Khách hàng vừa đặt đơn hàng mới, cần xác nhận và chăm sóc khách hàng.",
+      type: "order",
+      related_table: "orders",
+      related_id: orderid,
+      action_url: `/admin/orders?orderid=${orderid}`,
+    }));
+
+    await safeCreateNotification(() => createRoleNotification({
+      role: "warehouse_manager",
+      title: `Đơn hàng cần chuẩn bị #${orderid}`,
+      message: "Có đơn hàng mới cần kiểm tra tồn kho, đóng gói và cập nhật vận chuyển.",
+      type: "warehouse",
+      related_table: "orders",
+      related_id: orderid,
+      action_url: `/admin/warehouse?orderid=${orderid}`,
+    }));
+
+    await safeCreateNotification(() => createRoleNotification({
+      role: "admin",
+      title: `Phát sinh đơn hàng #${orderid}`,
+      message: "Hệ thống vừa ghi nhận một đơn hàng mới.",
+      type: "system",
+      related_table: "orders",
+      related_id: orderid,
+      action_url: `/admin/orders?orderid=${orderid}`,
+    }));
+
     await client.query("COMMIT");
     return { status: 200, orderid };
   } catch (error: any) {

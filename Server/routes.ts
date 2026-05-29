@@ -19,7 +19,6 @@ import salesRoutes from "./routes/sales";
 import toyFilter from "./routes/toyFilter";
 import customerOrdersRoutes from "./routes/customerOrders";
 import notificationsRoutes from "./routes/notifications";
-
 const router = express.Router();
 
 router.use("/", authentication);

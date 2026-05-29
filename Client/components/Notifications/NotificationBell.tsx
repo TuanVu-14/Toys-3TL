@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BellIcon } from "@heroicons/react/24/outline";
 import { useAppSelector } from "@/app/hooks";
@@ -12,6 +11,8 @@ type NotificationItem = {
   title: string;
   message: string;
   type: string;
+  related_table?: string | null;
+  related_id?: number | null;
   action_url?: string | null;
   is_read: boolean;
   createdat: string;
@@ -26,6 +27,36 @@ function timeAgo(value: string) {
   return `${Math.floor(hours / 24)} ngày trước`;
 }
 
+function getSafeNotificationUrl(item: NotificationItem) {
+  const orderID = item.related_table === "orders" || item.type === "order" || item.type === "warehouse"
+    ? item.related_id
+    : null;
+
+  if (item.action_url) {
+    const raw = item.action_url.trim();
+
+    // Các URL cũ trong database như /orders/34 hoặc /admin/orders/34 sẽ bị 404.
+    // Chuẩn lại theo route đang có trong Next.js.
+    const customerOrder = raw.match(/^\/orders\/(\d+)$/);
+    if (customerOrder) return `/order-detail/${customerOrder[1]}`;
+
+    const adminOrder = raw.match(/^\/admin\/orders\/(\d+)$/);
+    if (adminOrder) return `/admin/orders?orderid=${adminOrder[1]}`;
+
+    const adminWarehouse = raw.match(/^\/admin\/warehouse\/(\d+)$/);
+    if (adminWarehouse) return `/admin/warehouse?orderid=${adminWarehouse[1]}`;
+
+    return raw;
+  }
+
+  if (orderID) return `/order-detail/${orderID}`;
+  if (item.related_table === "products" && item.related_id) return `/product/${item.related_id}`;
+  if (item.related_table === "banners" || item.type === "content") return "/admin/content";
+  if (item.type === "promotion") return "/";
+
+  return "/orders";
+}
+
 export default function NotificationBell() {
   const router = useRouter();
   const user = useAppSelector((state) => state.userState.defaultAccount);
@@ -35,22 +66,20 @@ export default function NotificationBell() {
 
   const unread = useMemo(() => items.filter((item) => !item.is_read).length, [items]);
 
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     try {
-const res = await getNotifications({
-  userid: user?.userID,
-  role: user?.role,
-});      setItems(res.data?.data || []);
+      const res = await getNotifications({ userid: user?.userID, role: user?.role });
+      setItems(res.data?.data || []);
     } catch {
       setItems([]);
     }
-  }
+  }, [user?.userID, user?.role]);
 
   useEffect(() => {
     fetchData();
-    const timer = setInterval(fetchData, 30000);
+    const timer = setInterval(fetchData, 15000);
     return () => clearInterval(timer);
-  }, [user?.userID, user?.userID, user?.role]);
+  }, [fetchData]);
 
   useEffect(() => {
     function onClickOutside(event: MouseEvent) {
@@ -61,16 +90,20 @@ const res = await getNotifications({
   }, []);
 
   async function handleOpen(item: NotificationItem) {
-    if (!item.is_read) {
-      await markNotificationRead(item.notificationid);
-      setItems((prev) => prev.map((n) => n.notificationid === item.notificationid ? { ...n, is_read: true } : n));
+    try {
+      if (!item.is_read) {
+        await markNotificationRead(item.notificationid);
+        setItems((prev) => prev.map((n) => n.notificationid === item.notificationid ? { ...n, is_read: true } : n));
+      }
+    } finally {
+      setOpen(false);
+      router.push(getSafeNotificationUrl(item));
     }
-    if (item.action_url) router.push(item.action_url);
-    setOpen(false);
   }
 
-  async function handleReadAll() {
-    await markAllNotificationsRead();
+  async function handleReadAll(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    await markAllNotificationsRead({ userid: user?.userID, role: user?.role });
     setItems((prev) => prev.map((item) => ({ ...item, is_read: true })));
   }
 
@@ -79,10 +112,10 @@ const res = await getNotifications({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
+        className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/70"
         aria-label="Mở thông báo"
       >
-        <BellIcon className="h-[28px] w-[28px]" />
+        <BellIcon className="h-[27px] w-[27px] text-slate-700" />
         {unread > 0 ? (
           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-semibold leading-none text-white">
             {unread > 99 ? "99+" : unread}
@@ -91,14 +124,17 @@ const res = await getNotifications({
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-12 z-[80] w-[360px] overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl">
+        <div className="absolute right-0 top-12 z-[100] w-[390px] overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-slate-100 p-4">
             <div>
               <p className="text-sm font-bold text-slate-900">Thông báo</p>
               <p className="text-xs text-slate-500">{unread} thông báo chưa đọc</p>
             </div>
-            <button onClick={handleReadAll} className="text-xs font-semibold text-rose-500 hover:text-rose-600">Đọc tất cả</button>
+            <button onClick={handleReadAll} className="text-xs font-semibold text-rose-500 hover:text-rose-600">
+              Đọc tất cả
+            </button>
           </div>
+
           <div className="max-h-[420px] overflow-y-auto">
             {items.length === 0 ? (
               <p className="p-5 text-center text-sm text-slate-500">Chưa có thông báo.</p>
@@ -107,10 +143,10 @@ const res = await getNotifications({
                 key={item.notificationid}
                 type="button"
                 onClick={() => handleOpen(item)}
-                className={`block w-full border-b border-slate-100 p-4 text-left hover:bg-rose-50 ${!item.is_read ? "bg-rose-50/60" : "bg-white"}`}
+                className={`block w-full border-b border-slate-100 p-4 text-left hover:bg-rose-50 ${!item.is_read ? "bg-rose-50/70" : "bg-white"}`}
               >
                 <div className="flex gap-3">
-                  <span className={`mt-1 h-2.5 w-2.5 rounded-full ${!item.is_read ? "bg-rose-500" : "bg-slate-200"}`} />
+                  <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${!item.is_read ? "bg-rose-500" : "bg-slate-200"}`} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-slate-900">{item.title}</p>
                     <p className="mt-1 line-clamp-2 text-xs text-slate-600">{item.message}</p>

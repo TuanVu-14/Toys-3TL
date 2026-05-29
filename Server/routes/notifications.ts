@@ -55,7 +55,7 @@ export async function createUserNotification({
 }) {
   await client.query(
     `INSERT INTO notifications (userid, title, message, type, related_table, related_id, action_url)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+     VALUES ($1::int, $2::varchar, $3::text, $4::varchar, $5::varchar, $6::int, $7::text)`,
     [userid, title, message, type, related_table, related_id, action_url],
   );
 }
@@ -79,9 +79,9 @@ export async function createRoleNotification({
 }) {
   await client.query(
     `INSERT INTO notifications (userid, target_role, title, message, type, related_table, related_id, action_url)
-     SELECT userid, $1, $2, $3, $4, $5, $6, $7
+     SELECT userid, $1::varchar, $2::varchar, $3::text, $4::varchar, $5::varchar, $6::int, $7::text
      FROM users
-     WHERE role = $1 AND COALESCE(is_active, true) = true`,
+     WHERE role = $1::varchar AND COALESCE(is_active, true) = true`,
     [role, title, message, type, related_table, related_id, action_url],
   );
 }

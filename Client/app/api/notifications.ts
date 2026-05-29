@@ -51,8 +51,8 @@ export function markNotificationRead(notificationID: number) {
   return notificationClient.put(`/notifications/${notificationID}/read`, {});
 }
 
-export function markAllNotificationsRead() {
-  return notificationClient.put("/notifications/read-all", {});
+export function markAllNotificationsRead(body?: { userid?: number | string; role?: string }) {
+  return notificationClient.put("/notifications/read-all", body || {});
 }
 
 export function deleteNotification(notificationID: number) {
