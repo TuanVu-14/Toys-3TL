@@ -348,7 +348,7 @@ router.get("/admin/products", adminAuth, async (_req: Request, res: Response) =>
     const response = await client.query(`
       SELECT p.productid, p.title, p.description, p.categoryid, c.name AS category,
              p.price, p.discount, p.stock, p.tags, p.imgid,
-             pi.imglink AS image_url, pi.imgalt AS image_alt,
+             pi.imglink AS imglink, pi.imglink AS image_url, pi.imgalt AS image_alt,
              p.age_group, p.gender, p.material, p.skill_type, p.brand,
              p.safety_certificates, p.low_stock_threshold, p.supplier_id,
              COALESCE(p.is_active, true) AS is_active,
@@ -415,7 +415,7 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
         Number(discount || 0),
         Number(stock || 0),
         tags || null,
-        String(imgid || image_url || imglink || "").startsWith("data:") ? null : (imgid || image_url || imglink || null),
+        String(imglink || image_url || imgid || "").startsWith("data:") ? null : (imglink || image_url || imgid || null),
         age_group || null,
         gender || null,
         material || null,
@@ -435,7 +435,7 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
       [product.rows[0].productid, !!isnew, !!issale, !!isdiscount, Number(stars || 0)],
     );
 
-    await upsertPrimaryProductImage(product.rows[0].productid, image_url || imglink || imgid, image_alt || imgalt || title);
+    await upsertPrimaryProductImage(product.rows[0].productid, imglink || image_url || imgid, image_alt || imgalt || title);
 
     await client.query("COMMIT");
     res.status(201).json({ message: "Thêm sản phẩm thành công", data: product.rows[0] });
@@ -498,7 +498,7 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
         Number(discount || 0),
         Number(stock || 0),
         tags || null,
-        String(imgid || image_url || imglink || "").startsWith("data:") ? null : (imgid || image_url || imglink || null),
+        String(imglink || image_url || imgid || "").startsWith("data:") ? null : (imglink || image_url || imgid || null),
         age_group || null,
         gender || null,
         material || null,
@@ -523,7 +523,7 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
       [productID, !!isnew, !!issale, !!isdiscount, Number(stars || 0)],
     );
 
-    await upsertPrimaryProductImage(productID, image_url || imglink || imgid, image_alt || imgalt || title);
+    await upsertPrimaryProductImage(productID, imglink || image_url || imgid, image_alt || imgalt || title);
 
     await client.query("COMMIT");
 

@@ -317,9 +317,10 @@ router.post("/birthday-reminders/run", async (_req: Request, res: Response) => {
 router.get("/gift-suggestions/:userId", async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+
     const childrenResult = await client.query(
       `
-        SELECT child_id, child_name, birth_date, gender
+        SELECT child_id, child_name, birth_date, gender, favorite_category, favorite_skill, note
         FROM child_profiles
         WHERE user_id = $1
         ORDER BY birth_date ASC
@@ -328,16 +329,34 @@ router.get("/gift-suggestions/:userId", async (req: Request, res: Response) => {
       [userId],
     );
 
+    const baseSelect = `
+      SELECT
+        p.productid,
+        p.title,
+        p.price,
+        COALESCE(p.discount, 0) AS discount,
+        ROUND((p.price * (1 - COALESCE(p.discount, 0) / 100.0))::numeric, 0) AS current_price,
+        p.age_group,
+        p.brand,
+        p.skill_type,
+        p.material,
+        COALESCE(pi.imglink, '/images/no-image.png') AS imglink,
+        pi.imgalt AS image_alt
+      FROM products p
+      LEFT JOIN productimages pi ON pi.productid = p.productid AND COALESCE(pi.isprimary, false) = true
+      WHERE COALESCE(p.is_active, true) = true
+    `;
+
     if (childrenResult.rows.length === 0) {
       const fallback = await client.query(
-        `
-          SELECT productid, title, price, discount, age_group, brand, skill_type, material
-          FROM products
-          ORDER BY productid DESC
-          LIMIT 12
-        `,
+        `${baseSelect}
+         ORDER BY COALESCE(p.updatedat, p.createdat) DESC, p.productid DESC
+         LIMIT 12`,
       );
-      return res.status(200).json({ message: "Chưa có hồ sơ bé, trả về sản phẩm gợi ý chung", data: fallback.rows });
+      return res.status(200).json({
+        message: "Chưa có hồ sơ bé, trả về sản phẩm gợi ý chung",
+        data: fallback.rows,
+      });
     }
 
     const child = childrenResult.rows[0];
@@ -347,23 +366,60 @@ router.get("/gift-suggestions/:userId", async (req: Request, res: Response) => {
     const monthDiff = today.getMonth() - birthDate.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
 
-    let ageGroup = "12+";
-    if (age <= 3) ageGroup = "0-3";
-    else if (age <= 6) ageGroup = "3-6";
-    else if (age <= 12) ageGroup = "6-12";
+    // lego14.sql đang dùng nhiều kiểu độ tuổi khác nhau: 0-2, 3-5, 6-8, 9-12, 6-12, 12+, All.
+    const ageGroups = age <= 2
+      ? ["0-2", "0-3", "All"]
+      : age <= 5
+        ? ["3-5", "3-6", "All"]
+        : age <= 8
+          ? ["6-8", "6-12", "All"]
+          : age <= 12
+            ? ["9-12", "6-12", "All"]
+            : ["12+", "All"];
+
+    const favoriteCategory = String(child.favorite_category || "").trim();
+    const favoriteSkill = String(child.favorite_skill || "").trim();
+    const note = String(child.note || "").trim();
 
     const suggestions = await client.query(
-      `
-        SELECT productid, title, price, discount, age_group, brand, skill_type, material
-        FROM products
-        WHERE age_group = $1 OR age_group IS NULL
-        ORDER BY productid DESC
-        LIMIT 12
-      `,
-      [ageGroup],
+      `${baseSelect}
+       AND (
+         p.age_group = ANY($1::text[])
+         OR p.age_group IS NULL
+         OR p.age_group = ''
+       )
+       ORDER BY
+         CASE
+           WHEN $2::text <> '' AND (
+             p.tags ILIKE '%' || $2 || '%'
+             OR p.title ILIKE '%' || $2 || '%'
+             OR p.brand ILIKE '%' || $2 || '%'
+             OR p.skill_type ILIKE '%' || $2 || '%'
+           ) THEN 0
+           WHEN $3::text <> '' AND (
+             p.skill_type ILIKE '%' || $3 || '%'
+             OR p.tags ILIKE '%' || $3 || '%'
+             OR p.title ILIKE '%' || $3 || '%'
+           ) THEN 1
+           WHEN $4::text <> '' AND (
+             p.tags ILIKE '%' || $4 || '%'
+             OR p.title ILIKE '%' || $4 || '%'
+             OR p.description ILIKE '%' || $4 || '%'
+           ) THEN 2
+           ELSE 3
+         END,
+         COALESCE(p.discount, 0) DESC,
+         p.productid DESC
+       LIMIT 12`,
+      [ageGroups, favoriteCategory, favoriteSkill, note],
     );
 
-    return res.status(200).json({ child, age, age_group: ageGroup, data: suggestions.rows });
+    return res.status(200).json({
+      child,
+      age,
+      age_groups: ageGroups,
+      data: suggestions.rows,
+    });
   } catch (error) {
     console.error("GET /coupons/gift-suggestions/:userId error:", error);
     return res.status(500).json({ message: "Lỗi khi gợi ý quà tặng" });

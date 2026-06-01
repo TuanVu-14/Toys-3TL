@@ -21,6 +21,7 @@ type AdminProduct = {
   stock: number;
   tags?: string | null;
   imgid?: string | null;
+  imglink?: string | null;
   image_url?: string | null;
   image_alt?: string | null;
   age_group?: string | null;
@@ -49,6 +50,7 @@ type ProductFormData = {
   stock: number;
   tags: string;
   imgid: string;
+  imglink: string;
   image_url: string;
   age_group: string;
   gender: string;
@@ -74,6 +76,7 @@ const emptyForm: ProductFormData = {
   stock: 0,
   tags: "",
   imgid: "",
+  imglink: "",
   image_url: "",
   age_group: "3-5",
   gender: "unisex",
@@ -99,11 +102,25 @@ function finalPrice(product: AdminProduct) {
   return price * (1 - discount / 100);
 }
 
-function productImage(product: Pick<AdminProduct, "image_url" | "imgid">) {
-  return product.image_url || product.imgid || "/images/no-image.png";
+function safeImagePath(value?: string | number | null) {
+  const image = String(value || "").trim();
+
+  if (!image) return "/images/no-image.png";
+  if (["im", "img", "/im", "/img"].includes(image.toLowerCase())) {
+    return "/images/no-image.png";
+  }
+  if (image.startsWith("/images/")) return image;
+  if (image.startsWith("http://") || image.startsWith("https://")) return image;
+
+  return "/images/no-image.png";
+}
+
+function productImage(product: Pick<AdminProduct, "imglink" | "image_url" | "imgid">) {
+  return safeImagePath(product.imglink || product.image_url || product.imgid);
 }
 
 export default function ProductsPage() {
+  const [mounted, setMounted] = useState(false);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,8 +155,12 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted) fetchProducts();
+  }, [mounted]);
 
   const filteredProducts = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -151,10 +172,18 @@ export default function ProductsPage() {
     );
   }, [products, search]);
 
+  if (!mounted) {
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center">
+        <p className="text-gray-500">Đang tải danh sách sản phẩm...</p>
+      </div>
+    );
+  }
+
   const handleOpenForm = (product?: AdminProduct) => {
     if (product) {
       setEditingProduct(product);
-      const imageUrl = product.image_url || product.imgid || "";
+      const imageUrl = product.imglink || product.image_url || product.imgid || "";
       setFormData({
         title: product.title || "",
         description: product.description || "",
@@ -164,6 +193,7 @@ export default function ProductsPage() {
         stock: Number(product.stock || 0),
         tags: product.tags || "",
         imgid: product.imgid || "",
+        imglink: product.imglink || imageUrl,
         image_url: imageUrl,
         age_group: product.age_group || "3-5",
         gender: product.gender || "unisex",
@@ -206,7 +236,7 @@ export default function ProductsPage() {
   // Xóa ảnh đã chọn
   const handleRemoveImage = () => {
     setImagePreview("");
-    setFormData((prev) => ({ ...prev, image_url: "", imgid: "" }));
+    setFormData((prev) => ({ ...prev, imglink: "", image_url: "", imgid: "" }));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -220,7 +250,8 @@ export default function ProductsPage() {
       stock: Number(formData.stock),
       low_stock_threshold: Number(formData.low_stock_threshold || 10),
       supplier_id: formData.supplier_id ? Number(formData.supplier_id) : null,
-      image_url: (formData.image_url || formData.imgid || "").trim(),
+      imglink: (formData.imglink || formData.image_url || formData.imgid || "").trim(),
+      image_url: (formData.imglink || formData.image_url || formData.imgid || "").trim(),
       image_alt: formData.title,
     };
 
@@ -347,6 +378,9 @@ export default function ProductsPage() {
                         src={productImage(product)}
                         alt={product.image_alt || product.title}
                         className="h-16 w-16 rounded-xl border border-slate-100 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/images/no-image.png";
+                        }}
                       />
                       <div className="min-w-0">
                         <div className="font-semibold text-slate-900">
@@ -661,9 +695,12 @@ export default function ProductsPage() {
                   {imagePreview ? (
                     <div className="relative flex-shrink-0">
                       <img
-                        src={imagePreview}
+                        src={safeImagePath(imagePreview)}
                         alt="Preview ảnh sản phẩm"
                         className="h-40 w-40 rounded-2xl border-2 border-rose-100 object-cover shadow"
+                        onError={(e) => {
+                          e.currentTarget.src = "/images/no-image.png";
+                        }}
                       />
                       <button
                         type="button"
@@ -685,9 +722,14 @@ export default function ProductsPage() {
                     <label className="text-sm font-semibold text-slate-700">
                       Đường dẫn ảnh để lưu
                       <input
-                        value={formData.image_url}
+                        value={formData.imglink || formData.image_url}
                         onChange={(e) => {
-                          setFormData({ ...formData, image_url: e.target.value, imgid: e.target.value });
+                          setFormData({
+                            ...formData,
+                            imglink: e.target.value,
+                            image_url: e.target.value,
+                            imgid: e.target.value,
+                          });
                           setImagePreview(e.target.value);
                         }}
                         className={inputClass}

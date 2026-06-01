@@ -51,6 +51,9 @@ interface GiftSuggestion {
   title: string;
   price: string | number;
   discount?: string | number | null;
+  current_price?: string | number | null;
+  imglink?: string | null;
+  image_alt?: string | null;
   age_group?: string | null;
   brand?: string | null;
   skill_type?: string | null;
@@ -67,9 +70,51 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleDateString("vi-VN");
 }
 
-function formatMoney(value?: string | number | null) {
+function normalizeToyPrice(value?: string | number | null) {
   const amount = Number(value || 0);
+  if (!amount || amount <= 0) return 0;
+
+  // Một số dữ liệu seed cũ lưu giá kiểu 15, 20 thay vì 150000, 200000.
+  // Khi hiển thị gợi ý quà, quy đổi các giá nhỏ này sang VNĐ cho đúng giao diện bán hàng.
+  if (amount > 0 && amount < 1000) return amount * 10000;
+  return amount;
+}
+
+function formatMoney(value?: string | number | null) {
+  const amount = normalizeToyPrice(value);
+  if (!amount || amount <= 0) return "Liên hệ";
   return `${amount.toLocaleString("vi-VN")}đ`;
+}
+
+function getProductPrice(product: GiftSuggestion) {
+  const price = Number(product.price || 0);
+  const currentPrice = Number(product.current_price || 0);
+  const discountPercent = Number(product.discount || 0);
+
+  if (currentPrice > 0) return currentPrice;
+  if (price > 0 && discountPercent > 0 && discountPercent < 100) {
+    return Math.round(price * (1 - discountPercent / 100));
+  }
+  return price;
+}
+
+function safeImageUrl(value?: string | null) {
+  const image = String(value || "").trim();
+  const lower = image.toLowerCase();
+
+  if (!image || ["im", "/im", "img", "/img", "null", "undefined"].includes(lower)) {
+    return "/images/no-image.png";
+  }
+
+  if (image.startsWith("http://") || image.startsWith("https://") || image.startsWith("/") || image.startsWith("data:")) {
+    return image;
+  }
+
+  return `/images/${image}`;
+}
+
+function productImage(product: GiftSuggestion) {
+  return safeImageUrl(product.imglink);
 }
 
 function getBirthdayStatus(birthDateValue?: string | null) {
@@ -428,21 +473,54 @@ const ChildProfileForm = ({ userId }: ChildProfileFormProps) => {
       </div>
 
       <div className="rounded-xl border bg-white p-5 shadow-sm">
-        <h3 className="mb-3 text-lg font-semibold">Gợi ý quà tặng</h3>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">Gợi ý quà tặng</h3>
+            <p className="text-xs text-gray-500">
+              Sản phẩm được gợi ý theo độ tuổi, sở thích và kỹ năng trong hồ sơ bé.
+            </p>
+          </div>
+        </div>
 
         {suggestions.length === 0 ? (
           <p className="text-sm text-gray-500">Chưa có gợi ý quà tặng.</p>
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {suggestions.map((product) => (
-              <div key={product.productid} className="rounded-lg border p-4 text-sm">
-                <p className="font-semibold line-clamp-2">{product.title}</p>
-                <p>Thương hiệu: {product.brand || "N/A"}</p>
-                <p>Độ tuổi: {product.age_group || "N/A"}</p>
-                <p>Kỹ năng: {product.skill_type || "N/A"}</p>
-                <p className="mt-2 font-semibold text-orange-600">{formatMoney(product.discount || product.price)}</p>
-              </div>
-            ))}
+            {suggestions.map((product) => {
+              const price = Number(product.price || 0);
+              const currentPrice = getProductPrice(product);
+              const discountPercent = Number(product.discount || 0);
+
+              return (
+                <div key={product.productid} className="flex gap-3 rounded-lg border p-3 text-sm transition hover:border-orange-300 hover:shadow-sm">
+                  <img
+                    src={productImage(product)}
+                    alt={product.image_alt || product.title}
+                    className="h-24 w-24 flex-shrink-0 rounded-lg border object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/images/no-image.png";
+                    }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 font-semibold">{product.title}</p>
+                    <p className="text-gray-600">Thương hiệu: {product.brand || "N/A"}</p>
+                    <p className="text-gray-600">Độ tuổi: {product.age_group || "N/A"}</p>
+                    <p className="text-gray-600">Kỹ năng: {product.skill_type || "N/A"}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-orange-600">{formatMoney(currentPrice)}</span>
+                      {discountPercent > 0 && price > currentPrice ? (
+                        <>
+                          <span className="text-xs text-gray-400 line-through">{formatMoney(price)}</span>
+                          <span className="rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-600">
+                            -{discountPercent}%
+                          </span>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
