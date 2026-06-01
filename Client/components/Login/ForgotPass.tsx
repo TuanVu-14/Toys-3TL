@@ -96,17 +96,17 @@ const ForgotPass = () => {
             <Dialog open={otpPopup} onClose={() => setotpPopup(false)} className="relative z-40">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center font-medium">
-                <DialogTitle className="font-bold">OTP Sent</DialogTitle>
-                <Description>An OTP has been Sent on your Email Address, Please check your Email Inbox</Description>
+                <DialogTitle className="font-bold">Đã gửi OTP</DialogTitle>
+                <Description>Mã OTP đã được gửi tới email của bạn. Vui lòng kiểm tra hộp thư đến.</Description>
                 <Countdown onComplete={toggleResend}/>
                 <div>
                 <Dialog open={incorrectOTP} onClose={() => setIncorrectOTP(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
                 <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                    <DialogTitle className="font-bold">Incorrect</DialogTitle>
-                    <Description>OTP is Incorrect. Try again.</Description>
+                    <DialogTitle className="font-bold">Không đúng</DialogTitle>
+                    <Description>OTP không đúng. Vui lòng thử lại.</Description>
                     <div className="flex justify-center gap-4">
-                        <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setIncorrectOTP(false)}>OK</button>
+                        <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setIncorrectOTP(false)}>Đồng ý</button>
                     </div>
             </DialogPanel>
                 </div>
@@ -114,11 +114,11 @@ const ForgotPass = () => {
             <Dialog open={expiredOTP} onClose={() => setExpiredOTP(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
                 <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                    <DialogTitle className="font-bold">Expired</DialogTitle>
-                    <Description>OTP has been Expired. Try again.</Description>
+                    <DialogTitle className="font-bold">Đã hết hạn</DialogTitle>
+                    <Description>OTP đã hết hạn. Vui lòng thử lại.</Description>
                     <div className="flex justify-center gap-4">
-                        <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setExpiredOTP(false)}>OK</button>
-                        <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={()=>{resendOTP(form);setExpiredOTP(false)}}>Resend</button>
+                        <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setExpiredOTP(false)}>Đồng ý</button>
+                        <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={()=>{resendOTP(form);setExpiredOTP(false)}}>Gửi lại</button>
                     </div>
                 </DialogPanel>
                 </div>
@@ -126,11 +126,11 @@ const ForgotPass = () => {
             <Dialog open={success} onClose={() => setSuccess(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
                 <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                    <DialogTitle className="font-bold">Successful</DialogTitle>
-                    <Description>Password has been Successfully Changed.</Description>
-                    <p>Click on Sign In to Login</p>
+                    <DialogTitle className="font-bold">Thành công</DialogTitle>
+                    <Description>Đổi mật khẩu thành công.</Description>
+                    <p>Bấm Đăng nhập để vào tài khoản</p>
                     <div className="flex justify-center gap-4">
-                        <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => {setSuccess(false);setotpPopup(false);router.push('/sign-in');}}>Sign In</button>
+                        <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => {setSuccess(false);setotpPopup(false);router.push('/sign-in');}}>Đăng nhập</button>
                     </div>
                 </DialogPanel>
                 </div>
@@ -138,10 +138,10 @@ const ForgotPass = () => {
             <Dialog open={resent} onClose={() => setResent(false)} className="relative z-50">
                 <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
                 <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                    <DialogTitle className="font-bold">Resent</DialogTitle>
-                    <Description>OTP has been Resent. Please check your Inbox</Description>
+                    <DialogTitle className="font-bold">Đã gửi lại</DialogTitle>
+                    <Description>OTP đã được gửi lại. Vui lòng kiểm tra hộp thư đến.</Description>
                     <div className="flex justify-center gap-4">
-                        <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => setResent(false)}>OK</button>
+                        <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => setResent(false)}>Đồng ý</button>
                     </div>
                 </DialogPanel>
                 </div>
@@ -160,11 +160,11 @@ const ForgotPass = () => {
                     />
                 </div>
                 <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setotpPopup(false)}>Cancel</button>
-                    <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => {resetPassProceed(form,OTP)}}>Submit</button>
+                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setotpPopup(false)}>Hủy</button>
+                    <button className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' onClick={() => {resetPassProceed(form,OTP)}}>Gửi</button>
                 </div>
                 <div>
-                <p>Didn't receive OTP? <span className='text-primary-700'><button onClick={()=>resendOTP(form)} disabled={resendDisabled}>Resend OTP</button></span></p>
+                <p>Chưa nhận được OTP? <span className='text-primary-700'><button onClick={()=>resendOTP(form)} disabled={resendDisabled}>Gửi lại OTP</button></span></p>
                 </div>
                 
             </DialogPanel>
@@ -187,14 +187,14 @@ const ForgotPass = () => {
                                 <form onSubmit={(e)=>resetPass(e)} method='post' className="space-y-4 md:space-y-6 flex flex-col gap-4 lg:gap-0" action="/">
                                     <div data-validate = "Enter Email">
                                         <label className="block mb-2 text-sm font-medium text-gray-900">Email</label>
-                                        <input minLength={5} maxLength={128} required type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Enter your email"/>
+                                        <input minLength={5} maxLength={128} required type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Nhập email của bạn"/>
                                     </div>
-                                    <div data-validate = "Enter Password">
-                                        <label className="block mb-2 text-sm font-medium text-gray-900">Password</label>
+                                    <div data-validate = "Nhập mật khẩu">
+                                        <label className="block mb-2 text-sm font-medium text-gray-900">Mật khẩu</label>
                                         <input minLength={8} maxLength={32} required type="password" name="password" id="password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                     </div>
                                     <div>
-                                        <label className="block mb-2 text-sm font-medium text-gray-900">Re-Enter Password</label>
+                                        <label className="block mb-2 text-sm font-medium text-gray-900">Nhập lại mật khẩu</label>
                                         <input minLength={8} maxLength={32} required type="password" name="repassword" id="repassword" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                     </div>
                                     <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Get OTP & Reset Password</button>

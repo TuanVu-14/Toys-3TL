@@ -44,7 +44,7 @@ const SidebarS = () => {
         <>
             <div className='hidden lg:flex-col lg:flex ml-auto'>
                 <div className='border-[1px] rounded-xl max-h-[400px] w-[220px] xl:w-[320px] p-[15px] overflow-y-auto '>
-                    <p className='tracking-[2px] font-semibold text-davysilver mb-4'>CATEGORY</p>
+                    <p className='tracking-[2px] font-semibold text-davysilver mb-4'>DANH MỤC</p>
                     {leftStatus.map((stat, index) =>
                         <div key={index}>
                             <div
@@ -79,7 +79,7 @@ const SidebarS = () => {
                     )}
                 </div>
                 <div className='h-[500px] mt-10 relative'>
-                    <p className='font-semibold text-gray-700 tracking-wider text-[17px]'>BEST SELLERS</p>
+                    <p className='font-semibold text-gray-700 tracking-wider text-[17px]'>BÁN CHẠY</p>
                     {loading && <div className='w-[100px] h-[350px]'>{loading && <div className='absolute left-0 right-8 top-0 z-50'><Loading/></div>}</div> }
                     <div className='flex flex-col'>
                         {data.current.map((each, index) =>

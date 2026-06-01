@@ -98,7 +98,7 @@ const Account = () => {
           className="absolute left-1/2 top-full z-50 mt-1 w-56 -translate-x-1/2 overflow-hidden rounded-lg bg-white divide-y divide-gray-100 drop-shadow-custom-xl"
         >
           <div className="flex gap-2 px-4 py-3 text-sm text-gray-500">
-            <div>New User?</div>
+            <div>Người dùng mới?</div>
             <a href="/sign-up" className="text-primary-800">
               Register
             </a>

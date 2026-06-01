@@ -7,7 +7,7 @@ import React from 'react'
 const getWishlistItemID = (item: WishlistItem) => Number(item.wishlistItemID ?? item.wishlistitemid ?? 0)
 const getProductID = (item: WishlistItem) => Number(item.productID ?? item.productid ?? 0)
 const getProductImage = (item: WishlistItem) => item.productImg ?? item.imglink ?? '/no-image.png'
-const getProductAlt = (item: WishlistItem) => item.productAlt ?? item.imgalt ?? item.productName ?? item.title ?? 'Product'
+const getProductAlt = (item: WishlistItem) => item.productAlt ?? item.imgalt ?? item.productName ?? item.title ?? 'Sản phẩm'
 const getProductName = (item: WishlistItem) => item.productName ?? item.title ?? 'Sản phẩm'
 const getProductPrice = (item: WishlistItem) => item.productPrice ?? item.productprice ?? item.discountedprice ?? item.price ?? 0
 
@@ -25,7 +25,7 @@ const Wishlist = ({Component,loading,setLoading}:{Component:WishlistItem[],loadi
   }
   return (
     <div className='w-full h-full py-4 px-4 overflow-auto'>
-      <h1 className='text-xl font-semibold'>My Wishlist</h1>
+      <h1 className='text-xl font-semibold'>Danh sách yêu thích</h1>
       <div>
         <div className='flex justify-end mb-5'>
           {/* <button className='bg-primary-600 text-white px-4 py-2 rounded-xl'>Add all to Cart</button> */}
@@ -57,7 +57,7 @@ const Wishlist = ({Component,loading,setLoading}:{Component:WishlistItem[],loadi
                             </div>
                             </div>
                             <div className="flex flex-1 items-end justify-between text-sm">
-                            {/* <button className="font-medium text-indigo-600 hover:text-indigo-500">Add to Cart</button> */}
+                            {/* <button className="font-medium text-indigo-600 hover:text-indigo-500">Thêm vào giỏ hàng</button> */}
 
                             <div className="flex">
                                 <button

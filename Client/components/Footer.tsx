@@ -6,7 +6,7 @@ const Footer = () => {
     <div className='bg-flower-50  w-screen flex flex-col'>
         <div className='flex flex-col lg:flex-row justify-between items-center border-b-[1px] border-b-silver mt-16 pb-10 px-6 gap-6'>
             <div className='flex flex-col items-center text-center w-full lg:w-1/2'>
-                <p className='text-salmon font-semibold text-lg mb-2'>GET OUR UPDATES</p>
+                <p className='text-salmon font-semibold text-lg mb-2'>NHẬN CẬP NHẬT</p>
                 <p className='text-silver text-sm mb-4'>
                 Subscribe to receive updates, access to exclusive deals, and more.
                 </p>
@@ -24,7 +24,7 @@ const Footer = () => {
             </div>
 
             <div className='flex flex-col items-center justify-center text-center w-full lg:w-1/2'>
-                <p className='text-salmon font-semibold text-lg mb-4'>FOLLOW US</p>
+                <p className='text-salmon font-semibold text-lg mb-4'>THEO DÕI CHÚNG TÔI</p>
                 
                 <div className='flex gap-4 text-[30px]'>
                 <a href="#" className='text-silver hover:text-blue-600'>
@@ -58,7 +58,7 @@ const Footer = () => {
         </div>
         <div className='w-[100%] h-50  gap-2 flex flex-col items-center mt-4 mb-16 lg:mb-0'>
             <img height={50} src='https://codewithsadee.github.io/anon-ecommerce-website/assets/images/payment.png'/>
-            <p className='text-silver font-semibold tracking-[2px] lg:pb-0'>Copyright &copy; Anon All Rights Reserved.</p>
+            <p className='text-silver font-semibold tracking-[2px] lg:pb-0'>Bản quyền &copy; Anon. Mọi quyền được bảo lưu.</p>
         </div>
     </div>
   )

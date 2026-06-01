@@ -60,7 +60,7 @@ const STEPS = [
   { key: "Pending", label: "Chờ xác nhận" },
   { key: "Confirmed", label: "Xác nhận" },
   { key: "Preparing", label: "Chuẩn bị" },
-  { key: "Shipping", label: "Vận chuyển" },
+  { key: "Giao hàng", label: "Vận chuyển" },
   { key: "Completed", label: "Hoàn thành" },
 ];
 

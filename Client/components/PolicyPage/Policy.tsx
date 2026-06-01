@@ -5,7 +5,7 @@ import TermsConditions from './TermsConditions';
 
 const Policy = () => {
   const policyTypes = [
-    "Privacy Policy","Terms & Conditions","Refund & Concellation"
+    "Chính sách bảo mật","Điều khoản & điều kiện","Refund & Concellation"
   ]
   const [policyType, setPolicyType] = useState(policyTypes[1]);
   return (

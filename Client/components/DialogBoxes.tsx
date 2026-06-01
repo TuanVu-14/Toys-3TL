@@ -140,7 +140,7 @@ const DialogBoxes = () => {
               An account with the same email address or mobile number already
               exists.
             </Description>
-            <p className="mt-2 text-sm text-gray-600">Do you want to sign in?</p>
+            <p className="mt-2 text-sm text-gray-600">Bạn có muốn đăng nhập không?</p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"

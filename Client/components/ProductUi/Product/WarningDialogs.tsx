@@ -6,10 +6,10 @@ const WarningDialogs = ({WarningType,setWarningType,setloading}:{WarningType:nul
         <Dialog open={WarningType==='successful'} onClose={() => setWarningType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                <DialogTitle className="font-bold">Successfully Submitted</DialogTitle>
-                <Description>You will be able see your review in couple of minutes on our site. Thank you</Description>
+                <DialogTitle className="font-bold">Gửi thành công</DialogTitle>
+                <Description>Đánh giá của bạn sẽ hiển thị trên website sau vài phút. Cảm ơn bạn.</Description>
                 <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>OK</button>
+                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>Đồng ý</button>
                 </div>
             </DialogPanel>
             </div>
@@ -17,10 +17,10 @@ const WarningDialogs = ({WarningType,setWarningType,setloading}:{WarningType:nul
         <Dialog open={WarningType==='exists'} onClose={() => setWarningType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                <DialogTitle className="font-bold">Already Exists</DialogTitle>
-                <Description>Review cannot be processed as the review already exists.</Description>
+                <DialogTitle className="font-bold">Đã tồn tại</DialogTitle>
+                <Description>Không thể xử lý vì đánh giá đã tồn tại.</Description>
                 <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>OK</button>
+                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>Đồng ý</button>
                 </div>
             </DialogPanel>
             </div>
@@ -28,10 +28,10 @@ const WarningDialogs = ({WarningType,setWarningType,setloading}:{WarningType:nul
         <Dialog open={WarningType==='noOrder'} onClose={() => setWarningType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                <DialogTitle className="font-bold">Purchase product</DialogTitle>
-                <Description>Only the customers who bought this product can share their review.</Description>
+                <DialogTitle className="font-bold">Mua sản phẩm</DialogTitle>
+                <Description>Chỉ khách hàng đã mua sản phẩm này mới có thể đánh giá.</Description>
                 <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>OK</button>
+                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>Đồng ý</button>
                 </div>
             </DialogPanel>
             </div>
@@ -39,10 +39,10 @@ const WarningDialogs = ({WarningType,setWarningType,setloading}:{WarningType:nul
         <Dialog open={WarningType==='error'} onClose={() => setWarningType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border  p-6 rounded-xl text-center drop-shadow-custom-xl bg-red-400 text-white">
-                <DialogTitle className="font-bold">Error</DialogTitle>
-                <Description>We are currently facing Down Time. Please Try again lator.</Description>
+                <DialogTitle className="font-bold">Lỗi</DialogTitle>
+                <Description>Hệ thống đang tạm gián đoạn. Vui lòng thử lại sau.</Description>
                 <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>OK</button>
+                    <button className='border-[1.5px] hover:bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>Đồng ý</button>
                 </div>
             </DialogPanel>
             </div>
@@ -50,10 +50,10 @@ const WarningDialogs = ({WarningType,setWarningType,setloading}:{WarningType:nul
         <Dialog open={WarningType==='notExists'} onClose={() => setWarningType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                <DialogTitle className="font-bold">Does not Exist</DialogTitle>
-                <Description>Review cannot be processed as the review does not exists.</Description>
+                <DialogTitle className="font-bold">Không tồn tại</DialogTitle>
+                <Description>Không thể xử lý vì đánh giá không tồn tại.</Description>
                 <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>OK</button>
+                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>Đồng ý</button>
                 </div>
             </DialogPanel>
             </div>
@@ -61,10 +61,10 @@ const WarningDialogs = ({WarningType,setWarningType,setloading}:{WarningType:nul
         <Dialog open={WarningType==='deleted'} onClose={() => setWarningType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-12 rounded-xl text-center drop-shadow-custom-xl">
-                <DialogTitle className="font-bold">Successfully Deleted</DialogTitle>
-                <Description>Your review will be deleted shortly. Thank you</Description>
+                <DialogTitle className="font-bold">Xóa thành công</DialogTitle>
+                <Description>Đánh giá của bạn sẽ được xóa trong thời gian ngắn. Cảm ơn bạn.</Description>
                 <div className="flex justify-center gap-4">
-                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>OK</button>
+                    <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setWarningType(null)}>Đồng ý</button>
                 </div>
             </DialogPanel>
             </div>

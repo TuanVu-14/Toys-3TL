@@ -54,19 +54,19 @@ const DealTime: React.FC<PropType> = ({ endTime }) => {
     <div className='flex gap-5'>
       <div className='flex flex-col bg-gray-200 w-16 h-16 rounded-2xl items-center justify-center'>
         <p className='text-xl font-semibold'>{timeRemaining.days}</p>
-        <p className='text-sm text-davysilver'>Days</p>
+        <p className='text-sm text-davysilver'>Ngày</p>
       </div>
       <div className='flex flex-col bg-gray-200 w-16 h-16 rounded-2xl items-center justify-center'>
         <p className='text-xl font-semibold'>{timeRemaining.hours}</p>
-        <p className='text-sm text-davysilver'>Hours</p>
+        <p className='text-sm text-davysilver'>Giờ</p>
       </div>
       <div className='flex flex-col bg-gray-200 w-16 h-16 rounded-2xl items-center justify-center'>
         <p className='text-xl font-semibold'>{timeRemaining.minutes}</p>
-        <p className='text-sm text-davysilver'>Min</p>
+        <p className='text-sm text-davysilver'>Phút</p>
       </div>
       <div className='flex flex-col bg-gray-200 w-16 h-16 rounded-2xl items-center justify-center'>
         <p className='text-xl font-semibold'>{timeRemaining.seconds}</p>
-        <p className='text-sm text-davysilver'>Sec</p>
+        <p className='text-sm text-davysilver'>Giây</p>
       </div>
     </div>
   );

@@ -31,7 +31,7 @@ const SALES_ORDER_STATUSES = [
   { value: "Pending",    label: "Chờ xác nhận" },
   { value: "Confirmed",  label: "Đã xác nhận" },
   { value: "Preparing",  label: "Đang chuẩn bị hàng" },
-  { value: "Shipping",   label: "Đang giao hàng" },
+  { value: "Giao hàng",   label: "Đang giao hàng" },
   { value: "Completed",  label: "Giao thành công / Hoàn thành" },
   { value: "Cancelled",  label: "Đã hủy" },
 ];
@@ -60,7 +60,7 @@ export default function SalesStaffManager() {
   const tabs = useMemo(() => [
     ["consulting", "Tư vấn sản phẩm"],
     ["orders", "Tạo/Xác nhận đơn"],
-    ["coupons", "Coupon"],
+    ["coupons", "Mã giảm giá"],
     ["care", "Chăm sóc KH"],
   ], []);
 
@@ -172,8 +172,8 @@ export default function SalesStaffManager() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Stat label="Sản phẩm tư vấn" value={summary?.products || 0} />
         <Stat label="Đơn chờ xác nhận" value={summary?.pendingOrders || 0} />
-        <Stat label="Coupon" value={coupons.length || 0} />
-        <Stat label="Wishlist" value={summary?.wishlistItems || 0} />
+        <Stat label="Mã giảm giá" value={coupons.length || 0} />
+        <Stat label="Yêu thích" value={summary?.wishlistItems || 0} />
       </div>
 
       {message ? <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-700">{message}</div> : null}

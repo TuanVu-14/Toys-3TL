@@ -37,10 +37,10 @@ const Addresses = ({Component,setdialogType,setselectedAddress,setLoading,userID
   }
   return (
     <div className='w-full h-full py-4 px-4 overflow-auto'>
-      <h1 className='text-xl font-semibold'>Manage Addresses</h1>
+      <h1 className='text-xl font-semibold'>Quản lý địa chỉ</h1>
       <div>
         <div className='flex justify-end mb-5'>
-          <button onClick={()=>setdialogType('newaddress')} className='bg-primary-600 text-white px-4 py-2 rounded-xl'>Add Address</button>
+          <button onClick={()=>setdialogType('newaddress')} className='bg-primary-600 text-white px-4 py-2 rounded-xl'>Thêm địa chỉ</button>
         </div>
         <div className='flex flex-col gap-4 py-2 px-2'>
           {
@@ -49,8 +49,8 @@ const Addresses = ({Component,setdialogType,setselectedAddress,setLoading,userID
                 <div className='border-[1px] max-w-[380px] rounded-l-xl rounded-br-xl px-4 py-4 flex flex-col gap-2 drop-shadow-custom-xl bg-white'>
                   <div className='flex justify-between'>
                     <p className='text-gray-800 bg-gray-100 w-[60px] text-sm font-medium rounded-xl px-2 py-1'>{each.addressType}</p>
-                    {each.is_default && <p className='bg-salmon px-2 py-1 rounded-xl text-sm text-white'>Default</p>}
-                    {!each.is_default && <button onClick={()=>changeDefault(each.addressID,userID)} className='bg-salmon px-2 py-1 rounded-xl text-sm text-white'>Set Default</button>}
+                    {each.is_default && <p className='bg-salmon px-2 py-1 rounded-xl text-sm text-white'>Mặc định</p>}
+                    {!each.is_default && <button onClick={()=>changeDefault(each.addressID,userID)} className='bg-salmon px-2 py-1 rounded-xl text-sm text-white'>Đặt làm mặc định</button>}
                   </div>
                   <div className='flex justify-between text-sm font-medium'>
                     <p>{each.userName}</p>
@@ -60,7 +60,7 @@ const Addresses = ({Component,setdialogType,setselectedAddress,setLoading,userID
                     <p>{each.addressLine1}</p>
                     <p>{each.addressLine2}</p>
                     <p>{each.state}, {each.country}</p>
-                    <p className='font-medium mt-1'>Postal code- <span className='text-sm'>{each.postalCode}</span></p>
+                    <p className='font-medium mt-1'>Mã bưu chính - <span className='text-sm'>{each.postalCode}</span></p>
                   </div>
                 </div>
                 <div className='h-[100px] rounded-r-xl w-[35px] flex flex-col'>

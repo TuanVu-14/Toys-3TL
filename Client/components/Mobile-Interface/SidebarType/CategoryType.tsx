@@ -11,7 +11,7 @@ const CategoryType = () => {
     return (
         <>
                 <div className='flex w-[90%] items-center mt-5 justify-between'>
-                    <p className='text-salmon font-bold text-lg tracking-[2px]'>CATEGORY</p>
+                    <p className='text-salmon font-bold text-lg tracking-[2px]'>DANH MỤC</p>
                     <button  onClick={toggleSidebar}><i className="fa-solid fa-xmark fa-xl"></i></button>
                 </div>
                 <div className='w-[90%]'>
@@ -48,7 +48,7 @@ const CategoryType = () => {
 
                 </div>
                 <div className='h-[500px] border-t-[1px] w-[80%] pt-2'>
-                    <p className='text-salmon font-bold text-lg tracking-[2px]'>Categories</p>
+                    <p className='text-salmon font-bold text-lg tracking-[2px]'>Danh mục</p>
                     {allCategories.map((each,index)=>
                     <div key={index}>
                         <div className='flex mt-3 border-b-[1px] pb-3 tracking-wider justify-between hover:cursor-pointer'>

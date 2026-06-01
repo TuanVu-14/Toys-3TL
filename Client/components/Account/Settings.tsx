@@ -65,11 +65,11 @@ const Settings = () => {
                     <div className='rounded-xl py-1 px-1 flex flex-col gap-2'>
                         <button id='profile' onClick={()=>setmenuType('profile')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='profile' && 'hover:text-salmon'}  ${menuType==='profile' ? 'bg-salmon text-white': 'bg-white'}`}>
                             <UserIcon className='w-[35px] max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
-                            <p className='hidden lg:flex'>Profile Information</p>
+                            <p className='hidden lg:flex'>Thông tin hồ sơ</p>
                         </button>
                         <button id='address' onClick={()=>setmenuType('address')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='address' && 'hover:text-salmon'}  ${menuType==='address' ? 'bg-salmon text-white': 'bg-white'}`}>
                             <BookOpenIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
-                            <p className='hidden lg:flex'>Manage Addresses</p>
+                            <p className='hidden lg:flex'>Quản lý địa chỉ</p>
                         </button>
                         <button id='giftcard' onClick={()=>setmenuType('giftcard')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='giftcard' && 'hover:text-salmon'}  ${menuType==='giftcard' ? 'bg-salmon text-white': 'bg-white'}`}>
                             <GiftIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
@@ -77,11 +77,11 @@ const Settings = () => {
                         </button>
                         <button id='coupon' onClick={()=>setmenuType('coupon')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='coupon' && 'hover:text-salmon'}  ${menuType==='coupon' ? 'bg-salmon text-white': 'bg-white'}`}>
                             <ReceiptPercentIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
-                            <p className='hidden lg:flex'>Available Coupons</p>
+                            <p className='hidden lg:flex'>Mã giảm giá hiện có</p>
                         </button>
                         <button id='wishlist' onClick={()=>setmenuType('wishlist')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='wishlist' && 'hover:text-salmon'}  ${menuType==='wishlist' ? 'bg-salmon text-white': 'bg-white'}`}>
                             <QueueListIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
-                            <p className='hidden lg:flex'>My Wishlist</p>
+                            <p className='hidden lg:flex'>Danh sách yêu thích</p>
                         </button>
                         {/* <div className='flex items-center gap-4 drop-shadow-custom-xl bg-white rounded-xl py-1 px-1 cursor-pointer hover:text-salmon'>
                             <CreditCardIcon className=' max-w-[35px] rounded-xl bg-white drop-shadow-custom-xl px-2 py-2'/>
@@ -89,7 +89,7 @@ const Settings = () => {
                         </div> */}
                         {/* <div className='flex items-center gap-4 drop-shadow-custom-xl bg-white rounded-xl py-1 px-1 cursor-pointer hover:text-salmon'>
                             <EnvelopeIcon className=' max-w-[35px] rounded-xl bg-white drop-shadow-custom-xl px-2 py-2'/>
-                            <p>My Notifications</p>
+                            <p>Thông báo của tôi</p>
                         </div>
                         <div className='flex items-center gap-4 drop-shadow-custom-xl bg-white rounded-xl py-1 px-1 cursor-pointer hover:text-salmon'>
                             <ListBulletIcon className=' max-w-[35px] rounded-xl bg-white drop-shadow-custom-xl px-2 py-2'/>

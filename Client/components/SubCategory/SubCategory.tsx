@@ -52,7 +52,7 @@ const SubCategory = () => {
   const specificCategory = categoryCapture.subcategory as string;
 
   const currDirectory = [
-    'Categories',
+    'Danh mục',
     specficMainCategory,
     specificCategory,
   ];

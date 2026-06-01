@@ -66,11 +66,11 @@ const getProductImage = (images: Product['images']) => {
 
 export default function Quickview({ product, open, setOpen }: ProductCardProps) {
   // const [open, setOpen] = useState(false)
-  const colRef = useRef<string>('Default');
-  const sizeRef = useRef<string>('Default');
+  const colRef = useRef<string>('Mặc định');
+  const sizeRef = useRef<string>('Mặc định');
   const [btnLoading, setbtnLoading] = useState(false);
-  const [selectedColor, setSelectedColor] = useState(product.colors.length===0 ? {colorid:0,name:'Default',colorname:'Default',colorclass:''} : product.colors[0]);
-  const [selectedSize, setSelectedSize] = useState(product.sizes.length===0 ? {sizeid:0,name:'Default',sizename:'Default',instock:true} : product.sizes[0]);
+  const [selectedColor, setSelectedColor] = useState(product.colors.length===0 ? {colorid:0,name:'Mặc định',colorname:'Mặc định',colorclass:''} : product.colors[0]);
+  const [selectedSize, setSelectedSize] = useState(product.sizes.length===0 ? {sizeid:0,name:'Mặc định',sizename:'Mặc định',instock:true} : product.sizes[0]);
   const { appState } = useApp();
   const dispatch = useAppDispatch();
   const defaultAccount = useAppSelector((state) => state.userState.defaultAccount)
@@ -131,7 +131,7 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
                     className="absolute right-4 top-4 text-gray-400 hover:text-gray-500 sm:right-6 sm:top-8 md:right-6 md:top-6 lg:right-8 lg:top-8"
                     onClick={() => setOpen(false)}
                   >
-                    <span className="sr-only">Close</span>
+                    <span className="sr-only">Đóng</span>
                     <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                   </button>
 
@@ -151,7 +151,7 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
 
                         {/* Reviews */}
                         <div className="mt-6">
-                          <h4 className="sr-only">Reviews</h4>
+                          <h4 className="sr-only">Đánh giá</h4>
                           <div className="flex items-center">
                             <Stars stars={product.stars}/>
                             <p className="sr-only">{product.stars} out of 5 stars</p>
@@ -170,7 +170,7 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
                         <div>
                           {/* Colors */}
                         {product.colors.length != 0 && <fieldset aria-label="Choose a color">
-                            <legend className="text-sm font-medium text-gray-900">Color</legend>
+                            <legend className="text-sm font-medium text-gray-900">Màu sắc</legend>
 
                             <RadioGroup
                               value={selectedColor}
@@ -206,7 +206,7 @@ export default function Quickview({ product, open, setOpen }: ProductCardProps) 
                           {/* Sizes */}
                           {product.sizes.length != 0 &&<fieldset className="mt-10" aria-label="Choose a size">
                             <div className="flex items-center justify-between">
-                              <div className="text-sm font-medium text-gray-900">Size</div>
+                              <div className="text-sm font-medium text-gray-900">Kích cỡ</div>
                               <a href="#" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                                 Size guide
                               </a>

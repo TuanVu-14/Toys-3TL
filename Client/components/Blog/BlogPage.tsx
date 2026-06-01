@@ -39,10 +39,10 @@ const BlogPage = () => {
           <DialogPanel className="max-w-5xl space-y-4 overflow-y-auto max-h-screen border bg-white p-8 rounded-xl">
               <DialogTitle className="font-bold text-center text-2xl">{selectedData.current.title}</DialogTitle>
               <img src={selectedData.current.imglink} className='mx-auto rounded-xl font-semibold' width={720} alt={selectedData.current.imgalt}/>
-              <p className='font-medium text-end'>By <span className='rounded-xl px-2 py-2 bg-salmon text-white'>{selectedData.current.author}</span></p>
+              <p className='font-medium text-end'>Bởi <span className='rounded-xl px-2 py-2 bg-salmon text-white'>{selectedData.current.author}</span></p>
               <Description className='text-center bg-salmon text-white rounded-xl px-2 py-2 tracking-wider'>{selectedData.current.content}</Description>
               <div className="flex justify-center gap-4">
-              <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialog(false)}>Close</button>
+              <button className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialog(false)}>Đóng</button>
               </div>
           </DialogPanel>
           </div>
@@ -56,7 +56,7 @@ const BlogPage = () => {
               <div className='flex flex-col max-w-[300px]'>
                 <p className='text-salmon'>{each.category}</p>
                 <p className='font-semibold tracking-normal text-lg mb-2 cursor-pointer' onClick={()=>{selectedData.current=each;setdialog(true)}}>{each.title}</p>
-                <p className='text-silver tracking-wider'>By <span className='text-davysilver'>{each.author}</span> / {formatDate(each.published_date)}</p>
+                <p className='text-silver tracking-wider'>Bởi <span className='text-davysilver'>{each.author}</span> / {formatDate(each.published_date)}</p>
               </div>
             </div>
           ))}

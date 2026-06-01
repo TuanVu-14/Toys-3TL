@@ -50,7 +50,7 @@ const PaymentFailed = () => {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Payment Failed</h2>
+          <h2 className="text-2xl font-bold mb-2">Thanh toán thất bại</h2>
           <p className="mb-6">
             Order ID <span className="font-bold">#{params.orderID}</span> payment could not be processed.
           </p>

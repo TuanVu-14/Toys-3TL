@@ -12,7 +12,7 @@ interface UserCoupon {
 const Coupons = ({Component}:{Component:UserCoupon[]}) => {
   return (
     <div className='w-full h-full py-4 px-4 overflow-auto'>
-      <h1 className='text-xl font-semibold'>Available Coupons</h1>
+      <h1 className='text-xl font-semibold'>Mã giảm giá hiện có</h1>
       <div className='flex flex-col'>
         {Component.map((each,index)=>
         <div key={index} className='flex flex-col gap-4 py-2 px-2'>

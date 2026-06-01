@@ -5,17 +5,17 @@ const Contact = () => {
   return (
     <div className='border-t-[1px]'>
         <div className="container mx-auto px-4 py-8 w-[80%] border-[1px] rounded-xl mt-5">
-            <h1 className="text-4xl font-bold border-b-[1px] border-gray-300 pb-2 mb-8">Contact Us</h1>
+            <h1 className="text-4xl font-bold border-b-[1px] border-gray-300 pb-2 mb-8">Liên hệ với chúng tôi</h1>
 
             <section className="mb-8">
-                <p className='max-w-[1000px]'>We're here to help! At [Your E-commerce Site Name], we value open communication and are committed to providing you with the best possible service. Whether you have a question, need assistance, or want to share feedback, we encourage you to get in touch with us.</p>
+                <p className='max-w-[1000px]'>Chúng tôi luôn sẵn sàng hỗ trợ! Tại [Tên website thương mại điện tử], chúng tôi coi trọng giao tiếp cởi mở và cam kết mang đến dịch vụ tốt nhất cho bạn. Dù bạn có câu hỏi, cần hỗ trợ hay muốn góp ý, hãy liên hệ với chúng tôi.</p>
             </section>
 
             <section className="mb-8 flex flex-col gap-5">
-                <h2 className="text-2xl font-semibold mb-2">How to Reach Us</h2>
+                <h2 className="text-2xl font-semibold mb-2">Cách liên hệ với chúng tôi</h2>
                 <div>
-                    <h3 className="text-xl font-semibold mb-1">Customer Support:</h3>
-                    <p className='max-w-[1000px]'>Our dedicated customer support team is ready to assist you with any inquiries you may have. You can reach us via the following methods:</p>
+                    <h3 className="text-xl font-semibold mb-1">Hỗ trợ khách hàng:</h3>
+                    <p className='max-w-[1000px]'>Đội ngũ hỗ trợ khách hàng luôn sẵn sàng giải đáp mọi thắc mắc của bạn. Bạn có thể liên hệ qua các cách sau:</p>
                 </div>
                 <div>
                     <h4 className="text-lg font-semibold mb-1">Email:</h4>
@@ -27,8 +27,8 @@ const Contact = () => {
                     </p>
                 </div>
                 <div>
-                    <h4 className="text-lg font-semibold mb-1">Social Media:</h4>
-                    <p className='max-w-[1000px]'>Connect with us on our social media channels for the latest updates, promotions, and support:</p>
+                    <h4 className="text-lg font-semibold mb-1">Mạng xã hội:</h4>
+                    <p className='max-w-[1000px]'>Kết nối với chúng tôi trên mạng xã hội để nhận cập nhật, khuyến mãi và hỗ trợ mới nhất:</p>
                     <ul className="list-disc list-inside ml-4">
                         <li><a href="https://www.facebook.com/yourpage" className="text-blue-500" target="_blank">Facebook</a></li>
                         <li><a href="https://www.twitter.com/yourhandle" className="text-blue-500" target="_blank">Twitter</a></li>
@@ -38,20 +38,20 @@ const Contact = () => {
             </section>
 
             <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-2">Frequently Asked Questions (FAQ)</h2>
+                <h2 className="text-2xl font-semibold mb-2">Câu hỏi thường gặp (FAQ)</h2>
                 <p>For quick answers to common questions, visit our <a href="#" className="text-blue-500">FAQ</a> page. You might find the information you need without waiting for a response.</p>
             </section>
 
             <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-2">Feedback</h2>
+                <h2 className="text-2xl font-semibold mb-2">Góp ý</h2>
                 <p className='max-w-[1000px]'>We are always looking for ways to improve and would love to hear your thoughts. Whether it’s about our products, services, or website, your feedback is invaluable to us. Please send your comments and suggestions to <a href="mailto:feedback@yourwebsite.com" className="text-blue-500">feedback@yourwebsite.com</a>.</p>
             </section>
 
             <section className="mb-8">
-                <h2 className="text-2xl font-semibold mb-2">Help Center</h2>
-                <p className='max-w-[1000px]'>Explore our <a href="#" className="text-blue-500">Help Center</a> for detailed guides, how-tos, and troubleshooting tips. It's a comprehensive resource designed to assist you with everything from account setup to order tracking.</p>
+                <h2 className="text-2xl font-semibold mb-2">Trung tâm trợ giúp</h2>
+                <p className='max-w-[1000px]'>Explore our <a href="#" className="text-blue-500">Trung tâm trợ giúp</a> để xem hướng dẫn chi tiết, mẹo xử lý lỗi và cách theo dõi đơn hàng.</p>
             </section>
-            <p>Thank you for choosing [Your E-commerce Site Name]. We look forward to assisting you!</p>
+            <p>Cảm ơn bạn đã lựa chọn [Tên website thương mại điện tử]. Chúng tôi rất mong được hỗ trợ bạn!</p>
         </div>
         <ContactForm/>
     </div>

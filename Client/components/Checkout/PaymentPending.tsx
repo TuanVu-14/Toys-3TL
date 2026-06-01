@@ -50,7 +50,7 @@ const PaymentPending = () => {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Payment Pending</h2>
+          <h2 className="text-2xl font-bold mb-2">Đang chờ thanh toán</h2>
           <p className="mb-6">
             Order ID <span className="font-bold">#{params.orderID}</span> payment is pending confirmation.
           </p>

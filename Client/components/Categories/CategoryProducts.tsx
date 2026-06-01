@@ -184,7 +184,7 @@ const CategoryProducts = ({
 }) => {
   return (
     <section className="w-full">
-      <h2 className="mb-6 border-b border-gray-200 pb-3 text-2xl font-bold">Products</h2>
+      <h2 className="mb-6 border-b border-gray-200 pb-3 text-2xl font-bold">Sản phẩm</h2>
 
       {loading && <Loading />}
 

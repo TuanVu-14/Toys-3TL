@@ -363,7 +363,7 @@ export default function CartCheckout() {
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Payment</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Thanh toán</h3>
                 <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4">
                   <input
                     id="pay-on-delivery"
@@ -455,7 +455,7 @@ export default function CartCheckout() {
                       <div key={`${item.title}-${index}`} className="flex gap-4 border-b border-gray-100 pb-4">
                         <img
                           src={item.imglink || '/no-image.png'}
-                          alt={item.imgalt || item.title || 'Product'}
+                          alt={item.imgalt || item.title || 'Sản phẩm'}
                           className="h-20 w-20 rounded-lg object-cover"
                         />
                         <div className="min-w-0 flex-1">
@@ -472,27 +472,27 @@ export default function CartCheckout() {
 
                 <div className="mt-6 divide-y divide-gray-200">
                   <dl className="flex items-center justify-between gap-4 py-3">
-                    <dt className="text-base font-normal text-gray-500">Subtotal</dt>
+                    <dt className="text-base font-normal text-gray-500">Tạm tính</dt>
                     <dd className="text-base font-medium text-gray-900">{formatPrice(subTotal)}</dd>
                   </dl>
                   <dl className="flex items-center justify-between gap-4 py-3">
-                    <dt className="text-base font-normal text-gray-500">Shipping Charge</dt>
+                    <dt className="text-base font-normal text-gray-500">Phí vận chuyển</dt>
                     <dd className="text-base font-medium text-gray-900">{formatPrice(shipping)}</dd>
                   </dl>
                   {paymentFee > 0 && (
                     <dl className="flex items-center justify-between gap-4 py-3">
-                      <dt className="text-base font-normal text-gray-500">Payment Processing Charge</dt>
+                      <dt className="text-base font-normal text-gray-500">Phí xử lý thanh toán</dt>
                       <dd className="text-base font-medium text-gray-900">{formatPrice(paymentFee)}</dd>
                     </dl>
                   )}
                   {discount > 0 && (
                     <dl className="flex items-center justify-between gap-4 py-3">
-                      <dt className="text-base font-normal text-gray-500">Discount</dt>
+                      <dt className="text-base font-normal text-gray-500">Giảm giá</dt>
                       <dd className="text-base font-medium text-green-600">-{formatPrice(discount)}</dd>
                     </dl>
                   )}
                   <dl className="flex items-center justify-between gap-4 py-3">
-                    <dt className="text-base font-bold text-gray-900">Total</dt>
+                    <dt className="text-base font-bold text-gray-900">Tổng cộng</dt>
                     <dd className="text-base font-bold text-gray-900">{formatPrice(totalAmount)}</dd>
                   </dl>
                 </div>

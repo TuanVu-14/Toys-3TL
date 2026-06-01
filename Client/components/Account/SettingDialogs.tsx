@@ -132,7 +132,7 @@ const SettingDialogs = ({addresses,dialogType,setdialogType,menuType,userID,setL
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4 drop-shadow-custom-xl">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-8 rounded-xl text-center">
                 <DialogTitle className="font-bold">Update {dialogType != null && capitalizeFirstLetter(dialogType)}</DialogTitle>
-                <Description>Note: updating Profile will not affect current orders.</Description>
+                <Description>Lưu ý: cập nhật hồ sơ sẽ không ảnh hưởng đến các đơn hàng hiện tại.</Description>
                 <form onSubmit={(e)=>formSubmitProfile(e,dialogType,userID)} className='flex flex-col gap-2'>
                     <label>Please Enter New {dialogType != null && capitalizeFirstLetter(dialogType)}</label>
                     {dialogType==='name' && <input required id='updateValue' type='text' minLength={4} maxLength={64} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>}
@@ -141,8 +141,8 @@ const SettingDialogs = ({addresses,dialogType,setdialogType,menuType,userID,setL
                     {dialogType==='number' && <input id='updateValue' type='tel' required minLength={10} maxLength={10} className='border-[1px] w-[150px] rounded-md py-1 mx-auto'/>}
                     {dialogType==='password' && <input id='updateValue' type='password' required minLength={8} maxLength={32} className='border-[1px] w-[150px] rounded-md py-1 mx-auto'/>}
                     <div className="flex justify-center gap-4">
-                    <button type='button' className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Cancel</button>
-                    <button type='submit' className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' >Submit</button>
+                    <button type='button' className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Hủy</button>
+                    <button type='submit' className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' >Gửi</button>
                     </div>
                 </form>
             </DialogPanel>
@@ -153,38 +153,38 @@ const SettingDialogs = ({addresses,dialogType,setdialogType,menuType,userID,setL
         <Dialog open={dialogType!=null} onClose={() => setdialogType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4 drop-shadow-custom-xl">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-8 rounded-xl text-center">
-                <DialogTitle className="font-bold">{'Update'} {dialogType != null && capitalizeFirstLetter(dialogType)}</DialogTitle>
-                <Description>Note: updating Profile will not affect current orders.</Description>
+                <DialogTitle className="font-bold">{'Cập nhật'} {dialogType != null && capitalizeFirstLetter(dialogType)}</DialogTitle>
+                <Description>Lưu ý: cập nhật hồ sơ sẽ không ảnh hưởng đến các đơn hàng hiện tại.</Description>
                 <form onSubmit={(e)=>formSubmitAddress(e,dialogType,userID,selectedAddress.addressID)} className='flex flex-col gap-2'>
                     <label>Please Enter New {dialogType != null && capitalizeFirstLetter(dialogType)}</label>
                     <div className='flex flex-col'>
                         <div className='flex gap-3 justify-center'>
                         <input type="radio" id="work" name="addresstype" value="WORK" defaultChecked={selectedAddress.addressType==='WORK'}/>
-                        <label htmlFor="work">Work</label>
+                        <label htmlFor="work">Cơ quan</label>
                         <input type="radio" id="home" name="addresstype" value="HOME" defaultChecked={selectedAddress.addressType==='HOME'}/>
-                        <label htmlFor="home">Home</label>
+                        <label htmlFor="home">Trang chủ</label>
                         </div>
                         
-                        <label>Name</label>
+                        <label>Tên</label>
                         <input defaultValue={selectedAddress.userName} required id='name' type='text' minLength={4} maxLength={64} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Contact Number</label>
+                        <label>Số liên hệ</label>
                         <input defaultValue={selectedAddress.contactNumber} required id='contactnumber' type='text' minLength={10} maxLength={10} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Address Line 1</label>
+                        <label>Địa chỉ dòng 1</label>
                         <input defaultValue={selectedAddress.addressLine1} required id='addressline1' type='text' minLength={2} maxLength={128} className='border-[1px] w-[300px] rounded-md py-1 mx-auto'/>
-                        <label>Address Line 2</label>
+                        <label>Địa chỉ dòng 2</label>
                         <input defaultValue={selectedAddress.addressLine2} required id='addressline2' type='text' minLength={2} maxLength={128} className='border-[1px] w-[300px] rounded-md py-1 mx-auto'/>
-                        <label>City</label>
+                        <label>Thành phố</label>
                         <input defaultValue={selectedAddress.city}  required id='city' type='text' minLength={2} maxLength={60} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>State</label>
+                        <label>Tỉnh/Thành</label>
                         <input defaultValue={selectedAddress.state}  required id='state' type='text' minLength={2} maxLength={16} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Country</label>
+                        <label>Quốc gia</label>
                         <input defaultValue={selectedAddress.country}  required id='country' type='text' minLength={2} maxLength={56} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Postal Code</label>
+                        <label>Mã bưu chính</label>
                         <input defaultValue={selectedAddress.postalCode}  required id='postalcode' type='number' minLength={6} maxLength={8} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
                     </div>
                     <div className="flex justify-center gap-4">
-                    <button type='button' className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Cancel</button>
-                    <button type='submit' className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl'>Submit</button>
+                    <button type='button' className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Hủy</button>
+                    <button type='submit' className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl'>Gửi</button>
                     </div>
                 </form>
             </DialogPanel>
@@ -195,37 +195,37 @@ const SettingDialogs = ({addresses,dialogType,setdialogType,menuType,userID,setL
         <Dialog open={dialogType!=null} onClose={() => setdialogType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4 drop-shadow-custom-xl">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-8 rounded-xl text-center">
-                <DialogTitle className="font-bold">Add New Address</DialogTitle>
-                <Description>Note: updating Profile will not affect current orders.</Description>
+                <DialogTitle className="font-bold">Thêm địa chỉ mới</DialogTitle>
+                <Description>Lưu ý: cập nhật hồ sơ sẽ không ảnh hưởng đến các đơn hàng hiện tại.</Description>
                 <form onSubmit={(e)=>formSubmitAddress(e,dialogType,userID)} className='flex flex-col gap-2'>
-                    <label>Please Enter New Address</label>
+                    <label>Vui lòng nhập địa chỉ mới</label>
                     <div className='flex flex-col'>
                         <div className='flex gap-3 justify-center'>
                         <input type="radio" id="work" name="addresstype" value="WORK"/>
-                        <label htmlFor="work">Work</label>
+                        <label htmlFor="work">Cơ quan</label>
                         <input type="radio" id="home" name="addresstype" value="HOME" defaultChecked/>
-                        <label htmlFor="home">Home</label>
+                        <label htmlFor="home">Trang chủ</label>
                         </div>
-                        <label>Name</label>
+                        <label>Tên</label>
                         <input required id='name' type='text' minLength={4} maxLength={64} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Contact Number</label>
+                        <label>Số liên hệ</label>
                         <input required id='contactnumber' type='text' minLength={10} maxLength={10} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Address Line 1</label>
+                        <label>Địa chỉ dòng 1</label>
                         <input required id='addressline1' type='text' minLength={2} maxLength={128} className='border-[1px] w-[300px] rounded-md py-1 mx-auto'/>
-                        <label>Address Line 2</label>
+                        <label>Địa chỉ dòng 2</label>
                         <input required id='addressline2' type='text' minLength={2} maxLength={128} className='border-[1px] w-[300px] rounded-md py-1 mx-auto'/>
-                        <label>City</label>
+                        <label>Thành phố</label>
                         <input  required id='city' type='text' minLength={2} maxLength={60} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>State</label>
+                        <label>Tỉnh/Thành</label>
                         <input  required id='state' type='text' minLength={2} maxLength={16} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Country</label>
+                        <label>Quốc gia</label>
                         <input required id='country' type='text' minLength={2} maxLength={56} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
-                        <label>Postal Code</label>
+                        <label>Mã bưu chính</label>
                         <input required id='postalcode' type='number' minLength={6} maxLength={8} className='border-[1px] w-[200px] rounded-md py-1 mx-auto'/>
                     </div>
                     <div className="flex justify-center gap-4">
-                    <button type='button' className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Cancel</button>
-                    <button type='submit' className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' >Submit</button>
+                    <button type='button' className='border-[1.5px] hover:bg-black transition-colors duration-300 hover:text-white py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Hủy</button>
+                    <button type='submit' className='bg-primary-600 text-white py-2 hover:bg-primary-800 transition-colors duration-300 px-8 rounded-xl' >Gửi</button>
                     </div>
                 </form>
             </DialogPanel>
@@ -237,11 +237,11 @@ const SettingDialogs = ({addresses,dialogType,setdialogType,menuType,userID,setL
         <Dialog open={dialogType==='deleteaddress'} onClose={() => setdialogType(null)} className="relative z-50">
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border  p-6 rounded-xl text-center drop-shadow-custom-xl bg-red-400 text-white">
-                <DialogTitle className="font-bold">Confirmation</DialogTitle>
-                <Description>Are you sure, you want to delete the Address?</Description>
+                <DialogTitle className="font-bold">Xác nhận</DialogTitle>
+                <Description>Bạn có chắc muốn xóa địa chỉ này không?</Description>
                 <div className="flex justify-center gap-4">
-                <button className='border-[1.5px] text-black hover:bg-red-200 bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Cancel</button>
-                    <button className='border-[1.5px] hover:bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => {deleteAddress(userID,selectedAddress.addressID);setdialogType(null)}}>Delete</button>
+                <button className='border-[1.5px] text-black hover:bg-red-200 bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Hủy</button>
+                    <button className='border-[1.5px] hover:bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => {deleteAddress(userID,selectedAddress.addressID);setdialogType(null)}}>Xóa</button>
                 </div>
             </DialogPanel>
             </div>
@@ -252,10 +252,10 @@ const SettingDialogs = ({addresses,dialogType,setdialogType,menuType,userID,setL
     <Dialog open={dialogType==='defaultAddressError'} onClose={() => setdialogType(null)} className="relative z-50">
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
         <DialogPanel className="max-w-lg space-y-4 border  p-6 rounded-xl text-center drop-shadow-custom-xl bg-red-400 text-white">
-            <DialogTitle className="font-bold">Server Error</DialogTitle>
+            <DialogTitle className="font-bold">Lỗi máy chủ</DialogTitle>
             <Description>We're facing downtime currently. Please try again lator.</Description>
             <div className="flex justify-center gap-4">
-            <button className='border-[1.5px] text-black hover:bg-red-200 bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>OK</button>
+            <button className='border-[1.5px] text-black hover:bg-red-200 bg-white transition-colors duration-300 hover:text-black py-2 px-6 rounded-xl' onClick={() => setdialogType(null)}>Đồng ý</button>
             </div>
         </DialogPanel>
         </div>

@@ -49,7 +49,7 @@ const Options = ({
     <div className="mt-6 space-y-5">
       {colors.length > 0 && (
         <div>
-          <p className="mb-2 font-medium text-gray-900">Color</p>
+          <p className="mb-2 font-medium text-gray-900">Màu sắc</p>
           <div className="flex flex-wrap gap-3">
             {colors.map((color) => (
               <button
@@ -71,7 +71,7 @@ const Options = ({
 
       {sizes.length > 0 && (
         <div>
-          <p className="mb-2 font-medium text-gray-900">Size</p>
+          <p className="mb-2 font-medium text-gray-900">Kích cỡ</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {sizes.map((size) => (
               <button

@@ -209,7 +209,7 @@ export default function OrdersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-3xl border border-rose-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-rose-500">Order Management</p>
+          <p className="text-sm font-semibold text-rose-500">Quản lý đơn hàng</p>
           <h2 className="text-2xl font-bold text-slate-900">Quản lý đơn hàng</h2>
           <p className="mt-1 text-sm text-slate-500">Bấm vào một đơn để xem chi tiết ngắn gọn cho admin.</p>
         </div>

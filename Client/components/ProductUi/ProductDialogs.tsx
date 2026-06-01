@@ -192,12 +192,12 @@ const ProductDialogs = ({
         >
           <div className="fixed inset-0 flex w-screen items-center justify-center p-4 drop-shadow-custom-xl">
             <DialogPanel className="max-w-lg space-y-4 border bg-white p-8 rounded-xl text-center">
-              <DialogTitle className="font-bold">Write a Review</DialogTitle>
+              <DialogTitle className="font-bold">Viết đánh giá</DialogTitle>
               <Description>Share your Review</Description>
 
               <form onSubmit={createForm} className="flex flex-col gap-2">
                 <div className="flex flex-col items-center">
-                  <label>Stars</label>
+                  <label>Sao</label>
                   {starWarning && (
                     <p className="text-red-500">Rate Atleast 1 Star to Proceed</p>
                   )}
@@ -210,7 +210,7 @@ const ProductDialogs = ({
                     color2="#ffd700"
                   />
 
-                  <label>Title</label>
+                  <label>Tiêu đề</label>
                   <input
                     placeholder="Review Title in 50 characters"
                     required
@@ -222,7 +222,7 @@ const ProductDialogs = ({
                     className="border-[1px] w-[300px] rounded-md py-1 mx-auto"
                   />
 
-                  <label>Description</label>
+                  <label>Mô tả</label>
                   <textarea
                     placeholder="Review Description in 500 characters"
                     required
@@ -268,7 +268,7 @@ const ProductDialogs = ({
 
               <form onSubmit={editForm} className="flex flex-col gap-2">
                 <div className="flex flex-col items-center">
-                  <label>Stars</label>
+                  <label>Sao</label>
                   {starWarning && (
                     <p className="text-red-500">Rate Atleast 1 Star to Proceed</p>
                   )}
@@ -281,7 +281,7 @@ const ProductDialogs = ({
                     color2="#ffd700"
                   />
 
-                  <label>Title</label>
+                  <label>Tiêu đề</label>
                   <input
                     defaultValue={selectedReview != null ? selectedReview.title : ""}
                     placeholder="Review Title in 50 characters"
@@ -294,7 +294,7 @@ const ProductDialogs = ({
                     className="border-[1px] w-[300px] rounded-md py-1 mx-auto"
                   />
 
-                  <label>Description</label>
+                  <label>Mô tả</label>
                   <textarea
                     defaultValue={selectedReview != null ? selectedReview.comment : ""}
                     placeholder="Review Description in 500 characters"
@@ -336,8 +336,8 @@ const ProductDialogs = ({
         >
           <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
             <DialogPanel className="max-w-lg space-y-4 border p-6 rounded-xl text-center drop-shadow-custom-xl bg-red-400 text-white">
-              <DialogTitle className="font-bold">Confirmation</DialogTitle>
-              <Description>Are you sure, you want to delete the Review?</Description>
+              <DialogTitle className="font-bold">Xác nhận</DialogTitle>
+              <Description>Bạn có chắc muốn xóa đánh giá này không?</Description>
               <div className="flex justify-center gap-4">
                 <button
                   type="button"

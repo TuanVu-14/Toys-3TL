@@ -22,7 +22,7 @@ const ContactForm = () => {
                 break;
         
             default:
-                setmessage('We faced an error while processing your request. Please try again later.')
+                setmessage('Có lỗi khi xử lý yêu cầu. Vui lòng thử lại sau.')
                 setloading(false);
                 break;
         }
@@ -35,7 +35,7 @@ const ContactForm = () => {
               <div className="group w-full h-full">
                   <div className="relative h-full">
                       <img src="https://pagedone.io/asset/uploads/1696488602.png" alt="ContactUs tailwind section" className="w-full h-full lg:rounded-l-2xl rounded-2xl bg-blend-multiply bg-indigo-700"/>
-                      <h1 className="font-manrope text-white text-4xl font-bold leading-10 absolute top-11 left-11">Contact us</h1>
+                      <h1 className="font-manrope text-white text-4xl font-bold leading-10 absolute top-11 left-11">Liên hệ với chúng tôi</h1>
                       <div className="absolute bottom-0 w-full lg:p-11 p-5">
                           <div className="bg-white rounded-lg p-6 block">
                               <a href="#" className="flex items-center mb-6">
@@ -64,12 +64,12 @@ const ContactForm = () => {
           </div>
 
           <form action={'/'} onSubmit={formSubmit} className="bg-gray-50 p-5 lg:p-11 lg:rounded-r-2xl rounded-2xl">
-              <h2 className="text-indigo-600 font-manrope text-4xl font-semibold leading-10 mb-11">Send Us A Message</h2>
-              <input required type="text" name='name' id='name' className="w-full h-12 text-gray-600 placeholder-gray-400  shadow-sm bg-transparent text-lg font-normal leading-7 rounded-full border border-gray-200 focus:outline-none pl-4 mb-10" placeholder="Name"/>
+              <h2 className="text-indigo-600 font-manrope text-4xl font-semibold leading-10 mb-11">Gửi tin nhắn cho chúng tôi</h2>
+              <input required type="text" name='name' id='name' className="w-full h-12 text-gray-600 placeholder-gray-400  shadow-sm bg-transparent text-lg font-normal leading-7 rounded-full border border-gray-200 focus:outline-none pl-4 mb-10" placeholder="Tên"/>
               <input required type="text" name='email' id='email' className="w-full h-12 text-gray-600 placeholder-gray-400 shadow-sm bg-transparent text-lg font-normal leading-7 rounded-full border border-gray-200 focus:outline-none pl-4 mb-10" placeholder="Email"/>
-              <input required type="text" minLength={10} maxLength={10} name='phone' id='phone' className="w-full h-12 text-gray-600 placeholder-gray-400 shadow-sm bg-transparent text-lg font-normal leading-7 rounded-full border border-gray-200 focus:outline-none pl-4 mb-10" placeholder="Phone"/>
+              <input required type="text" minLength={10} maxLength={10} name='phone' id='phone' className="w-full h-12 text-gray-600 placeholder-gray-400 shadow-sm bg-transparent text-lg font-normal leading-7 rounded-full border border-gray-200 focus:outline-none pl-4 mb-10" placeholder="Số điện thoại"/>
               <div className="mb-10">
-                  <h4 className="text-gray-500 text-lg font-normal leading-7 mb-4">Preferred method  of communication</h4>
+                  <h4 className="text-gray-500 text-lg font-normal leading-7 mb-4">Phương thức liên hệ ưu tiên</h4>
                   <div className="flex">
                       <div className="flex items-center mr-11 gap-2">
                           <input defaultChecked value={'email'} id="radiogroup" type="radio" name="radiogroup" className="checked:bg-no-repeat checked:bg-center checked:border-indigo-500 checked:bg-indigo-100"/>
@@ -85,14 +85,14 @@ const ContactForm = () => {
                       </div>
                   </div>
               </div>
-              <textarea required name='message' id='message' className="w-full h-32 text-gray-600 placeholder-gray-400 bg-transparent text-lg shadow-sm font-normal leading-7 rounded-lg border border-gray-200 focus:outline-none pl-4 mb-10" placeholder="Message"></textarea>
+              <textarea required name='message' id='message' className="w-full h-32 text-gray-600 placeholder-gray-400 bg-transparent text-lg shadow-sm font-normal leading-7 rounded-lg border border-gray-200 focus:outline-none pl-4 mb-10" placeholder="Tin nhắn"></textarea>
               <button type='submit' disabled={loading} className="w-full h-12 text-white text-base font-semibold leading-6 rounded-full transition-all duration-700 hover:bg-indigo-800 bg-indigo-600 shadow-sm">
               {loading ? <div className="relative"><div className=''>
                 <div className='drop-shadow-custom-xl rounded-xl w-[120px] mx-auto'>
                     <div className="border-gray-300 my-auto mx-auto h-8 w-8 animate-spin rounded-full border-8 border-t-blue-600" />
                 </div>
                 
-            </div></div> : "Send"}
+            </div></div> : "Gửi"}
               </button>
               {message!=null && <p className='text-xl font-medium'>{message}</p>}
         </form>

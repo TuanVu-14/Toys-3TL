@@ -109,7 +109,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 font-black text-white">3TL</div>
           <div>
             <h2 className="font-bold text-slate-900">3TL-Store</h2>
-            <p className="text-xs text-slate-500">{roleNames[role] || "Admin"}</p>
+            <p className="text-xs text-slate-500">{roleNames[role] || "Quản trị"}</p>
           </div>
         </Link>
 

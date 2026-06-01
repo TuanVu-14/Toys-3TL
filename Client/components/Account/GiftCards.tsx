@@ -16,7 +16,7 @@ interface GiftCard {
 const GiftCards = ({Component}:{Component:GiftCard[]}) => {
   return (
     <div className='w-full h-full py-4 px-4 overflow-auto'>
-      <h1 className='text-xl font-semibold'>Gift Cards</h1>
+      <h1 className='text-xl font-semibold'>Thẻ quà tặng</h1>
       <div>
         <div className='flex justify-end mb-5'>
           {/* <button className='bg-primary-600 text-white px-4 py-2 rounded-xl'>Add Gift Card</button> */}

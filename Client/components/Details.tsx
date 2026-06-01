@@ -7,7 +7,7 @@ const Details = () => {
   return (
     <div className='flex w-full flex-wrap justify-center mt-5 gap-8'>
         <div>
-            <p className='tracking-base text-xl font-semibold text-eblack border-b-[1px] pb-3 border-b-gray-200'>Authors</p>
+            <p className='tracking-base text-xl font-semibold text-eblack border-b-[1px] pb-3 border-b-gray-200'>Tác giả</p>
             <div className='rounded-xl w-80 h-[375px] border-[1px] mt-8 flex justify-center items-center flex-col gap-4'>
                 <img height={80} width={80} src={testimonial.imgLink} className=' rounded-full'/>
                 <p className=' text-silver font-bold text-lg tracking-wide'>{testimonial.name} </p>
@@ -20,7 +20,7 @@ const Details = () => {
             <img className='h-full w-full rounded-xl absolute' src='/images/banner.png'/>
         </div>
         <div>
-            <p className='tracking-base text-xl font-semibold text-eblack border-b-[1px] pb-3 border-b-gray-200 tracking-wide'>Our Services</p>
+            <p className='tracking-base text-xl font-semibold text-eblack border-b-[1px] pb-3 border-b-gray-200 tracking-wide'>Dịch vụ</p>
             <div className='rounded-xl w-80 h-[375px] border-[1px] p-8 mt-8 flex justify-center flex-col gap-4'>
                 {featuresSec.map((each,index)=>
                     <a key={index} href='/our-services' onMouseEnter={()=>sethover(index)} onMouseLeave={()=>sethover(null)} className='flex justify-start items-center gap-5'>

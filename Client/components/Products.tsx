@@ -146,7 +146,7 @@ const Products = () => {
   }, [])
   return (
     <div className='sm:ml-4 ml-auto mr-auto pb-8 max-w-[980px] flex flex-col flex-1'>
-      <p className='border-b-[1px] leading-[40px] tracking-wide font-semibold text-lg'>Products</p>
+      <p className='border-b-[1px] leading-[40px] tracking-wide font-semibold text-lg'>Sản phẩm</p>
       <div className='flex flex-wrap mt-8 gap-5 justify-center xl:w-[980px] lg:w-[720px] max-w-[980px] flex-1 relative'>
       {loading && <div className='w-full h-[300px]'>{loading && <div className='absolute left-0 right-0 top-0 z-50'><Loading/></div>}</div> }
         {(dataChecked.current && products.current.length === 0) && <NoProduct/>}

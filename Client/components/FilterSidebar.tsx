@@ -96,16 +96,16 @@ const FilterSidebar = ({
   return (
     <form key={formKey} onSubmit={filterSubmit} className="space-y-7 rounded-2xl border bg-white p-5">
       <div>
-        <h6 className="mb-4 text-xl font-bold">Prices</h6>
+        <h6 className="mb-4 text-xl font-bold">Giá</h6>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>From</label>
+            <label className={labelClass}>Từ</label>
             <input type="number" name="pricefrom" min="0" defaultValue="0" className={inputClass} />
           </div>
 
           <div>
-            <label className={labelClass}>To</label>
+            <label className={labelClass}>Đến</label>
             <input type="number" name="priceto" min="0" defaultValue="5000000" className={inputClass} />
           </div>
         </div>
@@ -114,7 +114,7 @@ const FilterSidebar = ({
       </div>
 
       <div>
-        <h6 className="mb-4 text-xl font-bold">Product Catalog</h6>
+        <h6 className="mb-4 text-xl font-bold">Danh mục sản phẩm</h6>
 
         <div className="space-y-4">
           <div>
@@ -180,7 +180,7 @@ const FilterSidebar = ({
       </div>
 
       <div>
-        <h6 className="mb-3 text-xl font-bold">Minimum Rating</h6>
+        <h6 className="mb-3 text-xl font-bold">Đánh giá tối thiểu</h6>
         <select name="rating" className={inputClass} defaultValue="0">
           <option value="0">Tất cả đánh giá</option>
           {[5, 4, 3, 2, 1].map((rating) => (

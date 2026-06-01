@@ -22,8 +22,8 @@ const MenuType = () => {
             name: 'loggedIn',
             isExtendable: true,
             extendables: [
-                { title: 'Settings', link: '/account-settings' },
-                { title: 'Orders', link: '/orders' },
+                { title: 'Cài đặt', link: '/account-settings' },
+                { title: 'Đơn hàng', link: '/orders' },
             ]
         },
         {
@@ -31,7 +31,7 @@ const MenuType = () => {
             isExtendable: true,
             extendables: [
                 { title: 'Register', link: '/sign-up' },
-                { title: 'Sign In', link: '/sign-in' },
+                { title: 'Đăng nhập', link: '/sign-in' },
             ]
         }
         // Add other nav buttons here if needed
@@ -48,9 +48,9 @@ const MenuType = () => {
                 <button  onClick={toggleSidebar}><i className="fa-solid fa-xmark fa-xl"></i></button>
             </div>
             <div className='w-[90%]'>
-                {navBtns.map((each,index)=> each.name != 'Categories' &&
+                {navBtns.map((each,index)=> each.name != 'Danh mục' &&
                 <div key={index}>
-                    <div onClick={()=>{each.name!='Blog' ? handleToggle(index) : router.push('/blog')}} className='flex mt-3 border-b-[1px] pb-3 tracking-wider justify-between hover:cursor-pointer'>
+                    <div onClick={()=>{each.name!='Bài viết' ? handleToggle(index) : router.push('/blog')}} className='flex mt-3 border-b-[1px] pb-3 tracking-wider justify-between hover:cursor-pointer'>
                         <p className='text-gray-700'>{each.name}</p>
                         {each.isExtendable && <p className='text-silver font-bold'>{collapsedIndex === index ? '-' : '+'}</p>}
                     </div>

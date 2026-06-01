@@ -142,7 +142,7 @@ const SubProducts = ({
 }) => {
   return (
     <div className="w-full">
-      <h2 className="mb-4 text-xl font-bold">Products</h2>
+      <h2 className="mb-4 text-xl font-bold">Sản phẩm</h2>
 
       {loading && <Loading />}
 

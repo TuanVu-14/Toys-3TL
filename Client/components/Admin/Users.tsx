@@ -25,10 +25,10 @@ type UserFormData = {
 };
 
 const roles = [
-  { value: "customer", label: "Customer" },
-  { value: "sales_staff", label: "Sales Staff" },
-  { value: "warehouse_manager", label: "Warehouse Manager" },
-  { value: "admin", label: "Admin" },
+  { value: "customer", label: "Khách hàng" },
+  { value: "sales_staff", label: "Nhân viên bán hàng" },
+  { value: "warehouse_manager", label: "Quản lý kho" },
+  { value: "admin", label: "Quản trị" },
 ];
 
 const inputClass = "mt-2 w-full rounded-2xl border border-rose-200 px-4 py-2 text-sm outline-none focus:border-rose-500";

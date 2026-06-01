@@ -41,7 +41,7 @@ const Deal = () => {
   return (
     
     <div className=' mt-10 sm:ml-4 ml-auto mr-auto max-w-[350px] md:max-w-[800px] xl:max-w-[1000px] flex flex-col justify-center'>
-        <p className='border-b-[1px] leading-[50px] tracking-[1.5px] font-semibold text-[18px]'> Deal of The Day</p>
+        <p className='border-b-[1px] leading-[50px] tracking-[1.5px] font-semibold text-[18px]'> Ưu đãi trong ngày</p>
         <div className='p-[30px] border-[1px] mt-8 rounded-xl overflow-auto snap-x snap-proximity flex gap-20 relative'>
         {loading && <div className='w-screen h-[350px]'>{loading && <div className='absolute left-0 right-0 top-16 z-50'><Loading/></div>}</div> }
             {data.current.map((each,index)=><div key={index} className='flex flex-col rounded-xl min-w-full gap-5 h-auto items-center lg:pl-10 snap-center lg:flex-row'>
@@ -59,13 +59,13 @@ const Deal = () => {
                         <p className='text-2xl font-bold text-salmon'>{formatPrice(each.price, each.discount)}</p>
                         <p className='text-xl line-through ml-4 text-silver'>{formatPrice(each.price)}</p>
                     </div>
-                    <Link href={`/product/${each.productid}`}><button className='bg-salmon p-2 rounded-xl w-[165px] h-[45px] text-white font-bold text-lg hover:bg-black hover:text-white transition-colors duration-200'>Visit Product</button></Link>
+                    <Link href={`/product/${each.productid}`}><button className='bg-salmon p-2 rounded-xl w-[165px] h-[45px] text-white font-bold text-lg hover:bg-black hover:text-white transition-colors duration-200'>Xem sản phẩm</button></Link>
                     <div className='flex justify-between'>
-                        <p className='text-sm'>ALREADY SOLD: <span className='font-bold'>{each.sold}</span></p>
-                        <p className='text-sm'>AVAILABLE: <span className='font-bold'>{each.available}</span></p>
+                        <p className='text-sm'>ĐÃ BÁN: <span className='font-bold'>{each.sold}</span></p>
+                        <p className='text-sm'>CÒN LẠI: <span className='font-bold'>{each.available}</span></p>
                     </div>
                     <ProgressBar sold={each.sold} total={each.available}/>
-                    <p className='text-sm font-semibold'>HURRY UP! OFFER ENDS IN:</p>
+                    <p className='text-sm font-semibold'>NHANH TAY! ƯU ĐÃI KẾT THÚC SAU:</p>
                     <DealTime endTime={each.end_time}/>
                 </div>
             </div>

@@ -49,10 +49,10 @@ const Signup = () => {
                         </div>
                     </div>
                     <div className='flex gap-5 text-gray-500 font-medium text-sm'>
-                        <Link className='hover:underline hover:text-gray-800' href={'/about'}>About</Link>
-                        <Link className='hover:underline hover:text-gray-800' href={'/policy/terms&conditions'}>Terms & Conditions</Link>
-                        <Link className='hover:underline hover:text-gray-800' href={'/policy/privacypolicy'}>Privacy</Link>
-                        <Link className='hover:underline hover:text-gray-800' href={'/contact'}>Contact</Link>
+                        <Link className='hover:underline hover:text-gray-800' href={'/about'}>Giới thiệu</Link>
+                        <Link className='hover:underline hover:text-gray-800' href={'/policy/terms&conditions'}>Điều khoản & điều kiện</Link>
+                        <Link className='hover:underline hover:text-gray-800' href={'/policy/privacypolicy'}>Bảo mật</Link>
+                        <Link className='hover:underline hover:text-gray-800' href={'/contact'}>Liên hệ</Link>
                     </div>
                     
                 </div>
@@ -88,31 +88,31 @@ const Signup = () => {
                                 
                                 {/* <div className='flex w-full items-center'>
                                     <div className='w-full h-[2px] bg-gray-200'></div>
-                                    <p className='px-4 text-gray-500'>or</p>
+                                    <p className='px-4 text-gray-500'>hoặc</p>
                                     <div className='w-full h-[2px] bg-gray-200'></div>
                                 </div> */}
                                 <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Full Name</label>
+                                    <label className="block mb-2 text-sm font-medium text-gray-900">Họ và tên</label>
                                     <input minLength={4} maxLength={64} required type="text" name="name" id="name" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Enter your name"/>
                                 </div>
                                 <div>
                                     <label className="block mb-2 text-sm font-medium text-gray-900">Email</label>
-                                    <input minLength={5} maxLength={128} required type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Enter your email"/>
+                                    <input minLength={5} maxLength={128} required type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Nhập email của bạn"/>
                                 </div>
                                 <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Password</label>
+                                    <label className="block mb-2 text-sm font-medium text-gray-900">Mật khẩu</label>
                                     <input minLength={8} maxLength={32} required type="password" name="password" id="password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                 </div>
                                 <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Re-Enter Password</label>
+                                    <label className="block mb-2 text-sm font-medium text-gray-900">Nhập lại mật khẩu</label>
                                     <input minLength={8} maxLength={32} required type="password" name="repassword" id="repassword" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                 </div>
                                 <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Mobile Number</label>
+                                    <label className="block mb-2 text-sm font-medium text-gray-900">Số điện thoại</label>
                                     <input required type="tel" minLength={10} maxLength={10} pattern="\d{10}" inputMode='numeric' name="mobilenum" id="mobilenum" placeholder="Enter your mobile number" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                 </div>
                                 <div>
-                                    <label className="block mb-2 text-sm font-medium text-gray-900">Date of Birth</label>
+                                    <label className="block mb-2 text-sm font-medium text-gray-900">Ngày sinh</label>
                                     <input required type="date" name="dob" id="dob" placeholder="Enter your DOB" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                 </div>
                                 <div className="flex flex-col gap-4 justify-between">
@@ -129,7 +129,7 @@ const Signup = () => {
                                             </Checkbox>
                                         </div>
                                         <div onClick={()=>toggleAgreement()} className="ml-3 text-sm font-medium">
-                                            <label className="text-gray-500">By signing up, you are creating a H-Comm account, and you agree to H-Comm <a className='text-primary-700 font-medium' href='/policy/terms&conditions'>Terms & Conditions</a> and <a className='text-primary-700 font-medium' href='/policy/privacypolicy'>Privacy Policy.</a></label>
+                                            <label className="text-gray-500">Khi đăng ký, bạn đang tạo tài khoản H-Comm và đồng ý với <a className='text-primary-700 font-medium' href='/policy/terms&conditions'>Điều khoản & điều kiện</a> and <a className='text-primary-700 font-medium' href='/policy/privacypolicy'>Chính sách bảo mật.</a></label>
                                         </div>
                                     </div>
                                     <div className="flex items-start">
@@ -145,13 +145,13 @@ const Signup = () => {
                                         </Checkbox>
                                         </div>
                                         <div onClick={()=>setUpdates(!updates)} className="ml-3 text-sm font-medium">
-                                            <label className="text-gray-500">Email me about product updates and resources.</label>
+                                            <label className="text-gray-500">Gửi email cho tôi về cập nhật sản phẩm và tài nguyên.</label>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Sign up with New account</button>
+                                <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Đăng ký tài khoản mới</button>
                                 <p className="text-sm font-light text-gray-500">
-                                    Already have an account yet? <Link href="/sign-in" className="font-medium text-primary-600 hover:underline">Sign in</Link>
+                                    Already have an account yet? <Link href="/sign-in" className="font-medium text-primary-600 hover:underline">Đăng nhập</Link>
                                 </p>
                             </form>
                         </div>

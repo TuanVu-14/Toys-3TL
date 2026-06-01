@@ -16,7 +16,7 @@ const slugToText = (value: string) => decodeURIComponent(value || '').split('-')
 const Search = () => {
   const params = useParams<{ productName: string }>()
   const specificCategory = String(params.productName || '')
-  const currDirectory = ['Search', specificCategory]
+  const currDirectory = ['Tìm kiếm', specificCategory]
 
   const [loading, setLoading] = useState(true)
   const [clear, setClear] = useState(false)

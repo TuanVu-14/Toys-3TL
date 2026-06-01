@@ -438,7 +438,7 @@ const ProductPage = () => {
               </div>
 
               <div className="mt-8">
-                <p className="mb-2 font-semibold text-gray-900">Quantity</p>
+                <p className="mb-2 font-semibold text-gray-900">Số lượng</p>
                 <div className="flex items-center">
                   <button
                     type="button"
@@ -487,7 +487,7 @@ const ProductPage = () => {
                   onClick={() => itemStateUpdate('cart')}
                   className="h-12 w-48 rounded-lg bg-yellow-400 font-semibold transition hover:border-2 hover:border-yellow-400 hover:bg-white disabled:cursor-not-allowed disabled:bg-gray-200"
                 >
-                  {btnLoading ? 'Loading...' : 'ADD TO CART'}
+                  {btnLoading ? 'Đang tải...' : 'ADD TO CART'}
                 </button>
 
                 <button
@@ -514,7 +514,7 @@ const ProductPage = () => {
 
           <div className="mt-12 grid gap-10 lg:grid-cols-[1fr_420px]">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Description:</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Mô tả:</h2>
               <p className="mt-4 leading-8 text-gray-600">{data.description}</p>
             </div>
 

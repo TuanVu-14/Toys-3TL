@@ -96,7 +96,7 @@ const OrderConfirmation = () => {
             />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold mb-2">Your order is confirmed!</h2>
+        <h2 className="text-2xl font-bold mb-2">Đơn hàng của bạn đã được xác nhận!</h2>
         <p className="mb-6">
           Your order <span className="font-bold">#{params.orderID}</span> will be processed within 24 hours during working days. We will notify you by email once your order has been shipped.
         </p>

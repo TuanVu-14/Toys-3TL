@@ -58,10 +58,10 @@ const SignIn = () => {
                             </div>
                         </div>
                         <div className='flex gap-5 text-gray-500 font-medium text-sm'>
-                            <Link className='hover:underline hover:text-gray-800' href={'/about'}>About</Link>
-                            <Link className='hover:underline hover:text-gray-800' href={'/policy/terms&conditions'}>Terms & Conditions</Link>
-                            <Link className='hover:underline hover:text-gray-800' href={'/policy/privacypolicy'}>Privacy</Link>
-                            <Link className='hover:underline hover:text-gray-800' href={'/contact'}>Contact</Link>
+                            <Link className='hover:underline hover:text-gray-800' href={'/about'}>Giới thiệu</Link>
+                            <Link className='hover:underline hover:text-gray-800' href={'/policy/terms&conditions'}>Điều khoản & điều kiện</Link>
+                            <Link className='hover:underline hover:text-gray-800' href={'/policy/privacypolicy'}>Bảo mật</Link>
+                            <Link className='hover:underline hover:text-gray-800' href={'/contact'}>Liên hệ</Link>
                         </div>
                         
                     </div>
@@ -75,7 +75,7 @@ const SignIn = () => {
                                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
                                     Welcome back
                                 </h1>
-                                <h1 className='font-semibold'>Sign in With</h1>
+                                <h1 className='font-semibold'>Đăng nhập bằng</h1>
                                 <div className='flex justify-between gap-2'>
                                     <button onClick={()=>{setloading(true);googleLogin()}} className='px-6 w-4/6 mx-auto py-3 border-[1px] border-gray-200 rounded-lg text-sm font-medium transition-colors duration-150 hover:bg-gray-700 hover:text-white'>
                                         <div className='flex items-center justify-center gap-2'>
@@ -87,15 +87,15 @@ const SignIn = () => {
                                     
                                     <div className='flex w-full items-center'>
                                         <div className='w-full h-[2px] bg-gray-200'></div>
-                                        <p className='px-4 text-gray-500'>or</p>
+                                        <p className='px-4 text-gray-500'>hoặc</p>
                                         <div className='w-full h-[2px] bg-gray-200'></div>
                                     </div>
                                     <div data-validate = "Enter Email">
                                         <label className="block mb-2 text-sm font-medium text-gray-900">Email</label>
-                                        <input maxLength={128} minLength={5} required type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Enter your email"/>
+                                        <input maxLength={128} minLength={5} required type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5" placeholder="Nhập email của bạn"/>
                                     </div>
-                                    <div data-validate = "Enter Password">
-                                        <label className="block mb-2 text-sm font-medium text-gray-900">Password</label>
+                                    <div data-validate = "Nhập mật khẩu">
+                                        <label className="block mb-2 text-sm font-medium text-gray-900">Mật khẩu</label>
                                         <input minLength={8} maxLength={32} required type="password" name="password" id="password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                     </div>
                                     <div className="flex items-center justify-between">
@@ -112,14 +112,14 @@ const SignIn = () => {
                                             </Checkbox>
                                             </div>
                                             <div className="ml-3 text-sm">
-                                                <label className="text-gray-500">Remember me</label>
+                                                <label className="text-gray-500">Ghi nhớ đăng nhập</label>
                                             </div>
                                         </div>
-                                        <Link href="/forgot-password" className="text-sm font-medium text-primary-600 hover:underline">Forgot password?</Link>
+                                        <Link href="/forgot-password" className="text-sm font-medium text-primary-600 hover:underline">Quên mật khẩu?</Link>
                                     </div>
-                                    <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Sign in to your account</button>
+                                    <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Đăng nhập vào tài khoản</button>
                                     <p className="text-sm font-light text-gray-500">
-                                        Don’t have an account yet? <Link href="/sign-up" className="font-medium text-primary-600 hover:underline">Sign up</Link>
+                                        Don’t have an account yet? <Link href="/sign-up" className="font-medium text-primary-600 hover:underline">Đăng ký</Link>
                                     </p>
                                 </form>
                             </div>

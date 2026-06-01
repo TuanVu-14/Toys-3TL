@@ -160,7 +160,7 @@ const OrderDetail = () => {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {isInvoice ? 'Invoice' : 'Your Order Details'}
+                {isInvoice ? 'Hóa đơn' : 'Your Order Details'}
               </h1>
               <p className="mt-2 text-gray-500">Order #{data.order_code}{data.orderid}</p>
             </div>
@@ -175,30 +175,30 @@ const OrderDetail = () => {
           </div>
 
           <section className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-xl font-bold text-gray-900">Order Info</h2>
+            <h2 className="text-xl font-bold text-gray-900">Thông tin đơn hàng</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <div><p className="text-sm text-gray-500">Order Date</p><p className="font-semibold">{formatDate(data.createdat)}</p></div>
-              <div><p className="text-sm text-gray-500">Delivery Date</p><p className="font-semibold">{formatDate(data.deliveredat)}</p></div>
-              <div><p className="text-sm text-gray-500">Status</p><p className="font-semibold">{data.orderstatus}</p></div>
-              <div><p className="text-sm text-gray-500">Payment Status</p><p className="font-semibold">{data.paymentstatus}</p></div>
-              <div><p className="text-sm text-gray-500">Payment Method</p><p className="font-semibold">{data.paymentmethod}</p></div>
+              <div><p className="text-sm text-gray-500">Ngày đặt hàng</p><p className="font-semibold">{formatDate(data.createdat)}</p></div>
+              <div><p className="text-sm text-gray-500">Ngày giao hàng</p><p className="font-semibold">{formatDate(data.deliveredat)}</p></div>
+              <div><p className="text-sm text-gray-500">Trạng thái</p><p className="font-semibold">{data.orderstatus}</p></div>
+              <div><p className="text-sm text-gray-500">Trạng thái thanh toán</p><p className="font-semibold">{data.paymentstatus}</p></div>
+              <div><p className="text-sm text-gray-500">Phương thức thanh toán</p><p className="font-semibold">{data.paymentmethod}</p></div>
             </div>
           </section>
 
           <section className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-xl font-bold text-gray-900">Customer</h2>
+            <h2 className="text-xl font-bold text-gray-900">Khách hàng</h2>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
-              <div><p className="text-sm text-gray-500">Name</p><p className="font-semibold">{data.username}</p></div>
+              <div><p className="text-sm text-gray-500">Tên</p><p className="font-semibold">{data.username}</p></div>
               <div><p className="text-sm text-gray-500">Email</p><p className="font-semibold">{data.email}</p></div>
-              <div><p className="text-sm text-gray-500">Phone Number</p><p className="font-semibold">{data.mobile_number}</p></div>
+              <div><p className="text-sm text-gray-500">Số điện thoại</p><p className="font-semibold">{data.mobile_number}</p></div>
             </div>
           </section>
 
           <section className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-xl font-bold text-gray-900">Address</h2>
+            <h2 className="text-xl font-bold text-gray-900">Địa chỉ</h2>
             <div className="mt-5 grid gap-6 md:grid-cols-2">
-              <div><p className="text-gray-500">Shipping Address</p><p className="mt-2 font-semibold">{fullAddress(data.shippingaddress)}</p></div>
-              <div><p className="text-gray-500">Billing Address</p><p className="mt-2 font-semibold">{fullAddress(data.billingaddress)}</p></div>
+              <div><p className="text-gray-500">Địa chỉ giao hàng</p><p className="mt-2 font-semibold">{fullAddress(data.shippingaddress)}</p></div>
+              <div><p className="text-gray-500">Địa chỉ thanh toán</p><p className="mt-2 font-semibold">{fullAddress(data.billingaddress)}</p></div>
             </div>
           </section>
 
@@ -207,9 +207,9 @@ const OrderDetail = () => {
               <img src={data.imglink} alt={data.imgalt || data.title} className="h-20 w-32 rounded-lg object-cover" />
               <div>
                 <h3 className="text-xl font-bold text-gray-900">{data.title}</h3>
-                {data.sizename && <p className="mt-1 text-sm"><span className="font-semibold">Size:</span> {data.sizename}</p>}
-                {data.colorname && <p className="mt-1 text-sm"><span className="font-semibold">Color:</span> {data.colorname}</p>}
-                <p className="mt-1 text-gray-500">Quantity: <span className="font-semibold text-gray-900">{data.quantity}</span></p>
+                {data.sizename && <p className="mt-1 text-sm"><span className="font-semibold">Kích cỡ:</span> {data.sizename}</p>}
+                {data.colorname && <p className="mt-1 text-sm"><span className="font-semibold">Màu sắc:</span> {data.colorname}</p>}
+                <p className="mt-1 text-gray-500">Số lượng: <span className="font-semibold text-gray-900">{data.quantity}</span></p>
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-gray-900">{formatPrice(discountedUnitPrice)}</p>
@@ -222,16 +222,16 @@ const OrderDetail = () => {
 
           <section className="rounded-xl border border-gray-200 bg-white p-6">
             <div className="space-y-4 text-lg">
-              <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-bold">{formatPrice(subTotal)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Shipping Charge</span><span className="font-bold">{formatPrice(shipping)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Tạm tính</span><span className="font-bold">{formatPrice(subTotal)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Phí vận chuyển</span><span className="font-bold">{formatPrice(shipping)}</span></div>
               {data.paymentmethod === 'Payment on Delivery' && (
-                <div className="flex justify-between"><span className="text-gray-500">Payment Processing Charge</span><span className="font-bold">{formatPrice(paymentCharge.current)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Phí xử lý thanh toán</span><span className="font-bold">{formatPrice(paymentCharge.current)}</span></div>
               )}
               {discountAmount > 0 && (
-                <div className="flex justify-between"><span className="text-gray-500">Discount</span><span className="font-bold text-green-600">{formatPrice(discountAmount)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Giảm giá</span><span className="font-bold text-green-600">{formatPrice(discountAmount)}</span></div>
               )}
               <div className="border-t border-gray-200 pt-5 text-2xl font-bold">
-                <div className="flex justify-between"><span>Total</span><span>{formatPrice(totalAmount)}</span></div>
+                <div className="flex justify-between"><span>Tổng cộng</span><span>{formatPrice(totalAmount)}</span></div>
               </div>
             </div>
           </section>

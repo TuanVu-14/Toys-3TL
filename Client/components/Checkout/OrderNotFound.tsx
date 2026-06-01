@@ -52,7 +52,7 @@ const OrderNotFound = () => {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Order Not Found</h2>
+          <h2 className="text-2xl font-bold mb-2">Không tìm thấy đơn hàng</h2>
           <p className="mb-6">
             Order ID <span className="font-bold">#{params.orderID}</span> could not be found.
           </p>
