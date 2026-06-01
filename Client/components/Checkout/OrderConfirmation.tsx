@@ -15,7 +15,8 @@ const OrderConfirmation = () => {
     const paymentPending = useRef(false);
     const [loading, setloading] = useState(true);
     async function sync(){
-        const orderCheck = await orderStatusDataHandler({orderID:params.orderID});
+        const orderID = Array.isArray(params.orderID) ? params.orderID[0] : params.orderID;
+        const orderCheck = await orderStatusDataHandler({orderID});
         switch (orderCheck.status) {
             case 200:
                 found.current = true;

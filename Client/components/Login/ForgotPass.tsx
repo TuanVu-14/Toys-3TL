@@ -67,11 +67,14 @@ const ForgotPass = () => {
                     setloading(false);
                     break;
                 default:
-                    toggleServerError;
+                    toggleServerError();
                     setloading(false);
                     break;
             }
-        }else toggleIsPassword();
+        }else {
+            setloading(false);
+            toggleIsPassword();
+        }
     };
     async function resendOTP(form:userData){
         setloading(true);
@@ -82,7 +85,7 @@ const ForgotPass = () => {
                     setloading(false);
                     break;
                 default:
-                    toggleServerError;
+                    toggleServerError();
                     setloading(false);
                     break;
         }
@@ -177,12 +180,12 @@ const ForgotPass = () => {
                     <div className="flex flex-col items-center justify-center min-w-[500px] px-6 py-8 mx-auto md:h-screen lg:py-0">
                         <Link href="#" className="flex items-center text-2xl font-semibold text-gray-900 dark:text-white">
                             <img className="w-12 h-12 mr-2" src="https://www.strivemindz.com/images/offerings/icons/ecommerce.png" alt="logo"/>
-                            H-Comm    
+                            3TL-Shop    
                         </Link>
                         <div className="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
                             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
                                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
-                                    Reset Password
+                                    Đặt lại mật khẩu
                                 </h1>
                                 <form onSubmit={(e)=>resetPass(e)} method='post' className="space-y-4 md:space-y-6 flex flex-col gap-4 lg:gap-0" action="/">
                                     <div data-validate = "Enter Email">
@@ -197,9 +200,9 @@ const ForgotPass = () => {
                                         <label className="block mb-2 text-sm font-medium text-gray-900">Nhập lại mật khẩu</label>
                                         <input minLength={8} maxLength={32} required type="password" name="repassword" id="repassword" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"/>
                                     </div>
-                                    <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Get OTP & Reset Password</button>
+                                    <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Nhận OTP và đặt lại mật khẩu</button>
                                 </form>
-                                <div className='text-center'><Link href="/sign-in" className="font-medium text-primary-600 hover:underline">Go Back</Link></div>
+                                <div className='text-center'><Link href="/sign-in" className="font-medium text-primary-600 hover:underline">Quay lại</Link></div>
                             </div>
                         </div>
                     </div>

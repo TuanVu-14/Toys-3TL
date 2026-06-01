@@ -3,10 +3,14 @@
 import React, { useEffect, useState } from "react";
 import {
   createChildProfile,
+  deleteChildProfile,
   getBirthdayCoupons,
   getChildProfiles,
   getGiftSuggestions,
+  runBirthdayReminderHandler,
+  updateChildProfile,
 } from "@/app/api/couponsApi";
+import { PencilIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 interface ChildProfileFormProps {
   userId: number;
@@ -17,70 +21,166 @@ interface ChildProfile {
   user_id: number;
   child_name: string;
   birth_date: string;
-  gender: string;
+  gender?: string | null;
+  favorite_category?: string | null;
+  favorite_skill?: string | null;
+  note?: string | null;
 }
 
 interface BirthdayCoupon {
-  child: {
-    child_id: number;
-    child_name: string;
-    birth_date: string;
-    gender: string;
-  };
-  coupon: {
-    coupon_id: number;
-    code: string;
-    discount_percent: number;
-    expires_at: string;
-  };
+  usercouponid: number;
+  userid: number;
+  couponid: number;
+  child_id: number | null;
+  is_used: boolean;
+  usedat?: string | null;
+  code: string;
+  description?: string | null;
+  discountpercentage: number;
+  maxdiscountamount?: number | null;
+  minpurchaseamount?: number | null;
+  validfrom?: string | null;
+  validuntil?: string | null;
+  event_type?: string | null;
+  child_name?: string | null;
+  birth_date?: string | null;
 }
 
 interface GiftSuggestion {
   productid: number;
   title: string;
-  price: string;
-  discount: string;
-  age_group?: string;
-  brand?: string;
-  skill_type?: string;
-  material?: string;
+  price: string | number;
+  discount?: string | number | null;
+  age_group?: string | null;
+  brand?: string | null;
+  skill_type?: string | null;
+  material?: string | null;
 }
 
+function toInputDate(value?: string | null) {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "Chưa có";
+  return new Date(value).toLocaleDateString("vi-VN");
+}
+
+function formatMoney(value?: string | number | null) {
+  const amount = Number(value || 0);
+  return `${amount.toLocaleString("vi-VN")}đ`;
+}
+
+function getBirthdayStatus(birthDateValue?: string | null) {
+  if (!birthDateValue) return "Chưa có ngày sinh";
+
+  const today = new Date();
+  const birthDate = new Date(birthDateValue);
+  let birthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+
+  if (birthday < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+    birthday = new Date(today.getFullYear() + 1, birthDate.getMonth(), birthDate.getDate());
+  }
+
+  const diff = birthday.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+  if (days === 0) return "Hôm nay là sinh nhật của bé";
+  if (days <= 7) return `Còn ${days} ngày nữa đến sinh nhật - hệ thống sẽ tạo mã giảm giá`;
+  return `Còn ${days} ngày nữa đến sinh nhật`;
+}
+
+const emptyForm = {
+  childName: "",
+  birthDate: "",
+  gender: "",
+  favoriteCategory: "",
+  favoriteSkill: "",
+  note: "",
+};
+
 const ChildProfileForm = ({ userId }: ChildProfileFormProps) => {
-  const [childName, setChildName] = useState("");
-  const [birthDate, setBirthDate] = useState("");
-  const [gender, setGender] = useState("");
+  const [childName, setChildName] = useState(emptyForm.childName);
+  const [birthDate, setBirthDate] = useState(emptyForm.birthDate);
+  const [gender, setGender] = useState(emptyForm.gender);
+  const [favoriteCategory, setFavoriteCategory] = useState(emptyForm.favoriteCategory);
+  const [favoriteSkill, setFavoriteSkill] = useState(emptyForm.favoriteSkill);
+  const [note, setNote] = useState(emptyForm.note);
+  const [editingChildId, setEditingChildId] = useState<number | null>(null);
+
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [coupons, setCoupons] = useState<BirthdayCoupon[]>([]);
   const [suggestions, setSuggestions] = useState<GiftSuggestion[]>([]);
 
+  function resetForm() {
+    setChildName("");
+    setBirthDate("");
+    setGender("");
+    setFavoriteCategory("");
+    setFavoriteSkill("");
+    setNote("");
+    setEditingChildId(null);
+  }
+
   async function loadMarketingData() {
     if (!userId) return;
 
+    setPageLoading(true);
     const [childRes, couponRes, suggestionRes] = await Promise.all([
       getChildProfiles(userId),
       getBirthdayCoupons(userId),
       getGiftSuggestions(userId),
     ]);
 
-    if (childRes.status === 200 && childRes.data?.data) {
-      setChildren(childRes.data.data);
+    if (childRes.status === 200 && childRes.data?.data) setChildren(childRes.data.data);
+    if (couponRes.status === 200 && couponRes.data?.data) setCoupons(couponRes.data.data);
+    if (suggestionRes.status === 200 && suggestionRes.data?.data) setSuggestions(suggestionRes.data.data);
+    setPageLoading(false);
+  }
+
+  function handleEdit(child: ChildProfile) {
+    setEditingChildId(child.child_id);
+    setChildName(child.child_name || "");
+    setBirthDate(toInputDate(child.birth_date));
+    setGender(child.gender || "");
+    setFavoriteCategory(child.favorite_category || "");
+    setFavoriteSkill(child.favorite_skill || "");
+    setNote(child.note || "");
+    setMessage("Đang sửa hồ sơ bé. Sau khi sửa bấm Cập nhật hồ sơ bé.");
+  }
+
+  async function handleDelete(child: ChildProfile) {
+    const ok = window.confirm(`Bạn có chắc muốn xóa hồ sơ của bé ${child.child_name}?`);
+    if (!ok) return;
+
+    setLoading(true);
+    setMessage("");
+
+    const response = await deleteChildProfile({ child_id: child.child_id, user_id: userId });
+
+    if (response.status === 200) {
+      setMessage("Đã xóa hồ sơ bé.");
+      if (editingChildId === child.child_id) resetForm();
+      await loadMarketingData();
+    } else {
+      setMessage(response.data?.message || "Không thể xóa hồ sơ bé.");
     }
 
-    if (couponRes.status === 200 && couponRes.data?.data) {
-      setCoupons(couponRes.data.data);
-    }
-
-    if (suggestionRes.status === 200 && suggestionRes.data?.data) {
-      setSuggestions(suggestionRes.data.data);
-    }
+    setLoading(false);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (!userId) {
+      setMessage("Bạn cần đăng nhập để lưu thông tin bé.");
+      return;
+    }
 
     if (!childName || !birthDate) {
       setMessage("Vui lòng nhập tên bé và ngày sinh.");
@@ -90,21 +190,31 @@ const ChildProfileForm = ({ userId }: ChildProfileFormProps) => {
     setLoading(true);
     setMessage("");
 
-    const response = await createChildProfile({
+    const payload = {
       user_id: userId,
-      child_name: childName,
+      child_name: childName.trim(),
       birth_date: birthDate,
       gender,
-    });
+      favorite_category: favoriteCategory,
+      favorite_skill: favoriteSkill,
+      note,
+    };
+
+    const response = editingChildId
+      ? await updateChildProfile({ child_id: editingChildId, ...payload })
+      : await createChildProfile(payload);
 
     if (response.status === 201 || response.status === 200) {
-      setMessage("Đã lưu thông tin bé thành công.");
-      setChildName("");
-      setBirthDate("");
-      setGender("");
+      await runBirthdayReminderHandler();
+      setMessage(
+        editingChildId
+          ? "Đã cập nhật hồ sơ bé. Nếu bé sắp sinh nhật trong vòng 7 ngày, hệ thống sẽ tạo/cập nhật nhắc hẹn."
+          : "Đã lưu thông tin bé. Nếu bé sắp sinh nhật trong vòng 7 ngày, hệ thống sẽ tạo mã và gửi thông báo.",
+      );
+      resetForm();
       await loadMarketingData();
     } else {
-      setMessage("Không thể lưu thông tin bé. Vui lòng thử lại.");
+      setMessage(response.data?.message || "Không thể lưu thông tin bé. Vui lòng thử lại.");
     }
 
     setLoading(false);
@@ -115,48 +225,56 @@ const ChildProfileForm = ({ userId }: ChildProfileFormProps) => {
   }, [userId]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      <div className="border rounded-xl p-6 bg-white shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">
-          Thông tin bé
-        </h2>
-
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="w-full h-full overflow-y-auto p-4 space-y-5">
+      <div className="rounded-xl border bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <label className="block mb-2 text-sm font-medium">
-              Tên bé
-            </label>
+            <h2 className="mb-1 text-xl font-semibold">Hồ sơ của bé</h2>
+            <p className="text-sm text-gray-500">
+              Nhập ngày sinh của bé để hệ thống nhắc sinh nhật, tạo mã giảm giá và gửi thông báo.
+            </p>
+          </div>
+          {editingChildId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="flex items-center gap-1 rounded-lg border px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              <XMarkIcon className="h-4 w-4" /> Hủy sửa
+            </button>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium">Tên bé *</label>
             <input
               type="text"
               value={childName}
               onChange={(e) => setChildName(e.target.value)}
               placeholder="Ví dụ: Minh Anh"
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm"
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-salmon"
               required
             />
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium">
-              Ngày sinh
-            </label>
+            <label className="mb-2 block text-sm font-medium">Ngày sinh *</label>
             <input
               type="date"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm"
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-salmon"
               required
             />
           </div>
 
           <div>
-            <label className="block mb-2 text-sm font-medium">
-              Giới tính
-            </label>
+            <label className="mb-2 block text-sm font-medium">Giới tính</label>
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm"
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-salmon"
             >
               <option value="">Không chọn</option>
               <option value="Nam">Nam</option>
@@ -165,77 +283,143 @@ const ChildProfileForm = ({ userId }: ChildProfileFormProps) => {
             </select>
           </div>
 
-          <div className="md:col-span-3">
+          <div>
+            <label className="mb-2 block text-sm font-medium">Sở thích / danh mục yêu thích</label>
+            <select
+              value={favoriteCategory}
+              onChange={(e) => setFavoriteCategory(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-salmon"
+            >
+              <option value="">Không chọn</option>
+              <option value="LEGO">LEGO</option>
+              <option value="STEM">STEM</option>
+              <option value="Mô hình">Mô hình</option>
+              <option value="Nhà bếp">Nhà bếp</option>
+              <option value="Búp bê">Búp bê</option>
+              <option value="Đồ chơi vận động">Đồ chơi vận động</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Kỹ năng muốn phát triển</label>
+            <select
+              value={favoriteSkill}
+              onChange={(e) => setFavoriteSkill(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-salmon"
+            >
+              <option value="">Không chọn</option>
+              <option value="Tư duy">Tư duy</option>
+              <option value="Vận động">Vận động</option>
+              <option value="Ngôn ngữ">Ngôn ngữ</option>
+              <option value="Sáng tạo">Sáng tạo</option>
+              <option value="Giao tiếp">Giao tiếp</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Ghi chú</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ví dụ: Bé thích xe, robot, màu xanh..."
+              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm outline-none focus:border-salmon"
+            />
+          </div>
+
+          <div className="flex gap-2 md:col-span-2">
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 disabled:opacity-60"
+              className="rounded-lg bg-salmon px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
             >
-              {loading ? "Đang lưu..." : "Lưu thông tin bé"}
+              {loading ? "Đang lưu..." : editingChildId ? "Cập nhật hồ sơ bé" : "Thêm hồ sơ bé"}
             </button>
+            {editingChildId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-gray-50"
+              >
+                Hủy
+              </button>
+            )}
           </div>
         </form>
 
-        {message && (
-          <p className="mt-4 text-sm font-medium text-primary-700">
-            {message}
-          </p>
-        )}
+        {message && <p className="mt-4 rounded-lg bg-orange-50 p-3 text-sm font-medium text-orange-700">{message}</p>}
       </div>
 
-      <div className="border rounded-xl p-6 bg-white shadow-sm">
-        <h3 className="text-lg font-semibold mb-3">
-          Hồ sơ bé đã lưu
-        </h3>
+      <div className="rounded-xl border bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-lg font-semibold">Hồ sơ bé đã lưu</h3>
 
-        {children.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Chưa có hồ sơ bé.
-          </p>
+        {pageLoading ? (
+          <p className="text-sm text-gray-500">Đang tải dữ liệu...</p>
+        ) : children.length === 0 ? (
+          <p className="text-sm text-gray-500">Chưa có hồ sơ bé. Hãy thêm ngày sinh để hệ thống nhắc sinh nhật.</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {children.map((child) => (
-              <div
-                key={child.child_id}
-                className="flex flex-col md:flex-row md:items-center md:justify-between rounded-lg bg-gray-50 p-3 text-sm"
-              >
-                <span>
-                  <b>{child.child_name}</b> - {child.gender || "Chưa chọn giới tính"}
-                </span>
-                <span>
-                  Ngày sinh: {new Date(child.birth_date).toLocaleDateString("vi-VN")}
-                </span>
+              <div key={child.child_id} className="rounded-lg bg-gray-50 p-4 text-sm">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="font-semibold">{child.child_name}</p>
+                    <p className="text-gray-600">Ngày sinh: {formatDate(child.birth_date)}</p>
+                    <p className="text-gray-600">Giới tính: {child.gender || "Chưa chọn"}</p>
+                    {(child.favorite_category || child.favorite_skill || child.note) && (
+                      <p className="mt-2 text-gray-600">
+                        Sở thích: {child.favorite_category || "N/A"} | Kỹ năng: {child.favorite_skill || "N/A"} {child.note ? `| ${child.note}` : ""}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2 md:items-end">
+                    <div className="rounded-lg bg-white px-3 py-2 text-orange-700 shadow-sm">
+                      {getBirthdayStatus(child.birth_date)}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(child)}
+                        className="flex items-center gap-1 rounded-lg bg-white px-3 py-2 text-sm shadow-sm hover:text-salmon"
+                      >
+                        <PencilIcon className="h-4 w-4" /> Sửa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(child)}
+                        className="flex items-center gap-1 rounded-lg bg-white px-3 py-2 text-sm text-red-600 shadow-sm hover:bg-red-50"
+                      >
+                        <TrashIcon className="h-4 w-4" /> Xóa
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <div className="border rounded-xl p-6 bg-white shadow-sm">
-        <h3 className="text-lg font-semibold mb-3">
-          Mã giảm giá sinh nhật
-        </h3>
+      <div className="rounded-xl border bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-lg font-semibold">Mã giảm giá sinh nhật</h3>
 
         {coupons.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Hiện chưa có mã sinh nhật. Mã sẽ được tạo khi sinh nhật của bé còn trong vòng 7 ngày.
-          </p>
+          <p className="text-sm text-gray-500">Hiện chưa có mã sinh nhật. Mã sẽ được tạo khi sinh nhật của bé còn trong vòng 7 ngày.</p>
         ) : (
           <div className="space-y-3">
             {coupons.map((item) => (
-              <div
-                key={item.coupon.coupon_id}
-                className="rounded-lg border border-dashed border-primary-500 p-4"
-              >
+              <div key={item.usercouponid || item.couponid} className="rounded-lg border border-dashed border-orange-400 p-4">
+                <p className="text-sm">Bé: <b>{item.child_name || "Hồ sơ bé"}</b></p>
+                <p className="my-1 text-xl font-bold text-orange-600">{item.code}</p>
                 <p className="text-sm">
-                  Bé: <b>{item.child.child_name}</b>
+                  Giảm {Number(item.discountpercentage || 0)}% - Hạn dùng: {formatDate(item.validuntil)}
                 </p>
-                <p className="text-xl font-bold text-primary-700">
-                  {item.coupon.code}
+                <p className="text-sm text-gray-600">
+                  Đơn tối thiểu: {formatMoney(item.minpurchaseamount)} | Giảm tối đa: {formatMoney(item.maxdiscountamount)}
                 </p>
-                <p className="text-sm">
-                  Giảm {item.coupon.discount_percent}% - Hạn dùng:{" "}
-                  {new Date(item.coupon.expires_at).toLocaleDateString("vi-VN")}
+                <p className="mt-1 text-sm font-medium text-gray-700">
+                  Trạng thái: {item.is_used ? "Đã sử dụng" : "Chưa sử dụng"}
                 </p>
               </div>
             ))}
@@ -243,31 +427,20 @@ const ChildProfileForm = ({ userId }: ChildProfileFormProps) => {
         )}
       </div>
 
-      <div className="border rounded-xl p-6 bg-white shadow-sm">
-        <h3 className="text-lg font-semibold mb-3">
-          Gợi ý quà tặng
-        </h3>
+      <div className="rounded-xl border bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-lg font-semibold">Gợi ý quà tặng</h3>
 
         {suggestions.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Chưa có gợi ý quà tặng.
-          </p>
+          <p className="text-sm text-gray-500">Chưa có gợi ý quà tặng.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {suggestions.map((product) => (
-              <div
-                key={product.productid}
-                className="rounded-lg border p-4 text-sm"
-              >
-                <p className="font-semibold line-clamp-2">
-                  {product.title}
-                </p>
+              <div key={product.productid} className="rounded-lg border p-4 text-sm">
+                <p className="font-semibold line-clamp-2">{product.title}</p>
                 <p>Thương hiệu: {product.brand || "N/A"}</p>
                 <p>Độ tuổi: {product.age_group || "N/A"}</p>
                 <p>Kỹ năng: {product.skill_type || "N/A"}</p>
-                <p className="font-semibold text-primary-700 mt-2">
-                  ${product.discount || product.price}
-                </p>
+                <p className="mt-2 font-semibold text-orange-600">{formatMoney(product.discount || product.price)}</p>
               </div>
             ))}
           </div>

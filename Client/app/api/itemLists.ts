@@ -8,6 +8,8 @@ interface CartPayload {
   userID: number
   productID: number
   productPrice?: number
+  colorID?: number
+  sizeID?: number
   quantity: number
 }
 
@@ -35,13 +37,13 @@ function handleAxiosError(error: unknown) {
   return { status: 500, error: 'Internal Server Error' }
 }
 
-async function cartAddHandler({ userID, productID, productPrice, quantity }: CartPayload) {
+async function cartAddHandler({ userID, productID, productPrice, colorID, sizeID, quantity }: CartPayload) {
   const sendingKey = await encrypt(authKey)
 
   try {
     const response = await axios.post(
       `${url}/api/user/insert/cartitem`,
-      { userID, productID, productPrice, quantity },
+      { userID, productID, productPrice, colorID, sizeID, quantity },
       { headers: { authorization: `Bearer ${sendingKey}` } },
     )
 

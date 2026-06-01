@@ -8,6 +8,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import Loading from '../Loading';
 const SignIn = () => {
     const [enabled, setEnabled] = useState(false)
+    const googleReady = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_AUTH_CLIENT_ID)
     const {checkLogin,checkAuthLogin} = useAuth();
     const [loading, setloading] = useState(false);
     async function login(e:any,remember:boolean){
@@ -68,21 +69,22 @@ const SignIn = () => {
                     <div className="flex flex-col items-center justify-center min-w-[500px] px-6 py-8 mx-auto md:h-screen lg:py-0">
                     <Link href="#" className="flex items-center text-2xl font-semibold text-gray-900 dark:text-white lg:hidden">
                         <img className="w-12 h-12 mr-2" src="https://www.strivemindz.com/images/offerings/icons/ecommerce.png" alt="logo"/>
-                        H-Comm    
+                        3TL-Shop    
                     </Link>
                         <div className="w-full bg-pink-30 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
                             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
                                 <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
-                                    Welcome back
+                                    Chào mừng quay lại
                                 </h1>
                                 <h1 className='font-semibold'>Đăng nhập bằng</h1>
                                 <div className='flex justify-between gap-2'>
-                                    <button onClick={()=>{setloading(true);googleLogin()}} className='px-6 w-4/6 mx-auto py-3 border-[1px] border-gray-200 rounded-lg text-sm font-medium transition-colors duration-150 hover:bg-gray-700 hover:text-white'>
+                                    <button type="button" disabled={!googleReady} onClick={()=>{ if (!googleReady) return; setloading(true);googleLogin()}} className={`px-6 w-4/6 mx-auto py-3 border-[1px] border-gray-200 rounded-lg text-sm font-medium transition-colors duration-150 ${googleReady ? 'hover:bg-gray-700 hover:text-white' : 'cursor-not-allowed opacity-60'}`}>
                                         <div className='flex items-center justify-center gap-2'>
                                             <img width={20} height={5} src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png'/>Google
                                         </div>
                                     </button>
                                 </div>
+                                {!googleReady && <p className="text-center text-xs text-rose-500">Chưa cấu hình NEXT_PUBLIC_GOOGLE_CLIENT_ID nên tạm thời không dùng được đăng nhập Google.</p>}
                                 <form onSubmit={(e)=>login(e,enabled)} method='post' className="space-y-4 md:space-y-6 flex flex-col gap-4 lg:gap-0" action="/">
                                     
                                     <div className='flex w-full items-center'>
@@ -119,7 +121,7 @@ const SignIn = () => {
                                     </div>
                                     <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Đăng nhập vào tài khoản</button>
                                     <p className="text-sm font-light text-gray-500">
-                                        Don’t have an account yet? <Link href="/sign-up" className="font-medium text-primary-600 hover:underline">Đăng ký</Link>
+                                        Bạn chưa có tài khoản? <Link href="/sign-up" className="font-medium text-primary-600 hover:underline">Đăng ký</Link>
                                     </p>
                                 </form>
                             </div>

@@ -2,7 +2,7 @@
 import formatDate from '@/app/api/dateConvert';
 import { orderDetailHandler } from '@/app/api/orders';
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import Loading from '../Loading';
 import OrderNotFound from './OrderNotFound';
 import NotLoggedin from './NotLoggedin';
@@ -95,6 +95,50 @@ const fullAddress = (address: Address) =>
     .filter(Boolean)
     .join(', ');
 
+const mapUrl = (address: Address) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress(address))}`;
+
+const statusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    Pending: 'Chờ xác nhận',
+    Confirmed: 'Đã xác nhận',
+    Preparing: 'Đang chuẩn bị hàng',
+    Prepared: 'Đã chuẩn bị',
+    Packed: 'Đã đóng gói',
+    Shipping: 'Đang giao hàng',
+    Shipped: 'Đang giao hàng',
+    Delivered: 'Đã giao hàng',
+    Completed: 'Hoàn thành',
+    Cancelled: 'Đã hủy',
+    Returned: 'Đã hoàn trả',
+    Failed: 'Giao thất bại',
+  };
+
+  return labels[status] || status || 'Chưa cập nhật';
+};
+
+const paymentMethodLabel = (method: string) => {
+  const labels: Record<string, string> = {
+    'Payment on Delivery': 'Thanh toán khi nhận hàng',
+    COD: 'Thanh toán khi nhận hàng',
+    Online: 'Thanh toán trực tuyến',
+  };
+
+  return labels[method] || method || 'Chưa cập nhật';
+};
+
+const paymentStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    Pending: 'Chờ thanh toán',
+    Paid: 'Đã thanh toán',
+    Completed: 'Đã thanh toán',
+    Failed: 'Thanh toán thất bại',
+    Refunded: 'Đã hoàn tiền',
+  };
+
+  return labels[status] || status || 'Chưa cập nhật';
+};
+
 const OrderDetail = () => {
   const dataVar = useRef(emptyOrder);
   const data = dataVar.current;
@@ -106,7 +150,8 @@ const OrderDetail = () => {
   const paymentCharge = useRef(0);
   const params = useParams<{ orderid: string }>();
   const searchParams = useSearchParams();
-  const isInvoice = searchParams.get('invoice') === '1';
+  const pathname = usePathname();
+  const isInvoice = searchParams.get('invoice') === '1' || pathname?.startsWith('/invoice');
 
   const originalPrice = Number(data.price || 0);
   const discountPercent = Number(data.discount || 0);
@@ -127,7 +172,7 @@ const OrderDetail = () => {
           dataVar.current = response.data.data;
           found.current = true;
           dataChecked.current = true;
-          if (response.data.data.paymentmethod === 'Payment on Delivery') paymentCharge.current = 15000;
+          if (['Payment on Delivery', 'COD'].includes(response.data.data.paymentmethod)) paymentCharge.current = 15000;
           setLoading(false);
         }
         break;
@@ -160,16 +205,16 @@ const OrderDetail = () => {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {isInvoice ? 'Hóa đơn' : 'Your Order Details'}
+                {isInvoice ? 'Hóa đơn mua hàng' : 'Chi tiết đơn hàng'}
               </h1>
-              <p className="mt-2 text-gray-500">Order #{data.order_code}{data.orderid}</p>
+              <p className="mt-2 text-gray-500">Mã đơn hàng #{data.order_code}{data.orderid}</p>
             </div>
             {isInvoice && (
               <button
                 onClick={() => window.print()}
                 className="rounded-lg bg-btnpurple px-4 py-2 text-sm font-semibold text-white print:hidden"
               >
-                Print invoice
+                In hóa đơn
               </button>
             )}
           </div>
@@ -179,9 +224,9 @@ const OrderDetail = () => {
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <div><p className="text-sm text-gray-500">Ngày đặt hàng</p><p className="font-semibold">{formatDate(data.createdat)}</p></div>
               <div><p className="text-sm text-gray-500">Ngày giao hàng</p><p className="font-semibold">{formatDate(data.deliveredat)}</p></div>
-              <div><p className="text-sm text-gray-500">Trạng thái</p><p className="font-semibold">{data.orderstatus}</p></div>
-              <div><p className="text-sm text-gray-500">Trạng thái thanh toán</p><p className="font-semibold">{data.paymentstatus}</p></div>
-              <div><p className="text-sm text-gray-500">Phương thức thanh toán</p><p className="font-semibold">{data.paymentmethod}</p></div>
+              <div><p className="text-sm text-gray-500">Trạng thái</p><p className="font-semibold">{statusLabel(data.orderstatus)}</p></div>
+              <div><p className="text-sm text-gray-500">Trạng thái thanh toán</p><p className="font-semibold">{paymentStatusLabel(data.paymentstatus)}</p></div>
+              <div><p className="text-sm text-gray-500">Phương thức thanh toán</p><p className="font-semibold">{paymentMethodLabel(data.paymentmethod)}</p></div>
             </div>
           </section>
 
@@ -197,8 +242,16 @@ const OrderDetail = () => {
           <section className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="text-xl font-bold text-gray-900">Địa chỉ</h2>
             <div className="mt-5 grid gap-6 md:grid-cols-2">
-              <div><p className="text-gray-500">Địa chỉ giao hàng</p><p className="mt-2 font-semibold">{fullAddress(data.shippingaddress)}</p></div>
-              <div><p className="text-gray-500">Địa chỉ thanh toán</p><p className="mt-2 font-semibold">{fullAddress(data.billingaddress)}</p></div>
+              <div>
+                <p className="text-gray-500">Địa chỉ giao hàng</p>
+                <p className="mt-2 font-semibold">{fullAddress(data.shippingaddress)}</p>
+                <a href={mapUrl(data.shippingaddress)} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700">Xem trên bản đồ</a>
+              </div>
+              <div>
+                <p className="text-gray-500">Địa chỉ thanh toán</p>
+                <p className="mt-2 font-semibold">{fullAddress(data.billingaddress)}</p>
+                <a href={mapUrl(data.billingaddress)} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700">Xem trên bản đồ</a>
+              </div>
             </div>
           </section>
 
@@ -224,7 +277,7 @@ const OrderDetail = () => {
             <div className="space-y-4 text-lg">
               <div className="flex justify-between"><span className="text-gray-500">Tạm tính</span><span className="font-bold">{formatPrice(subTotal)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Phí vận chuyển</span><span className="font-bold">{formatPrice(shipping)}</span></div>
-              {data.paymentmethod === 'Payment on Delivery' && (
+              {['Payment on Delivery', 'COD'].includes(data.paymentmethod) && (
                 <div className="flex justify-between"><span className="text-gray-500">Phí xử lý thanh toán</span><span className="font-bold">{formatPrice(paymentCharge.current)}</span></div>
               )}
               {discountAmount > 0 && (

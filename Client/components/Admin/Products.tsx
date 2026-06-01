@@ -188,26 +188,19 @@ export default function ProductsPage() {
     setShowForm(true);
   };
 
-  // Xử lý chọn file ảnh → tạo data URL preview + gán vào formData
+  // Lưu ý: backend hiện lưu đường dẫn ảnh dạng varchar(255), không lưu trực tiếp base64.
+  // Vì vậy file chọn từ máy chỉ dùng để xem trước; khi lưu hãy nhập đường dẫn ảnh ở ô bên dưới
+  // ví dụ: /images/car.jpg hoặc https://...
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       setError("Vui lòng chọn file ảnh (JPG, PNG, WEBP, ...).");
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setImagePreview(dataUrl);
-      // Lưu data URL vào image_url để gửi lên server
-      // (Server cần hỗ trợ nhận base64 hoặc bạn cần tích hợp upload riêng)
-      setFormData((prev) => ({ ...prev, image_url: dataUrl, imgid: dataUrl }));
-    };
-    reader.readAsDataURL(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+    setError("Ảnh vừa chọn chỉ là xem trước. Hãy nhập đường dẫn ảnh /images/... hoặc URL để lưu vào database.");
   };
 
   // Xóa ảnh đã chọn
@@ -227,7 +220,7 @@ export default function ProductsPage() {
       stock: Number(formData.stock),
       low_stock_threshold: Number(formData.low_stock_threshold || 10),
       supplier_id: formData.supplier_id ? Number(formData.supplier_id) : null,
-      image_url: formData.image_url || formData.imgid || "",
+      image_url: (formData.image_url || formData.imgid || "").trim(),
       image_alt: formData.title,
     };
 
@@ -687,33 +680,29 @@ export default function ProductsPage() {
                     </div>
                   )}
 
-                  {/* Upload area */}
-                  <div className="flex flex-1 flex-col gap-2">
+                  {/* URL ảnh + xem trước */}
+                  <div className="flex flex-1 flex-col gap-3">
+                    <label className="text-sm font-semibold text-slate-700">
+                      Đường dẫn ảnh để lưu
+                      <input
+                        value={formData.image_url}
+                        onChange={(e) => {
+                          setFormData({ ...formData, image_url: e.target.value, imgid: e.target.value });
+                          setImagePreview(e.target.value);
+                        }}
+                        className={inputClass}
+                        placeholder="/images/ten-anh.jpg hoặc https://..."
+                      />
+                    </label>
                     <label
                       htmlFor="product-image-upload"
-                      className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-rose-200 bg-rose-50 px-4 py-6 text-center transition hover:border-rose-400 hover:bg-rose-100"
+                      className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-rose-200 bg-rose-50 px-4 py-5 text-center transition hover:border-rose-400 hover:bg-rose-100"
                     >
                       <span className="text-2xl">📷</span>
-                      <span className="mt-1 text-sm font-semibold text-rose-500">
-                        Chọn ảnh từ máy tính
-                      </span>
-                      <span className="mt-1 text-xs text-slate-400">
-                        JPG, PNG, WEBP — tối đa 5MB
-                      </span>
+                      <span className="mt-1 text-sm font-semibold text-rose-500">Xem trước ảnh từ máy</span>
+                      <span className="mt-1 text-xs text-slate-400">Không lưu base64 vào database</span>
                     </label>
-                    <input
-                      id="product-image-upload"
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageFileChange}
-                    />
-                    {imagePreview && (
-                      <p className="text-xs text-emerald-600">
-                        ✓ Ảnh đã được chọn
-                      </p>
-                    )}
+                    <input id="product-image-upload" ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageFileChange}/>
                   </div>
                 </div>
               </div>

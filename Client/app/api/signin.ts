@@ -37,7 +37,9 @@ export default async function signInHandler({
         name: "sessionhold",
         value: response.data.token,
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
         maxAge: 60 * 60 * 24 * 7,
       });
     } else {
@@ -45,12 +47,17 @@ export default async function signInHandler({
         name: "sessionhold",
         value: response.data.token,
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
         maxAge: 60 * 60 * 24,
       });
     }
     return { status: response.status, data: response.data };
-  } catch (error) {
-    return { status: 500, error: "Internal Server Error" };
+  } catch (error: any) {
+    return {
+      status: error?.response?.status || 500,
+      data: error?.response?.data || { error: error?.message || "Internal Server Error" },
+    };
   }
 }

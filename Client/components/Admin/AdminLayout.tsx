@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppSelector } from "@/app/hooks";
@@ -54,6 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [role, setRole] = useState(roleFromStore || "");
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -84,6 +85,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const menu = useMemo(() => sidebarItems.filter((item) => item.roles.includes(role)), [role]);
 
   useEffect(() => {
+    if (!mounted) return;
+    const saved = Number(window.sessionStorage.getItem("adminSidebarScroll") || 0);
+    if (sidebarScrollRef.current) sidebarScrollRef.current.scrollTop = saved;
+  }, [mounted, pathname]);
+
+  const rememberSidebarScroll = () => {
+    if (sidebarScrollRef.current) {
+      window.sessionStorage.setItem("adminSidebarScroll", String(sidebarScrollRef.current.scrollTop));
+    }
+  };
+
+  useEffect(() => {
     if (loading || !role) return;
     const currentItem = sidebarItems.find((item) => pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`)));
     if (currentItem && !currentItem.roles.includes(role)) router.replace(fallbackByRole[role] || "/admin");
@@ -104,7 +117,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-slate-50">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-rose-100 bg-white shadow-sm lg:flex">
-        <div className="flex-1 overflow-y-auto p-5 pb-2">
+        <div ref={sidebarScrollRef} onScroll={rememberSidebarScroll} className="flex-1 overflow-y-auto p-5 pb-2">
         <Link href="/admin" className="flex items-center gap-3 rounded-3xl bg-rose-50 p-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 font-black text-white">3TL</div>
           <div>
@@ -140,7 +153,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-rose-500">Bảng quản trị › {roleNames[role]}</p>
-              <h1 className="text-xl font-bold text-slate-900">Management Tổng quan</h1>
+              <h1 className="text-xl font-bold text-slate-900">{sidebarItems.find((item) => pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`)))?.label || "Tổng quan"}</h1>
             </div>
             <div className="flex items-center gap-3"><NotificationBell /><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500 font-bold text-white">{roleInitial(role)}</div></div>
           </div>

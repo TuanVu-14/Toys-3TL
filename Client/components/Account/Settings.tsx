@@ -1,4 +1,4 @@
-import { BookOpenIcon, CreditCardIcon, EnvelopeIcon, GiftIcon, ListBulletIcon, QueueListIcon, ReceiptPercentIcon, UserCircleIcon, UserIcon } from '@heroicons/react/24/outline'
+import { BookOpenIcon, CakeIcon, CreditCardIcon, EnvelopeIcon, GiftIcon, ListBulletIcon, QueueListIcon, ReceiptPercentIcon, UserCircleIcon, UserIcon } from '@heroicons/react/24/outline'
 import React, { useState, useLayoutEffect } from 'react'
 import ProfileInfo from './ProfileInfo'
 import Addresses from './Addresses'
@@ -8,6 +8,7 @@ import { useAppSelector } from '@/app/hooks'
 import Coupons from './Coupons'
 import Loading from '../Loading'
 import SettingDialogs from './SettingDialogs'
+import ChildProfileForm from '../Profile/ChildProfileForm'
 interface Address {
     addressID:number;
     addressType:string;
@@ -71,9 +72,13 @@ const Settings = () => {
                             <BookOpenIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
                             <p className='hidden lg:flex'>Quản lý địa chỉ</p>
                         </button>
+                        <button id='children' onClick={()=>setmenuType('children')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='children' && 'hover:text-salmon'}  ${menuType==='children' ? 'bg-salmon text-white': 'bg-white'}`}>
+                            <CakeIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
+                            <p className='hidden lg:flex'>Hồ sơ của bé</p>
+                        </button>
                         <button id='giftcard' onClick={()=>setmenuType('giftcard')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='giftcard' && 'hover:text-salmon'}  ${menuType==='giftcard' ? 'bg-salmon text-white': 'bg-white'}`}>
                             <GiftIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
-                            <p className='hidden lg:flex'>Available Gift Cards</p>
+                            <p className='hidden lg:flex'>Thẻ quà tặng</p>
                         </button>
                         <button id='coupon' onClick={()=>setmenuType('coupon')} className={`flex items-center gap-4 drop-shadow-custom-xl  rounded-xl py-1 px-1 cursor-pointer ${menuType!='coupon' && 'hover:text-salmon'}  ${menuType==='coupon' ? 'bg-salmon text-white': 'bg-white'}`}>
                             <ReceiptPercentIcon className=' max-w-[35px] rounded-xl text-black bg-white drop-shadow-custom-xl px-2 py-2'/>
@@ -98,12 +103,13 @@ const Settings = () => {
                     </div>
                 </div>
             </div>
-            <div className='bg-white sm:max-w-[600px] lg:max-w-[600px] lg:w-[600px] h-full drop-shadow-custom-xl rounded-xl flex-col flex items-center'>
+            <div className='bg-white sm:max-w-[600px] lg:max-w-[900px] lg:w-[900px] h-[calc(100vh-40px)] drop-shadow-custom-xl rounded-xl flex-col flex items-center'>
                 {menuType==='profile' && <ProfileInfo Component={defaultAccount} setdialogType={setdialogType}/>}
                 {menuType==='address' && <Addresses Component={addresses}  setdialogType={setdialogType} setselectedAddress={setselectedAddress} setLoading={setLoading} userID={defaultAccount.userID}/>}
                 {menuType==='giftcard' && <GiftCards Component={giftCards}/>}
                 {menuType==='wishlist' && <Wishlist Component={wishlist} loading={loading} setLoading={setLoading}/>}
                 {menuType==='coupon' && <Coupons Component={coupons}/>}
+                {menuType==='children' && <ChildProfileForm userId={defaultAccount.userID}/>}
             </div>
         </div>
     </div>

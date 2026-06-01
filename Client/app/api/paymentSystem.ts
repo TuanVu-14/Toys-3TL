@@ -247,3 +247,14 @@ export async function orderStatusDataHandler({
     };
   }
 }
+
+
+// Compatibility wrappers for older Stripe checkout components.
+// The project currently prefers COD/QR, but these keep old imports compiling.
+export async function cardCheckoutHandler(payload: any) {
+  return onlineCheckoutHandler({ ...payload, paymentMethod: payload.paymentMethod || "Thanh toán online" });
+}
+
+export async function cartCardCheckoutHandler(payload: any) {
+  return cartOnlineCheckoutHandler({ ...payload, paymentMethod: payload.paymentMethod || "Thanh toán online" });
+}

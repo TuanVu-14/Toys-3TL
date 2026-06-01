@@ -5,6 +5,27 @@ import Link from "next/link";
 import { getAdminStats } from "@/app/api/admin";
 import { formatPrice } from "@/features/UIUpdates/CartWishlist";
 
+const orderStatusVi: Record<string, string> = {
+  Pending: "Chờ xử lý",
+  Confirmed: "Đã xác nhận",
+  Preparing: "Đang chuẩn bị",
+  Prepared: "Đã chuẩn bị",
+  Packed: "Đã đóng gói",
+  Shipping: "Đang vận chuyển",
+  Shipped: "Đã giao cho đơn vị vận chuyển",
+  Delivered: "Đã giao hàng",
+  Completed: "Hoàn tất",
+  Cancelled: "Đã hủy",
+  Returned: "Đã trả hàng",
+  Failed: "Thất bại",
+  Refunded: "Đã hoàn tiền",
+  "Payment Failed": "Thanh toán thất bại",
+};
+
+function viOrderStatus(status?: string) {
+  return orderStatusVi[String(status || "")] || status || "Chưa cập nhật";
+}
+
 type AdminStats = {
   products: number;
   orders: number;
@@ -52,7 +73,7 @@ export default function Dashboard() {
         <div className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm xl:col-span-2">
           <div className="flex items-center justify-between"><div><h3 className="text-lg font-bold text-slate-900">Đơn hàng gần đây</h3><p className="text-sm text-slate-500">Hoạt động mới nhất từ cửa hàng.</p></div><button onClick={loadStats} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Tải lại</button></div>
           <div className="mt-5 overflow-hidden rounded-2xl border border-slate-100">
-            <table className="min-w-full divide-y divide-slate-100 text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Mã đơn</th><th className="px-4 py-3">Khách</th><th className="px-4 py-3">Tổng</th><th className="px-4 py-3">Trạng thái</th></tr></thead><tbody className="divide-y divide-slate-100">{loading ? <tr><td className="px-4 py-6 text-center text-slate-500" colSpan={4}>Đang tải...</td></tr> : stats?.recentOrders?.length ? stats.recentOrders.map((order) => <tr key={order.orderid}><td className="px-4 py-3 font-semibold">#{order.orderid}</td><td className="px-4 py-3"><div>{order.username || "—"}</div><div className="text-xs text-slate-400">{order.email}</div></td><td className="px-4 py-3">{formatPrice(Number(order.totalamount || 0))}</td><td className="px-4 py-3"><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{order.orderstatus}</span></td></tr>) : <tr><td className="px-4 py-6 text-center text-slate-500" colSpan={4}>Chưa có đơn hàng.</td></tr>}</tbody></table>
+            <table className="min-w-full divide-y divide-slate-100 text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Mã đơn</th><th className="px-4 py-3">Khách</th><th className="px-4 py-3">Tổng</th><th className="px-4 py-3">Trạng thái</th></tr></thead><tbody className="divide-y divide-slate-100">{loading ? <tr><td className="px-4 py-6 text-center text-slate-500" colSpan={4}>Đang tải...</td></tr> : stats?.recentOrders?.length ? stats.recentOrders.map((order) => <tr key={order.orderid}><td className="px-4 py-3 font-semibold">#{order.orderid}</td><td className="px-4 py-3"><div>{order.username || "—"}</div><div className="text-xs text-slate-400">{order.email}</div></td><td className="px-4 py-3">{formatPrice(Number(order.totalamount || 0))}</td><td className="px-4 py-3"><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">{viOrderStatus(order.orderstatus)}</span></td></tr>) : <tr><td className="px-4 py-6 text-center text-slate-500" colSpan={4}>Chưa có đơn hàng.</td></tr>}</tbody></table>
           </div>
         </div>
         <div className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm">

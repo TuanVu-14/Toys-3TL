@@ -9,7 +9,7 @@ interface propForm{
     userID:number;
   userName: string |boolean;
   email: string |boolean;
-  mobile_number: number |boolean;
+  mobile_number: number | string | boolean;
   dob: string|boolean;
   password:string|boolean;
 }
@@ -25,7 +25,7 @@ interface Address {
     userName:string;
 }
 const url = process.env.BACKEND_URL;
-const authKey = process.env.AUTH_KEY as string;
+const authKey = (process.env.JWT_AUTH_KEY || process.env.AUTH_KEY || process.env.JWT_KEY || process.env.JWT_ENCRYPTION_KEY) as string;
 export async function userUpdateHandler({ userID,userName, email, mobile_number, dob,password }:propForm) {
   const sendingKey = await encrypt(authKey);
     

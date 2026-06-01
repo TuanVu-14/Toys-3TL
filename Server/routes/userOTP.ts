@@ -39,7 +39,7 @@ router.post('/user/send-forgot-otp',EmailSchema,async (req:Request,res:Response)
             const randomOTP = GeneratedOTP;
             try {
                 
-                const query2 = `UPDATE "${userTable}" SET otp = $1 WHERE email = $2`;
+                const query2 = `UPDATE "${userTable}" SET otp = $1, updatedat = NOW() WHERE email = $2`;
                 const values2 = [randomOTP, email];
                 await client.query(query2,values2);
             } catch (error) {
@@ -94,7 +94,7 @@ router.post('/user/reset-password',EmailPasswordOtpSchema,async (req:Request,res
         } catch (error) {
             return res.status(500).json({error:'Server error'});
         }
-        const query2 = `UPDATE "${userTable}" SET password = $1 WHERE email = $2`;
+        const query2 = `UPDATE "${userTable}" SET password = $1, otp = NULL, updatedat = NOW() WHERE email = $2`;
         try {
             const hash = await bcrypt.hash(password, saltRounds);
             const values2 = [hash, email];

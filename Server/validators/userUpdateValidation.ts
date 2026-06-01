@@ -159,7 +159,7 @@ const AddressUpdateSchema = checkSchema({
         isString: true,
         notEmpty: true,
         escape:true,
-        isLength:{options:{min:2,max:16}},
+        isLength:{options:{min:2,max:60}},
         trim:true,
         errorMessage: 'State must be a non-empty string'
     },
@@ -251,7 +251,7 @@ const insertAddressSchema = checkSchema({
         isString: true,
         notEmpty: true,
         escape: true,
-        isLength: { options: { min: 2, max: 16 } },
+        isLength: { options: { min: 2, max: 60 } },
         trim: true,
         errorMessage: 'State must be a non-empty string'
     },

@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { connectDB } from './data/DB';
 import rateLimiterMiddleware from './middleware/rateLimit';
 import authenticateToken from './middleware/header_auth';
+import { startBirthdayReminderJob } from './services/birthdayReminder';
  
 const app: Express = express();
 app.set('trust proxy', true);
@@ -38,6 +39,7 @@ app.use('/api', routes);
 const startServer = async () => {
   try {
     await connectDB(); // ✅ DB trước
+    startBirthdayReminderJob();
     app.listen(port, () => {
       console.log(`[server]: Server is running at Port ${port}`);
     });

@@ -1,38 +1,47 @@
 "use server";
+
 import axios from "axios";
 import { sign } from "jsonwebtoken";
 import { cookies } from "next/headers";
+
 async function encrypt(key: string) {
-  const encryptedKey = await sign({}, key);
-  return encryptedKey;
+  return sign({}, key);
 }
+
 const url = process.env.BACKEND_URL;
 const authKey =
   process.env.JWT_AUTH_KEY ||
   process.env.AUTH_KEY ||
   process.env.JWT_KEY ||
   process.env.JWT_ENCRYPTION_KEY;
-if (!authKey) throw new Error("Missing authentication key in environment");
-const safeAuthKey = authKey as string;
+
 export default async function authDataHandler(code: string) {
-  const sendingKey = await encrypt(safeAuthKey);
+  if (!url) return { status: 500, data: { error: "Missing BACKEND_URL" } };
+  if (!authKey) return { status: 500, data: { error: "Missing authentication key in environment" } };
+
+  const sendingKey = await encrypt(authKey as string);
   try {
     const response = await axios.post(
       `${url}/api/auth/google`,
       { code },
-      {
-        headers: { authorization: `Bearer ${sendingKey}` },
-      },
+      { headers: { authorization: `Bearer ${sendingKey}` } },
     );
+
     cookies().set({
       name: "sessionhold",
       value: response.data.token,
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7,
+      path: "/",
     });
+
     return { status: response.status, data: response.data };
-  } catch (error) {
-    return { status: 500, error: "Internal Server Error" };
+  } catch (error: any) {
+    return {
+      status: error?.response?.status || 500,
+      data: error?.response?.data || { error: error?.message || "Internal Server Error" },
+    };
   }
 }

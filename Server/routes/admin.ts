@@ -84,7 +84,8 @@ function normalizeOrderStatus(status?: string) {
 
 async function upsertPrimaryProductImage(productID: number | string, imageUrl?: string, imageAlt?: string) {
   const safeUrl = String(imageUrl || "").trim();
-  if (!safeUrl) return;
+  // productimages.imglink trong lego9.sql là varchar(255); không lưu base64 vì sẽ lỗi value too long.
+  if (!safeUrl || safeUrl.startsWith("data:") || safeUrl.length > 255) return;
 
   const existing = await client.query(
     "SELECT imageid FROM productimages WHERE productid = $1::int AND COALESCE(isprimary, false) = true LIMIT 1",
@@ -414,7 +415,7 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
         Number(discount || 0),
         Number(stock || 0),
         tags || null,
-        imgid || null,
+        String(imgid || image_url || imglink || "").startsWith("data:") ? null : (imgid || image_url || imglink || null),
         age_group || null,
         gender || null,
         material || null,
@@ -497,7 +498,7 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
         Number(discount || 0),
         Number(stock || 0),
         tags || null,
-        imgid || null,
+        String(imgid || image_url || imglink || "").startsWith("data:") ? null : (imgid || image_url || imglink || null),
         age_group || null,
         gender || null,
         material || null,

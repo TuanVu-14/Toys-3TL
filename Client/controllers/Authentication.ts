@@ -55,10 +55,13 @@ const useAuth = () => {
         redirectByRole(data.role, router);
         return;
       }
-      if (res.status === 205) {
+      if (res.status === 205 || res.status === 401 || res.status === 404) {
         setloading(false);
         toggleIsIncorrect();
+        return;
       }
+      setloading(false);
+      toggleServerError();
     } catch {
       setloading(false);
       toggleServerError();
@@ -72,17 +75,21 @@ const useAuth = () => {
   ) => {
     try {
       const res = await signUpHandler(form, promotional);
-      if (res.status === 200) {
+      if (res.status === 200 || res.status === 201) {
+        const data = saveLoginData(res.data.userData);
         setloading(false);
-        setLoggedIn(true);
-        router.push("/");
+        redirectByRole(data.role, router);
         return;
       }
-      if (res.status === 205) {
+      if (res.status === 205 || res.status === 409) {
         setloading(false);
         toggleIsExists();
+        return;
       }
+      setloading(false);
+      toggleServerError();
     } catch {
+      setloading(false);
       toggleServerError();
     }
   };
@@ -112,10 +119,13 @@ const useAuth = () => {
         redirectByRole(data.role, router);
         return;
       }
-      if (res.status === 205) {
+      if (res.status === 205 || res.status === 401 || res.status === 404) {
         setloading(false);
         toggleIsIncorrect();
+        return;
       }
+      setloading(false);
+      toggleServerError();
     } catch {
       setloading(false);
       toggleServerError();

@@ -42,11 +42,10 @@ const DialogBoxes = () => {
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <DialogTitle className="text-lg font-semibold text-gray-900">
-              Sign Up Agreement
+              Điều khoản đăng ký
             </DialogTitle>
             <Description className="mt-3 text-sm leading-6 text-gray-600">
-              By signing up, you are creating a H-Comm account, and you agree to
-              H-Comm Terms &amp; Conditions and Privacy Policy.
+              Khi đăng ký, bạn tạo tài khoản 3TL-Shop và đồng ý với Điều khoản sử dụng cùng Chính sách bảo mật.
             </Description>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -54,7 +53,7 @@ const DialogBoxes = () => {
                 onClick={toggleIsOpenAgreement}
                 className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="button"
@@ -64,7 +63,7 @@ const DialogBoxes = () => {
                 }}
                 className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
               >
-                Accept
+                Đồng ý
               </button>
             </div>
           </DialogPanel>
@@ -80,10 +79,10 @@ const DialogBoxes = () => {
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <DialogTitle className="text-lg font-semibold text-gray-900">
-              Password
+              Mật khẩu
             </DialogTitle>
             <Description className="mt-3 text-sm leading-6 text-gray-600">
-              Passwords don&apos;t match. Try again.
+              Mật khẩu nhập lại không khớp. Vui lòng thử lại.
             </Description>
             <div className="mt-6 flex justify-end">
               <button
@@ -91,7 +90,7 @@ const DialogBoxes = () => {
                 onClick={toggleIsPassword}
                 className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
               >
-                OK
+                Đồng ý
               </button>
             </div>
           </DialogPanel>
@@ -107,10 +106,10 @@ const DialogBoxes = () => {
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <DialogTitle className="text-lg font-semibold text-gray-900">
-              Error
+              Lỗi
             </DialogTitle>
             <Description className="mt-3 text-sm leading-6 text-gray-600">
-              We are currently facing down time. Please try again later.
+              Hệ thống đang gặp sự cố. Vui lòng thử lại sau.
             </Description>
             <div className="mt-6 flex justify-end">
               <button
@@ -118,7 +117,7 @@ const DialogBoxes = () => {
                 onClick={toggleServerError}
                 className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
               >
-                OK
+                Đồng ý
               </button>
             </div>
           </DialogPanel>
@@ -134,11 +133,10 @@ const DialogBoxes = () => {
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <DialogTitle className="text-lg font-semibold text-gray-900">
-              Account Already Exists
+              Tài khoản đã tồn tại
             </DialogTitle>
             <Description className="mt-3 text-sm leading-6 text-gray-600">
-              An account with the same email address or mobile number already
-              exists.
+              Email hoặc số điện thoại này đã được đăng ký.
             </Description>
             <p className="mt-2 text-sm text-gray-600">Bạn có muốn đăng nhập không?</p>
             <div className="mt-6 flex justify-end gap-3">
@@ -147,7 +145,7 @@ const DialogBoxes = () => {
                 onClick={toggleIsExists}
                 className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
               >
-                OK
+                Đồng ý
               </button>
               <button
                 type="button"
@@ -157,7 +155,7 @@ const DialogBoxes = () => {
                 }}
                 className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
               >
-                Sign in
+                Đăng nhập
               </button>
             </div>
           </DialogPanel>
@@ -173,10 +171,10 @@ const DialogBoxes = () => {
         <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
           <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
             <DialogTitle className="text-lg font-semibold text-gray-900">
-              Incorrect Credentials
+              Thông tin đăng nhập không đúng
             </DialogTitle>
             <Description className="mt-3 text-sm leading-6 text-gray-600">
-              Your email address or password is incorrect. Please check again.
+              Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại.
             </Description>
             <div className="mt-6 flex justify-end">
               <button
@@ -184,7 +182,7 @@ const DialogBoxes = () => {
                 onClick={toggleIsIncorrect}
                 className="rounded-lg bg-primary-800 px-4 py-2 text-sm text-white hover:opacity-90"
               >
-                OK
+                Đồng ý
               </button>
             </div>
           </DialogPanel>

@@ -634,8 +634,9 @@ const Checkout = () => {
                     const phone = String(
                       address.contactNumber ?? address.contactnumber ?? "",
                     );
-                    const type =
+                    const rawType =
                       address.addressType || address.address_type || "HOME";
+                    const type = rawType === "WORK" ? "Cơ quan" : "Nhà riêng";
                     return (
                       <button
                         type="button"
