@@ -55,7 +55,7 @@ const Account = () => {
                 href="/account-settings"
                 className="block px-4 py-2 text-gray-500 hover:bg-gray-100"
               >
-                Settings
+                Cài đặt tài khoản
               </a>
             </li>
 
@@ -65,7 +65,7 @@ const Account = () => {
                   href="/admin"
                   className="block px-4 py-2 text-gray-500 hover:bg-gray-100"
                 >
-                  Admin Panel
+                  Quản trị
                 </a>
               </li>
             )}
@@ -75,7 +75,7 @@ const Account = () => {
                 href="/orders"
                 className="block px-4 py-2 text-gray-500 hover:bg-gray-100"
               >
-                Orders
+                Đơn hàng của tôi 
               </a>
             </li>
           </ul>
@@ -86,7 +86,7 @@ const Account = () => {
               onClick={signOut}
               className="block w-full px-4 py-2 text-start text-sm text-gray-400 hover:bg-gray-100"
             >
-              Sign out
+              Đăng xuất
             </button>
           </div>
         </div>
@@ -100,7 +100,7 @@ const Account = () => {
           <div className="flex gap-2 px-4 py-3 text-sm text-gray-500">
             <div>Người dùng mới?</div>
             <a href="/sign-up" className="text-primary-800">
-              Register
+              Đăng ký
             </a>
           </div>
 
@@ -113,7 +113,7 @@ const Account = () => {
                 href="/sign-in"
                 className="block px-4 py-2 text-primary-800 hover:bg-gray-100"
               >
-                Sign In
+                Đăng nhập
               </a>
             </li>
           </ul>

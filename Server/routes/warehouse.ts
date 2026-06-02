@@ -354,4 +354,52 @@ router.put("/orders/:orderID/status", async (req: Request, res: Response) => {
   }
 });
 
+
+router.get("/key-product-alerts", async (_req: Request, res: Response) => {
+  try {
+    const result = await client.query(`
+      WITH sales AS (
+        SELECT
+          p.productid,
+          COALESCE(SUM(oi.quantity), 0)::int AS sold_quantity,
+          COALESCE(SUM((p.price * oi.quantity) * (1 - COALESCE(p.discount, 0) / 100.0)), 0) AS revenue
+        FROM products p
+        LEFT JOIN orderitems oi ON oi.productid = p.productid
+        LEFT JOIN orders o ON o.orderid = oi.orderid
+          AND o.orderstatus IN ('Delivered', 'Completed')
+        WHERE COALESCE(p.is_active, true) = true
+        GROUP BY p.productid
+      )
+      SELECT
+        p.productid,
+        p.title,
+        p.brand,
+        p.stock,
+        COALESCE(p.low_stock_threshold, 10) AS low_stock_threshold,
+        s.sold_quantity,
+        s.revenue,
+        CASE
+          WHEN p.stock <= 0 THEN 'Hết hàng'
+          WHEN p.stock <= CEIL(COALESCE(p.low_stock_threshold, 10) / 2.0) THEN 'Rất thấp'
+          ELSE 'Sắp hết'
+        END AS alert_level,
+        CASE
+          WHEN s.sold_quantity > 0 THEN 'Sản phẩm bán chạy đang sắp hết'
+          ELSE 'Tồn kho thấp, cần kiểm tra nhập hàng'
+        END AS key_reason
+      FROM products p
+      INNER JOIN sales s ON s.productid = p.productid
+      WHERE COALESCE(p.is_active, true) = true
+        AND p.stock <= COALESCE(p.low_stock_threshold, 10)
+      ORDER BY s.sold_quantity DESC, s.revenue DESC, p.stock ASC, p.title ASC
+      LIMIT 30
+    `);
+
+    res.json({ data: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
 export default router;

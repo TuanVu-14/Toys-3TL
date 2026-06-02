@@ -348,7 +348,7 @@ router.get("/admin/products", adminAuth, async (_req: Request, res: Response) =>
     const response = await client.query(`
       SELECT p.productid, p.title, p.description, p.categoryid, c.name AS category,
              p.price, p.discount, p.stock, p.tags, p.imgid,
-             pi.imglink AS imglink, pi.imglink AS image_url, pi.imgalt AS image_alt,
+             pi.imglink AS image_url, pi.imgalt AS image_alt,
              p.age_group, p.gender, p.material, p.skill_type, p.brand,
              p.safety_certificates, p.low_stock_threshold, p.supplier_id,
              COALESCE(p.is_active, true) AS is_active,
@@ -415,7 +415,7 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
         Number(discount || 0),
         Number(stock || 0),
         tags || null,
-        String(imglink || image_url || imgid || "").startsWith("data:") ? null : (imglink || image_url || imgid || null),
+        String(imgid || image_url || imglink || "").startsWith("data:") ? null : (imgid || image_url || imglink || null),
         age_group || null,
         gender || null,
         material || null,
@@ -435,7 +435,7 @@ router.post("/admin/products", adminAuth, async (req: Request, res: Response) =>
       [product.rows[0].productid, !!isnew, !!issale, !!isdiscount, Number(stars || 0)],
     );
 
-    await upsertPrimaryProductImage(product.rows[0].productid, imglink || image_url || imgid, image_alt || imgalt || title);
+    await upsertPrimaryProductImage(product.rows[0].productid, image_url || imglink || imgid, image_alt || imgalt || title);
 
     await client.query("COMMIT");
     res.status(201).json({ message: "Thêm sản phẩm thành công", data: product.rows[0] });
@@ -498,7 +498,7 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
         Number(discount || 0),
         Number(stock || 0),
         tags || null,
-        String(imglink || image_url || imgid || "").startsWith("data:") ? null : (imglink || image_url || imgid || null),
+        String(imgid || image_url || imglink || "").startsWith("data:") ? null : (imgid || image_url || imglink || null),
         age_group || null,
         gender || null,
         material || null,
@@ -523,7 +523,7 @@ router.put("/admin/products/:productID", adminAuth, async (req: Request, res: Re
       [productID, !!isnew, !!issale, !!isdiscount, Number(stars || 0)],
     );
 
-    await upsertPrimaryProductImage(productID, imglink || image_url || imgid, image_alt || imgalt || title);
+    await upsertPrimaryProductImage(productID, image_url || imglink || imgid, image_alt || imgalt || title);
 
     await client.query("COMMIT");
 
@@ -1269,10 +1269,11 @@ router.post("/admin/settings", adminAuth, async (req: Request, res: Response) =>
   }
 });
 
-router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
+router.get("/admin/reports", adminAuth, async (_req: Request, res: Response) => {
   try {
     const finishedStatus = ["Delivered", "Completed"];
-    const [summary, topProducts, paymentBreakdown, revenueByDay] = await Promise.all([
+
+    const [summary, topProducts, paymentBreakdown, revenueByDay, seasonalTrends, keyProductAlerts] = await Promise.all([
       client.query(
         `
         SELECT
@@ -1328,6 +1329,93 @@ router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
         `,
         [finishedStatus],
       ),
+      client.query(
+        `
+        WITH sale_rows AS (
+          SELECT
+            CASE
+              WHEN EXTRACT(MONTH FROM o.createdat) IN (1, 2, 3) THEN 1
+              WHEN EXTRACT(MONTH FROM o.createdat) IN (4, 5, 6) THEN 2
+              WHEN EXTRACT(MONTH FROM o.createdat) IN (7, 8, 9) THEN 3
+              ELSE 4
+            END AS season_order,
+            CASE
+              WHEN EXTRACT(MONTH FROM o.createdat) IN (1, 2, 3) THEN 'Xuân / Tết'
+              WHEN EXTRACT(MONTH FROM o.createdat) IN (4, 5, 6) THEN 'Hè / Quốc tế Thiếu nhi'
+              WHEN EXTRACT(MONTH FROM o.createdat) IN (7, 8, 9) THEN 'Thu / Trung thu'
+              ELSE 'Đông / Noel'
+            END AS season_name,
+            COALESCE(c.name, NULLIF(pr.skill_type, ''), NULLIF(pr.tags, ''), 'Khác') AS toy_type,
+            pr.productid,
+            pr.title,
+            COALESCE(SUM(oi.quantity), 0)::int AS product_sold,
+            COALESCE(SUM((pr.price * oi.quantity) * (1 - COALESCE(pr.discount, 0) / 100.0)), 0) AS product_revenue
+          FROM orders o
+          INNER JOIN orderitems oi ON oi.orderid = o.orderid
+          INNER JOIN products pr ON pr.productid = oi.productid
+          LEFT JOIN categories c ON c.categoryid = pr.categoryid
+          WHERE o.orderstatus = ANY($1)
+            AND o.createdat >= NOW() - INTERVAL '365 days'
+          GROUP BY season_order, season_name, toy_type, pr.productid, pr.title
+        ), ranked AS (
+          SELECT
+            *,
+            ROW_NUMBER() OVER (PARTITION BY season_order, toy_type ORDER BY product_sold DESC, product_revenue DESC) AS rn
+          FROM sale_rows
+        )
+        SELECT
+          season_order,
+          season_name,
+          toy_type,
+          SUM(product_sold)::int AS sold_quantity,
+          SUM(product_revenue) AS revenue,
+          MAX(CASE WHEN rn = 1 THEN title END) AS hot_product
+        FROM ranked
+        GROUP BY season_order, season_name, toy_type
+        ORDER BY season_order ASC, sold_quantity DESC, revenue DESC
+        LIMIT 20
+        `,
+        [finishedStatus],
+      ),
+      client.query(
+        `
+        WITH sales AS (
+          SELECT
+            p.productid,
+            COALESCE(SUM(oi.quantity), 0)::int AS sold_quantity,
+            COALESCE(SUM((p.price * oi.quantity) * (1 - COALESCE(p.discount, 0) / 100.0)), 0) AS revenue
+          FROM products p
+          LEFT JOIN orderitems oi ON oi.productid = p.productid
+          LEFT JOIN orders o ON o.orderid = oi.orderid AND o.orderstatus = ANY($1)
+          WHERE COALESCE(p.is_active, true) = true
+          GROUP BY p.productid
+        )
+        SELECT
+          p.productid,
+          p.title,
+          p.brand,
+          p.stock,
+          COALESCE(p.low_stock_threshold, 10) AS low_stock_threshold,
+          s.sold_quantity,
+          s.revenue,
+          CASE
+            WHEN p.stock <= 0 THEN 'Hết hàng'
+            WHEN p.stock <= CEIL(COALESCE(p.low_stock_threshold, 10) / 2.0) THEN 'Rất thấp'
+            ELSE 'Sắp hết'
+          END AS alert_level,
+          CASE
+            WHEN s.sold_quantity > 0 THEN 'Sản phẩm bán chạy đang sắp hết'
+            ELSE 'Sản phẩm tồn thấp cần theo dõi'
+          END AS key_reason
+        FROM products p
+        INNER JOIN sales s ON s.productid = p.productid
+        WHERE COALESCE(p.is_active, true) = true
+          AND p.stock <= COALESCE(p.low_stock_threshold, 10)
+        ORDER BY s.sold_quantity DESC, s.revenue DESC, p.stock ASC, p.title ASC
+        LIMIT 20
+        `,
+        [finishedStatus],
+      ),
     ]);
 
     const row = summary.rows[0] || {};
@@ -1345,6 +1433,8 @@ router.get("/admin/reports", adminAuth, async (req: Request, res: Response) => {
         topProducts: topProducts.rows,
         paymentBreakdown: paymentBreakdown.rows,
         revenueByDay: revenueByDay.rows,
+        seasonalTrends: seasonalTrends.rows,
+        keyProductAlerts: keyProductAlerts.rows,
       },
     });
   } catch (error) {

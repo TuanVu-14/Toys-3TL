@@ -5,16 +5,41 @@ import { getAdminReports } from "@/app/api/admin";
 import { formatPrice } from "@/features/UIUpdates/CartWishlist";
 import React, { useEffect, useState } from "react";
 
+type TopProduct = { title: string; sold_quantity: number; revenue: number };
+type PaymentItem = { paymentmethod: string; total: number; orders: number };
+type RevenueDay = { day: string; revenue: number; orders: number };
+type SeasonalTrend = {
+  season_order: number;
+  season_name: string;
+  toy_type: string;
+  sold_quantity: number;
+  revenue: number;
+  hot_product?: string;
+};
+type KeyProductAlert = {
+  productid: number;
+  title: string;
+  brand?: string;
+  stock: number;
+  low_stock_threshold: number;
+  sold_quantity: number;
+  revenue: number;
+  alert_level: string;
+  key_reason: string;
+};
+
 type ReportData = {
   revenue: number;
   weeklyRevenue: number;
   completedOrders: number;
   newCustomers: number;
   conversionRate: number;
-  bestSeller?: string;
-  paymentBreakdown: { paymentmethod: string; total: number; orders: number }[];
-  topProducts: { title: string; sold_quantity: number; revenue: number }[];
-  revenueByDay: { day: string; revenue: number; orders: number }[];
+  bestSeller?: string | null;
+  paymentBreakdown: PaymentItem[];
+  topProducts: TopProduct[];
+  revenueByDay: RevenueDay[];
+  seasonalTrends: SeasonalTrend[];
+  keyProductAlerts: KeyProductAlert[];
 };
 
 const emptyReport: ReportData = {
@@ -26,7 +51,11 @@ const emptyReport: ReportData = {
   paymentBreakdown: [],
   topProducts: [],
   revenueByDay: [],
+  seasonalTrends: [],
+  keyProductAlerts: [],
 };
+
+const cardClass = "rounded-3xl border border-rose-100 bg-white p-6 shadow-sm";
 
 export default function ReportsPage() {
   const [data, setData] = useState<ReportData>(emptyReport);
@@ -47,98 +76,209 @@ export default function ReportsPage() {
     }
   };
 
-  useEffect(() => { loadReports(); }, []);
+  useEffect(() => {
+    loadReports();
+  }, []);
 
   const handleExportReport = async () => {
     setExporting(true);
     try {
       const lines = [
-        [`Báo cáo quản trị`, new Date().toLocaleDateString("vi-VN")],
+        ["Báo cáo quản trị", new Date().toLocaleDateString("vi-VN")],
         ["Tổng doanh thu", data.revenue],
         ["Doanh thu 7 ngày", data.weeklyRevenue],
         ["Đơn hoàn tất", data.completedOrders],
         ["Khách hàng mới", data.newCustomers],
-        ["Sản phẩm bán chạy", data.bestSeller || "—"],
+        ["Sản phẩm bán chạy nhất", data.bestSeller || ""],
         [],
-        ["Top sản phẩm", "Đã bán", "Doanh thu"],
-        ...data.topProducts.map((p) => [p.title, p.sold_quantity, p.revenue]),
+        ["Xu hướng đồ chơi hot theo mùa"],
+        ["Mùa", "Loại đồ chơi", "Đã bán", "Doanh thu", "Sản phẩm nổi bật"],
+        ...data.seasonalTrends.map((item) => [
+          item.season_name,
+          item.toy_type,
+          item.sold_quantity,
+          item.revenue,
+          item.hot_product || "",
+        ]),
+        [],
+        ["Cảnh báo mặt hàng chủ lực sắp hết"],
+        ["Sản phẩm", "Thương hiệu", "Tồn", "Ngưỡng", "Đã bán", "Mức cảnh báo"],
+        ...data.keyProductAlerts.map((item) => [
+          item.title,
+          item.brand || "",
+          item.stock,
+          item.low_stock_threshold,
+          item.sold_quantity,
+          item.alert_level,
+        ]),
       ];
-      const csvContent = lines.map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
-      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8" });
-      const url = window.URL.createObjectURL(blob);
+
+      const csv = lines.map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `admin-report-${Date.now()}.csv`;
+      link.download = `bao-cao-quan-tri-${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch {
-      alert("Không thể xuất báo cáo. Vui lòng thử lại.");
+      URL.revokeObjectURL(url);
     } finally {
       setExporting(false);
     }
   };
 
-  const reports = [
-    { id: 1, title: "Tổng doanh thu", value: formatPrice(Number(data.revenue || 0)), note: "Tính từ các đơn đã hoàn tất/giao thành công" },
-    { id: 2, title: "Doanh thu 7 ngày", value: formatPrice(Number(data.weeklyRevenue || 0)), note: "Dữ liệu trong 7 ngày gần nhất" },
-    { id: 3, title: "Sản phẩm bán chạy", value: data.bestSeller || "—", note: "Theo số lượng bán trong orderitems" },
-    { id: 4, title: "Khách hàng mới", value: String(data.newCustomers || 0), note: "Tài khoản tạo trong 30 ngày" },
-  ];
-
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-xl font-bold text-slate-900">Báo cáo quản trị</h3>
-            <p className="text-sm text-slate-500">Dữ liệu lấy trực tiếp từ orders, orderitems, products, users và payments.</p>
+            <p className="text-xs font-black uppercase tracking-[0.35em] text-rose-400">Báo cáo quản trị</p>
+            <h1 className="text-3xl font-black text-slate-950">Phân tích doanh thu, xu hướng và tồn kho</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Theo dõi sản phẩm bán chạy, đồ chơi hot theo mùa và mặt hàng chủ lực sắp hết.
+            </p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={loadReports} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold hover:bg-slate-50">Tải lại</button>
-            <button onClick={handleExportReport} disabled={exporting} className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">{exporting ? "Đang xuất..." : "Xuất báo cáo"}</button>
-          </div>
+          <button
+            onClick={handleExportReport}
+            disabled={exporting}
+            className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-500 disabled:opacity-60"
+          >
+            {exporting ? "Đang xuất..." : "Xuất CSV"}
+          </button>
         </div>
 
-        {error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div> : null}
-        {loading ? <div className="rounded-3xl border border-slate-100 bg-white p-8 text-center text-slate-500">Đang tải báo cáo...</div> : null}
+        {error ? <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-600">{error}</div> : null}
+        {loading ? <div className={cardClass}>Đang tải báo cáo...</div> : null}
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {reports.map((report) => (
-            <div key={report.id} className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-              <p className="text-sm font-bold text-slate-500">{report.title}</p>
-              <p className="mt-3 text-3xl font-black text-slate-950">{report.value}</p>
-              <p className="mt-3 text-sm text-slate-500">{report.note}</p>
-            </div>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Tổng doanh thu" value={formatPrice(Number(data.revenue || 0))} />
+          <MetricCard label="Doanh thu 7 ngày" value={formatPrice(Number(data.weeklyRevenue || 0))} />
+          <MetricCard label="Đơn hoàn tất" value={data.completedOrders} />
+          <MetricCard label="Khách hàng mới" value={data.newCustomers} />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <ReportTable title="Top sản phẩm bán chạy" headers={["Sản phẩm", "Đã bán", "Doanh thu"]} rows={data.topProducts.map((p) => [p.title, p.sold_quantity, formatPrice(Number(p.revenue || 0))])} />
-          <ReportTable title="Phương thức thanh toán" headers={["Phương thức", "Số đơn", "Tổng tiền"]} rows={data.paymentBreakdown.map((p) => [p.paymentmethod || "Không rõ", p.orders, formatPrice(Number(p.total || 0))])} />
+        <div className="grid gap-5 xl:grid-cols-2">
+          <TableCard title="Sản phẩm bán chạy">
+            <Table
+              headers={["Sản phẩm", "Đã bán", "Doanh thu"]}
+              rows={data.topProducts.map((item) => [
+                item.title,
+                Number(item.sold_quantity || 0),
+                formatPrice(Number(item.revenue || 0)),
+              ])}
+            />
+          </TableCard>
+
+          <TableCard title="Phương thức thanh toán">
+            <Table
+              headers={["Phương thức", "Số đơn", "Tổng tiền"]}
+              rows={data.paymentBreakdown.map((item) => [
+                item.paymentmethod,
+                Number(item.orders || 0),
+                formatPrice(Number(item.total || 0)),
+              ])}
+            />
+          </TableCard>
         </div>
 
-        <ReportTable title="Doanh thu theo ngày" headers={["Ngày", "Số đơn", "Doanh thu"]} rows={data.revenueByDay.map((d) => [new Date(d.day).toLocaleDateString("vi-VN"), d.orders, formatPrice(Number(d.revenue || 0))])} />
+        <TableCard
+          title="Thống kê xu hướng đồ chơi hot theo mùa"
+          description="Tự động nhóm đơn hàng 365 ngày gần nhất theo mùa, loại đồ chơi và sản phẩm nổi bật."
+        >
+          <Table
+            headers={["Mùa", "Loại đồ chơi", "Đã bán", "Doanh thu", "Sản phẩm hot"]}
+            rows={data.seasonalTrends.map((item) => [
+              item.season_name,
+              item.toy_type,
+              Number(item.sold_quantity || 0),
+              formatPrice(Number(item.revenue || 0)),
+              item.hot_product || "—",
+            ])}
+          />
+        </TableCard>
+
+        <TableCard
+          title="Cảnh báo mặt hàng chủ lực sắp hết"
+          description="Ưu tiên các sản phẩm bán chạy hoặc tồn kho thấp hơn ngưỡng để kịp nhập hàng."
+        >
+          <Table
+            headers={["Sản phẩm", "Thương hiệu", "Tồn", "Ngưỡng", "Đã bán", "Mức cảnh báo", "Gợi ý"]}
+            rows={data.keyProductAlerts.map((item) => [
+              item.title,
+              item.brand || "—",
+              Number(item.stock || 0),
+              Number(item.low_stock_threshold || 10),
+              Number(item.sold_quantity || 0),
+              <span key={`level-${item.productid}`} className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">
+                {item.alert_level}
+              </span>,
+              item.key_reason || "Cần nhập thêm",
+            ])}
+          />
+        </TableCard>
+
+        <TableCard title="Doanh thu theo ngày">
+          <Table
+            headers={["Ngày", "Số đơn", "Doanh thu"]}
+            rows={data.revenueByDay.map((item) => [
+              String(item.day).slice(0, 10),
+              Number(item.orders || 0),
+              formatPrice(Number(item.revenue || 0)),
+            ])}
+          />
+        </TableCard>
       </div>
     </AdminLayout>
   );
 }
 
-function ReportTable({ title, headers, rows }: { title: string; headers: string[]; rows: React.ReactNode[][] }) {
+function MetricCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-      <h4 className="text-lg font-black text-slate-900">{title}</h4>
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-xs uppercase tracking-wide text-slate-400">{headers.map((header) => <th key={header} className="py-3 pr-4">{header}</th>)}</tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {rows.length ? rows.map((row, index) => <tr key={index}>{row.map((cell, i) => <td key={i} className="py-3 pr-4">{cell}</td>)}</tr>) : <tr><td colSpan={headers.length} className="py-6 text-center text-slate-400">Không có dữ liệu.</td></tr>}
-          </tbody>
-        </table>
+    <div className={cardClass}>
+      <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-400">{label}</p>
+      <p className="mt-3 text-2xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function TableCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  return (
+    <div className={cardClass}>
+      <div className="mb-4">
+        <h3 className="text-xl font-black text-slate-950">{title}</h3>
+        {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
       </div>
+      {children}
+    </div>
+  );
+}
+
+function Table({ headers, rows }: { headers: string[]; rows: React.ReactNode[][] }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wide text-rose-400">
+            {headers.map((header) => (
+              <th key={header} className="py-3 pr-4 font-black">{header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-rose-50">
+          {rows.length ? rows.map((row, index) => (
+            <tr key={index} className="align-top">
+              {row.map((cell, cellIndex) => (
+                <td key={cellIndex} className="py-3 pr-4 text-slate-700">{cell}</td>
+              ))}
+            </tr>
+          )) : (
+            <tr>
+              <td colSpan={headers.length} className="py-5 text-center text-slate-400">Không có dữ liệu.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

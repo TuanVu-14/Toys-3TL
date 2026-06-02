@@ -487,7 +487,7 @@ const ProductPage = () => {
                   onClick={() => itemStateUpdate('cart')}
                   className="h-12 w-48 rounded-lg bg-yellow-400 font-semibold transition hover:border-2 hover:border-yellow-400 hover:bg-white disabled:cursor-not-allowed disabled:bg-gray-200"
                 >
-                  {btnLoading ? 'Đang tải...' : 'ADD TO CART'}
+                  {btnLoading ? 'Đang tải...' : 'Thêm vào giỏ hàng'}
                 </button>
 
                 <button
@@ -498,7 +498,7 @@ const ProductPage = () => {
                   }
                   className="h-12 w-48 rounded-lg border-2 border-yellow-400 font-semibold transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-300"
                 >
-                  BUY NOW
+                  Mua ngay
                 </button>
               </div>
 
@@ -507,7 +507,7 @@ const ProductPage = () => {
                 onClick={() => itemStateUpdate('wishlist')}
                 className="mt-6 flex items-center gap-2 text-gray-600 hover:text-yellow-500"
               >
-                <HeartIcon className="h-5 w-5" /> Add to wishlist
+                <HeartIcon className="h-5 w-5" /> Thêm vào yêu thích
               </button>
             </div>
           </div>

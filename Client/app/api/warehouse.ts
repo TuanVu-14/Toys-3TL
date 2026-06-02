@@ -58,6 +58,10 @@ export function getTopWarehouseProducts() {
   return warehouseClient.get("/warehouse/top-products");
 }
 
+export function getKeyProductAlerts() {
+  return warehouseClient.get("/warehouse/key-product-alerts");
+}
+
 export function getProductBatches() {
   return warehouseClient.get("/warehouse/batches");
 }

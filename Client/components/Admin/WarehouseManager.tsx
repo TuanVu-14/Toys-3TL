@@ -3,6 +3,7 @@
 import React, { FormEvent, useEffect, useState } from "react";
 import { formatPrice } from "@/features/UIUpdates/CartWishlist";
 import {
+  getKeyProductAlerts,
   getLowStockProducts,
   getProductBatches,
   getTopWarehouseProducts,
@@ -16,7 +17,7 @@ import {
   updateReturnStatus,
 } from "@/app/api/warehouse";
 
-type Product = { productid: number; title: string; stock: number; low_stock_threshold?: number; brand?: string; sold_quantity?: number };
+type Product = { productid: number; title: string; stock: number; low_stock_threshold?: number; brand?: string; sold_quantity?: number; revenue?: number; alert_level?: string; key_reason?: string };
 type Order = { orderid: number; username?: string; email?: string; totalamount: number; status: string; tracking_number?: string; item_count: number; createdat: string };
 type Batch = { batch_id: number; product_id: number; title: string; batch_number: string; quantity: number; manufacture_date?: string; expiry_date?: string };
 type ReturnItem = { return_id: number; orderid: number; productid: number; title?: string; username?: string; quantity: number; reason: string; status: string };
@@ -47,6 +48,7 @@ export default function WarehouseManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [lowStock, setLowStock] = useState<Product[]>([]);
   const [topProducts, setTopProducts] = useState<Product[]>([]);
+  const [keyProductAlerts, setKeyProductAlerts] = useState<Product[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [returns, setReturns] = useState<ReturnItem[]>([]);
@@ -64,11 +66,12 @@ export default function WarehouseManager() {
     setLoading(true);
     setError("");
     try {
-      const [summaryRes, productRes, lowRes, topRes, batchRes, orderRes, returnRes] = await Promise.all([
+      const [summaryRes, productRes, lowRes, topRes, keyAlertsRes, batchRes, orderRes, returnRes] = await Promise.all([
         getWarehouseSummary(),
         getWarehouseProducts(),
         getLowStockProducts(),
         getTopWarehouseProducts(),
+        getKeyProductAlerts(),
         getProductBatches(),
         getWarehouseOrders(),
         getWarehouseReturns(),
@@ -77,6 +80,7 @@ export default function WarehouseManager() {
       setProducts(productRes.data?.data || []);
       setLowStock(lowRes.data?.data || []);
       setTopProducts(topRes.data?.data || []);
+      setKeyProductAlerts(keyAlertsRes.data?.data || []);
       setBatches(batchRes.data?.data || []);
       setOrders(orderRes.data?.data || []);
       setReturns(returnRes.data?.data || []);
@@ -190,7 +194,7 @@ export default function WarehouseManager() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {[["inventory", "Nhập / xuất kho"], ["alerts", "Cảnh báo tồn kho"], ["batches", "Lô sản phẩm"], ["orders", "Xử lý đơn hàng"], ["returns", "Hàng trả lại"]].map(([key, label]) => (
+        {[["inventory", "Nhập / xuất kho"], ["alerts", "Cảnh báo tồn kho"], ["key-products", "Mặt hàng chủ lực"], ["batches", "Lô sản phẩm"], ["orders", "Xử lý đơn hàng"], ["returns", "Hàng trả lại"]].map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${tab === key ? "bg-rose-400 text-white" : "border border-rose-100 bg-white text-rose-500"}`}>{label}</button>
         ))}
       </div>
@@ -308,7 +312,34 @@ export default function WarehouseManager() {
         </div>
       ) : null}
 
-      {/* ─── Tab: Lô sản phẩm ─────────────────────────────────────────────── */}
+
+
+      {/* ─── Tab: Mặt hàng chủ lực sắp hết ───────────────────────────────── */}
+      {tab === "key-products" ? (
+        <div className="grid gap-5">
+          <TableCard title="Cảnh báo mặt hàng chủ lực sắp hết">
+            <p className="mb-4 text-sm text-slate-500">
+              Danh sách ưu tiên nhập hàng: sản phẩm tồn kho thấp hơn ngưỡng, sắp xếp theo lượng đã bán và doanh thu.
+            </p>
+            <Table
+              headers={["Sản phẩm", "Thương hiệu", "Tồn", "Ngưỡng", "Đã bán", "Mức cảnh báo", "Gợi ý"]}
+              rows={keyProductAlerts.map((p) => [
+                p.title,
+                p.brand || "—",
+                p.stock,
+                p.low_stock_threshold ?? 10,
+                p.sold_quantity ?? 0,
+                <span key={`level-${p.productid}`} className="rounded-full bg-orange-50 px-3 py-1 text-xs font-black text-orange-600">
+                  {p.alert_level || "Sắp hết"}
+                </span>,
+                p.key_reason || "Cần nhập thêm",
+              ])}
+            />
+          </TableCard>
+        </div>
+      ) : null}
+
+            {/* ─── Tab: Lô sản phẩm ─────────────────────────────────────────────── */}
       {tab === "batches" ? (
         <TableCard title="Lô sản phẩm">
           <Table headers={["Mã lô", "Sản phẩm", "Số lượng", "Ngày SX", "Hạn dùng"]} rows={batches.map((b) => [b.batch_number, b.title || b.product_id, b.quantity, b.manufacture_date?.slice(0, 10) || "—", b.expiry_date?.slice(0, 10) || "—"])} />
