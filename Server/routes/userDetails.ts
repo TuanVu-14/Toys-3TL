@@ -434,70 +434,105 @@ const fetchOrderAddresses = async (userID: number,addressID:number) => {
     return result.rows[0];
 };
 
-router.get('/user/order-detail/:userIDToken/:orderID',orderSchema,async (req:Request,res:Response)=>{
-    const result = validationResult(req);
-    if(result.isEmpty()){
-        const { userIDToken,orderID } = matchedData(req);
-        const query = `SELECT 
-        orders.orderid,
-        orders.createdat,
-        shipping.deliveredat,
-        orders.orderstatus,
-        payments.paymentstatus,
-        payments.paymentmethod,
-        users.username,
-        users.email,
-        users.mobile_number,
-        products.title,
-        products.discount,
-        products.price,
-        shipping.shippingcost,
-        orderitems.quantity,
-        productimages.imglink,
-        productimages.imgalt,
-        payments.billingaddress,
-        shipping.addressid,
-        orderitems.productid,
-        orders.order_code,
-        orders.totalamount
-        FROM orders
-        INNER JOIN users ON orders.userid = users.userid
-        INNER JOIN orderitems ON orders.orderid = orderitems.orderid
-        INNER JOIN shipping ON orderitems.shippingid = shipping.shippingid
-        INNER JOIN payments ON orderitems.paymentid = payments.paymentid
-        INNER JOIN products ON orderitems.productid = products.productid
-        INNER JOIN productimages ON products.productid = productimages.productid AND productimages.isprimary = true
-        WHERE orders.orderid = $1 AND orders.userid = $2;`
-        try {
-            const userID = jwt.verify(userIDToken,JWT_SECRET) as JwtPayload;
-            const values = [orderID,userID.userID];
-            const result = await client.query(query,values);
-            
-            if(result.rows.length === 0){
-                return res.status(404).json({message:'Data not Found'});
-            }
-            
-            const [shippingAddress,billingAddress] = await Promise.all([
-                fetchOrderAddresses(userID.userID,result.rows[0].addressid),
-                fetchOrderAddresses(userID.userID,result.rows[0].billingaddress)
-            ]);
-            const data = {
-                ...result.rows[0],
-                shippingaddress:{...shippingAddress},
-                billingaddress:{...billingAddress}
-            }
-            
-            res.status(200).json(
-                {data}
-            );
-        } catch (error) {
-            res.status(500).json({ error: 'Server error' });
-        }
+router.get('/user/order-detail/:userIDToken/:orderID', orderSchema, async (req: Request, res: Response) => {
+  const result = validationResult(req);
+
+  if (!result.isEmpty()) {
+    console.log(result);
+    return res.status(400).json({ message: 'Validation error' });
+  }
+
+  const { userIDToken, orderID } = matchedData(req);
+
+  try {
+    const userID = jwt.verify(userIDToken, JWT_SECRET) as JwtPayload;
+
+    const orderQuery = `
+      SELECT
+        o.orderid,
+        o.createdat,
+        o.updatedat,
+        COALESCE(s.deliveredat, s.delivered_at, o.delivered_at) AS deliveredat,
+        o.orderstatus,
+        o.order_code,
+        o.totalamount,
+        o.is_gift,
+        o.gift_message,
+        o.gift_wrapping_type,
+        COALESCE(o.tracking_number, s.trackingnumber) AS trackingnumber,
+        u.username,
+        u.email,
+        u.mobile_number,
+        p.paymentid,
+        p.paymentstatus,
+        p.paymentmethod,
+        p.amount AS paymentamount,
+        p.billingaddress,
+        s.shippingid,
+        s.addressid,
+        COALESCE(s.shippingcost, 0) AS shippingcost
+      FROM orders o
+      INNER JOIN users u ON u.userid = o.userid
+      LEFT JOIN shipping s ON s.orderid = o.orderid
+      LEFT JOIN payments p ON p.orderid = o.orderid
+      WHERE o.orderid = $1
+        AND o.userid = $2
+      ORDER BY s.createdat DESC NULLS LAST, p.createdat DESC NULLS LAST
+      LIMIT 1
+    `;
+
+    const orderResult = await client.query(orderQuery, [orderID, userID.userID]);
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Data not Found' });
     }
-    else
-    {
-        console.log(result);
-        res.status(500).json({ message: 'Validation error' });
-    }
-})
+
+    const order = orderResult.rows[0];
+
+    const itemsQuery = `
+      SELECT
+        oi.orderitemid,
+        oi.productid,
+        oi.quantity,
+        COALESCE(oi.gift_wrapping, false) AS gift_wrapping,
+        oi.gift_wrap_style,
+        oi.gift_message,
+        pr.title,
+        pr.price,
+        COALESCE(pr.discount, 0) AS discount,
+        CASE
+          WHEN COALESCE(pr.discount, 0) > 0
+          THEN ROUND(pr.price * (100 - pr.discount) / 100, 0)
+          ELSE pr.price
+        END AS discountedprice,
+        COALESCE(pi.imglink, '/images/no-image.png') AS imglink,
+        COALESCE(pi.imgalt, pr.title) AS imgalt
+      FROM orderitems oi
+      INNER JOIN products pr ON pr.productid = oi.productid
+      LEFT JOIN productimages pi ON pi.productid = pr.productid AND pi.isprimary = true
+      WHERE oi.orderid = $1
+      ORDER BY oi.orderitemid ASC
+    `;
+
+    const itemsResult = await client.query(itemsQuery, [orderID]);
+
+    const [shippingAddress, billingAddress] = await Promise.all([
+      order.addressid ? fetchOrderAddresses(userID.userID, order.addressid) : Promise.resolve(null),
+      order.billingaddress ? fetchOrderAddresses(userID.userID, order.billingaddress) : Promise.resolve(null),
+    ]);
+
+    const data = {
+      ...order,
+      items: itemsResult.rows,
+      shippingaddress: shippingAddress || {},
+      billingaddress: billingAddress || shippingAddress || {},
+    };
+
+    return res.status(200).json({ data });
+  } catch (error) {
+    console.error('GET /user/order-detail error:', error);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 export default router;

@@ -1,12 +1,8 @@
-"use client"
-import Common from '@/components/CommonPage/Common'
-import OrderDetail from '@/components/Orders/OrderDetail'
-import React from 'react'
+"use client";
 
-const page = () => {
-  return (
-    <Common Component={OrderDetail}/>
-  )
+import Common from "@/components/CommonPage/Common";
+import OrderDetail from "@/components/Orders/OrderDetail";
+
+export default function Page() {
+  return <Common Component={OrderDetail} />;
 }
-
-export default page
